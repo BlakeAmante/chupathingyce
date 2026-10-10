@@ -212,6 +212,10 @@ OpenCE's current builds (so their clients join its hosts), without that
 message (its hosts do not send it, its clients drop it), and joins hosts of
 9 and 10. The game browser lists the range's games.
 
+`port/linux/network_format.txt` records the wire format of the current
+version (`tools/network_format.py`): `test_linux_port.py` fails when the
+sources' messages, kinds, bits or structs sent whole differ from it.
+
 A client plays by its host's rules: in another's game (searching for it,
 in its lobby, or playing it) the developer console, the telnet console
 and the cheat buttons run only commands that change nothing of the game
