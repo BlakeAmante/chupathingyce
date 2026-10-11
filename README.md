@@ -10,7 +10,7 @@
 <a href="https://discord.gg/4BUm2FwuCB">Discord</a>
 </p>
 
-> **Compatible with [OpenCE](https://github.com/OpenCommunityEdition/OpenCE) build-169 through build-170 (network version 25).** OpenCE build-169 through build-170 players join our games, and our builds join games hosted on network versions 11 through 25 (OpenCE build-76 through build-170). Games hosted on older builds (network version 10) can't be joined; their hosts need to update.
+> **Compatible with [OpenCE](https://github.com/OpenCommunityEdition/OpenCE) build-184 (network version 26).** OpenCE build-184 players join our games, and our builds join games hosted on network versions 11 through 30 (OpenCE build-76 onward). Games hosted on older builds (network version 10) can't be joined; their hosts need to update. OpenCE's browser players can't join our games, nor we theirs.
 > Players on OpenCE and players on ChupathingyCE play together.
 
 ChupathingyCE is a community build of **OpenCE**, the port of the Halo: Combat
