@@ -20,6 +20,15 @@ host or share Microsoft's files. Expect rough edges, and please report them.
 
 <p align="center"><img src="docs/screenshots/lobby.jpg" width="720" alt="A multiplayer lobby"></p>
 
+## What ChupathingyCE is and isn't
+
+- A port of the Halo: Combat Evolved decompilation for Windows, Mac, Linux
+  and Android, run by its community.
+- You bring your own legally owned copy of the game. We never host, share or
+  distribute Microsoft's files, and the game never downloads them.
+- No browser version, and no websites or domains that look official.
+- A fan project, not made or endorsed by Microsoft, Bungie or 343 Industries.
+
 ## Features
 
 **Online**

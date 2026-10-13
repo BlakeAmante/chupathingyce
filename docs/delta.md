@@ -492,6 +492,27 @@ host with the same number. OpenCE raises it often, usually for additive
 changes (a message older machines drop). Delta handles it with a
 compatibility table and automation, so it stops being hand work.
 
+### Following policy
+
+ChupathingyCE has its own code and roadmap. Since October 9, 2026 it takes no
+code from OpenCE; it follows OpenCE's **network version**, so players of both
+keep sharing games.
+
+- **Bumps, not features.** When OpenCE raises its network version, we follow
+  the number. An additive raise (messages older machines drop) is followed by
+  the legacy table or the watch, after the cross-play gate passes. A raise
+  that changes how a game plays, or internet play's signalling, gets the
+  smallest port that keeps games in agreement, in a release, and nothing else
+  of that build.
+- **Servers first.** Our dedicated servers move to each follow as soon as it
+  ships, so OpenCE players always have a server to join.
+- **Weekly at most.** Follows are batched into a release about once a week,
+  unless cross-play is broken now. A follow that would cost more than an
+  evening is weighed against the players it keeps.
+- **Security fixes** in shared code are ported by hand whenever they turn up.
+- **Browser builds** aren't followed: their players can't join our games, nor
+  we theirs.
+
 ### The compatibility table
 
 Built: `port/linux/include/delta.h`, `DELTA_LEGACY_VERSIONS`, one row per
