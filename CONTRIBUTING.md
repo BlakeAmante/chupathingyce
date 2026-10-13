@@ -21,6 +21,10 @@ Contributors are credited in the release notes.
 - The 32-bit builds must stay byte-identical unless the change is meant for them: `tools/port_neutrality_check.py` checks it.
 - Commit messages, pull requests and issues are public, and they're posted to the ChupathingyCE Discord.
 
+## Using AI tools
+
+You can use AI tools when you contribute. You're responsible for what you submit: understand every line, test it, and be able to explain it in review. Say in the pull request if a large part of it was generated. Pull requests that are mostly generated and untested will be closed.
+
 ## Versions
 
 - **`0.MINOR.0`** is a major release, with a theme.
