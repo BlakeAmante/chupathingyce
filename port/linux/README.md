@@ -28,7 +28,7 @@ To start the game:
 
 - glibc 2.31 or later (32-bit), for the builds from GitHub Actions, which
   are built against glibc 2.31. They should start on Debian 11, Ubuntu
-  20.04, Fedora 32, SteamOS 3 and later distributions. A build that you
+  20.04, Fedora 32 and later distributions. A build that you
   make without `--portable` needs the glibc of the computer that built it,
   or a later one.
 - The 32-bit OpenGL libraries (`lib32-mesa`).
@@ -42,9 +42,8 @@ To start the game:
   On GNOME, the window then has borders only with the 32-bit libdecor
   (`lib32-libdecor`).
 
-SteamOS has all of these. Its system is read-only, and the builds from
-GitHub Actions need no package: they bring their own SDL3
-(`libSDL3.so.0`, next to the executable).
+The builds from GitHub Actions need no SDL package: they bring their own
+SDL3 (`libSDL3.so.0`, next to the executable).
 
 ### Portable build
 
@@ -116,10 +115,10 @@ network, and it is a dedicated server too (`server/README.md`).
 
 Enter `build/linux/halo`.
 
-To play on a Steam Deck, unpack `chupathingyce-linux64-release.zip` into a
-folder (in Desktop Mode), and add `halo` to Steam as a non-Steam game ("Add
-a Game" in the Games menu of Steam). The game then starts in Game Mode as
-well.
+The Steam Deck is not a supported platform yet. The Linux build may run
+on it: unpack `chupathingyce-linux64-release.zip` into a folder (in Desktop
+Mode), and add `halo` to Steam as a non-Steam game ("Add a Game" in the
+Games menu of Steam). Reports are welcome in #bug-reports on the Discord.
 
 The game data is the folder that contains `maps/`, from an Xbox disc image
 of any version of the game. The game looks for this folder in this
