@@ -2086,6 +2086,7 @@ static void game_engine_rasterize_scoreboard(
 	/* port: bounded (the map's column names) */
 	usnprintf(row_string, NUMBEROF(row_string), L"\t%s\t%s\t%s\t%s", column_name, score_name, score_string,
 		network ? L"Ping" : L"");
+	row_string[NUMBEROF(row_string) - 1] = 0;
 	{
 		long column;
 
@@ -2160,6 +2161,7 @@ static void game_engine_rasterize_scoreboard(
 			player->name,
 			status_string,
 			ping_string);
+		row_string[NUMBEROF(row_string) - 1] = 0;
 		row_color = has_teams ? &team_colors[PIN(player->team_index, 0, 1)] : &color;
 		scoreboard_draw_row(
 			row_string,
@@ -2246,6 +2248,7 @@ static void game_engine_rasterize_in_game_score(
 
 	game_engine->format_score_name(score_string);
 	usnprintf(row_string, NUMBEROF(row_string), L"\t%s\t%s\t%s", column_name, score_name, score_string);
+	row_string[NUMBEROF(row_string) - 1] = 0;
 	rasterize_in_game_score_draw_line(row_string, FALSE, &color, 1);
 
 	for (entry_index = 0; entry_index < entry_count; entry_index++)
@@ -2309,6 +2312,7 @@ static void game_engine_rasterize_in_game_score(
 				place_string,
 				player->name,
 				status_string);
+			row_string[NUMBEROF(row_string) - 1] = 0;
 
 			if (has_teams)
 				row_color = &team_colors[PIN(player->team_index, 0, 1)];
@@ -3802,7 +3806,6 @@ static void game_engine_build_lighting(
 	void)
 {
 	long player_count = 0;
-	long object_count = 0;
 
 	{
 		struct data_iterator iterator;
@@ -3812,55 +3815,10 @@ static void game_engine_build_lighting(
 			player_count++;
 	}
 
-	if (global_variant.universal_variant.vehicle_set != _game_engine_vehicles_none)
-	{
-		if (global_variant.game_engine_index == game_engine_race)
-		{
-			struct scenario *scenario = global_scenario_get();
-			/* port: a long counter, for a map's long count */
-			long flag_index;
-
-			for (flag_index = 0;
-				flag_index < scenario->netgame_flags.count;
-				flag_index++)
-			{
-				struct scenario_netgame_flag *flag = TAG_BLOCK_GET_ELEMENT(
-					&scenario->netgame_flags,
-					flag_index,
-					struct scenario_netgame_flag);
-
-				if (flag->type == _netgame_flag_race_vehicle)
-					object_count++;
-			}
-
-			if (object_count > player_count)
-				object_count = player_count;
-		}
-		else
-		{
-			struct object_iterator object_iterator;
-
-			object_iterator_new(
-				&object_iterator,
-				_object_mask_vehicle,
-				0);
-			while (object_iterator_next(&object_iterator))
-				object_count++;
-		}
-	}
-
-	if ((player_count > 8 && object_count >= 2) ||
-		player_count >= 13)
-	{
-		SET_FLAG(game_engine_globals.flags, _game_engine_disable_dynamic_light_bit, TRUE);
-	}
-
-	if (player_count > 4 ||
-		object_count >= 4 ||
-		TEST_FLAG(game_engine_globals.flags, _game_engine_disable_dynamic_light_bit))
-	{
-		SET_FLAG(game_engine_globals.flags, _game_engine_disable_integrated_lights_bit, TRUE);
-	}
+	/* port: the Xbox turned dynamic lights off past 13 players, or past 8
+	with two vehicles, and the flashlight off past 4 players or 4 vehicles.
+	A match on a map with a few vehicles then had a flashlight, and the next
+	one did not. The beam is a dynamic light, so both stay on. */
 
 	if (player_count >= 5)
 		SET_FLAG(game_engine_globals.flags, _game_engine_5_or_more_players_bit, TRUE);
@@ -5944,7 +5902,9 @@ struct game_variant *build_game_variant_oddball(
 struct game_variant *build_game_variant_team_oddball(
 	struct game_variant *variant)
 {
-	struct game_variant result;
+	/* port: cleared, as every other builder's is: only some of its fields
+	are set below, and the rest were the stack's */
+	struct game_variant result = { 0 };
 
 	SET_FLAG(result.universal_variant.flags, _game_variant_draw_object_in_motion_sensor_bit, TRUE);
 	SET_FLAG(result.universal_variant.flags, _game_variant_allow_friendly_navpoints_bit, TRUE);
