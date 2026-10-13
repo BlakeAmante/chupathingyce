@@ -507,9 +507,11 @@ keep sharing games.
   of that build.
 - **Servers first.** Our dedicated servers move to each follow as soon as it
   ships, so OpenCE players always have a server to join.
-- **Weekly at most.** Follows are batched into a release about once a week,
-  unless cross-play is broken now. A follow that would cost more than an
-  evening is weighed against the players it keeps.
+- **Weekly at most, for ports.** An additive raise is followed on its own,
+  by the table or the watch, once the gate passes. A raise that needs ported
+  code is batched into a release about once a week, unless cross-play is
+  broken now. A port that would cost more than an evening is weighed against
+  the players it keeps.
 - **Security fixes** in shared code are ported by hand whenever they turn up.
 - **Browser builds** aren't followed: their players can't join our games, nor
   we theirs.
