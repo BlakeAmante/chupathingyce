@@ -180,7 +180,18 @@ and switches co-op's BSP on the host's crossing alone; version 22 names a
 Halo Custom Edition map `custom_maps\<name>` in the game's settings, and a
 client without the map it names is told which map it misses and where to
 put it; version 24 sends the gametype's PC vehicle set, with which every
-machine places all of the map's vehicles.
+machine places all of the map's vehicles; version 29 (OpenCE's build-206)
+names a Custom Edition map by its own name (`custom_maps\hugeass`) and puts
+which version of it the host plays in the game record's map version: the
+first 32 bits of the map's whole-file hash (BLAKE2b of a label, the file's
+size and its 256 KiB pieces' hashes, `port/linux/src/map_archive.h`), read
+big-endian, 1 for 0, where versions 23 to 28 put the map's header checksum.
+A client plays its file of that name and version, or one named for its hash
+(`hugeass_0e2b3ee4.map`, a download beside another version of the name),
+and still takes an older host's header checksum and the hashed level names
+(`custom_maps\hugeass_0e2b3ee4`) its map sharing gave
+(`port/linux/game/map_families.c`, `map_family_find_version`). A host hashes
+a map once a run, when its game is put on it.
 
 A host never checks a joining client's version: the client reads the
 host's from its advertisement and joins only a version it plays with. That

@@ -355,6 +355,121 @@ static boolean hashed_name_find(
 	return FALSE;
 }
 
+/* the network game's map and the version of it the host plays
+(map_family_set_game_version), whose file map_family_find gives */
+static struct
+{
+	short family;
+	char file[MAP_FAMILY_FILE_LENGTH];
+	unsigned long version;
+} map_family_game;
+
+/* whether the map file at path is of a host's version (cache_files_map_version
+on the host: since network version 29 its whole-file hash's first 32 bits,
+before then its header's checksum; 0 for any). The checksum first: no file
+is hashed for a host that sends it */
+static boolean version_matches(
+	char const *path,
+	unsigned long version)
+{
+	unsigned char header[MAP_ARCHIVE_HEADER_SIZE];
+	unsigned long bytes_read = 0;
+	unsigned int checksum = 0;
+	unsigned int hash_version = 0;
+	HANDLE file;
+
+	if (!version)
+		return TRUE;
+	file = CreateFileA(path, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (file == INVALID_HANDLE_VALUE)
+		return FALSE;
+	if (ReadFile(file, header, sizeof(header), &bytes_read, NULL) && bytes_read == sizeof(header))
+		checksum = map_archive_header_checksum(header);
+	CloseHandle(file);
+	if (map_archive_version_matches((unsigned int)version, checksum, 0))
+		return TRUE;
+	return map_file_hash_version(path, &hash_version) &&
+		map_archive_version_matches((unsigned int)version, checksum, hash_version);
+}
+
+/* the first file of a map's name in the family's places (or, for a Custom
+Edition map's hashed name, its base's whose hash is the name's) */
+static boolean find_any(
+	short family,
+	char const *file,
+	char *path,
+	long size)
+{
+	long count, index;
+	struct map_family_place const *places = family_places(family, &count);
+
+	for (index = 0; index < count; index++)
+	{
+		char folder[256];
+
+		place_folder(&places[index], folder, sizeof(folder));
+		snprintf(path, (size_t)size, "%s%s%s.map", folder, file, places[index].suffix);
+		if (cache_file_is(path, family_cache_version(family), FALSE))
+			return TRUE;
+	}
+	/* (a Custom Edition map by a hashed name another build's host gave it:
+	its base name's file, in the same places, if its hash is the name's) */
+	if (family == _map_family_custom_edition && hashed_name_find(places, count, file, path, size))
+		return TRUE;
+	path[0] = 0;
+	return FALSE;
+}
+
+static boolean find_version(
+	short family,
+	char const *file,
+	unsigned long version,
+	char *path,
+	long size)
+{
+	long count, index;
+	struct map_family_place const *places = family_places(family, &count);
+
+	for (index = 0; index < count; index++)
+	{
+		char folder[256];
+
+		place_folder(&places[index], folder, sizeof(folder));
+		snprintf(path, (size_t)size, "%s%s%s.map", folder, file, places[index].suffix);
+		if (cache_file_is(path, family_cache_version(family), FALSE) && version_matches(path, version))
+			return TRUE;
+	}
+	if (family == _map_family_custom_edition)
+	{
+		/* (another version of the map beside the one of its name, named
+		for its hash: <file>_<8 hex digits>.map, the version's, as a
+		download beside it is named: map_download.c) */
+		for (index = 0; index < count; index++)
+		{
+			char folder[256];
+
+			place_folder(&places[index], folder, sizeof(folder));
+			snprintf(path, (size_t)size, "%s%s_%08lx%s.map", folder, file, version & 0xffffffffUL,
+				places[index].suffix);
+			if (cache_file_is(path, CUSTOM_EDITION_CACHE_VERSION, FALSE) && version_matches(path, version))
+				return TRUE;
+		}
+		/* (a hashed name an older host gave the map: its base's file) */
+		if (hashed_name_find(places, count, file, path, size) && version_matches(path, version))
+			return TRUE;
+	}
+	path[0] = 0;
+	return FALSE;
+}
+
+/* a map file's name a map can be found by: no folder in it */
+static boolean file_name_valid(
+	char const *file)
+{
+	return file[0] && strlen(file) < MAP_FAMILY_FILE_LENGTH && !strchr(file, '\\') && !strchr(file, '/') &&
+		!strchr(file, ':');
+}
+
 /* ---------- public code */
 
 long map_family_cache_version(
@@ -395,29 +510,46 @@ boolean map_family_find(
 	char *path,
 	long size)
 {
-	long count, index;
-	struct map_family_place const *places = family_places(family, &count);
-
-	if (!file[0] || strlen(file) >= MAP_FAMILY_FILE_LENGTH || strchr(file, '\\') || strchr(file, '/') ||
-		strchr(file, ':'))
-	{
+	if (!file_name_valid(file))
 		return FALSE;
-	}
-	for (index = 0; index < count; index++)
+	/* (the network game's map: the file of the host's version, if there is
+	one; any other is found as before, and cache_files_map_present has told
+	the player it is not the host's) */
+	if (map_family_game.version && map_family_game.family == family && !_stricmp(map_family_game.file, file) &&
+		find_version(family, file, map_family_game.version, path, size))
 	{
-		char folder[256];
-
-		place_folder(&places[index], folder, sizeof(folder));
-		snprintf(path, (size_t)size, "%s%s%s.map", folder, file, places[index].suffix);
-		if (cache_file_is(path, family_cache_version(family), FALSE))
-			return TRUE;
-	}
-	/* (a Custom Edition map by a hashed name another build's host gave it:
-	its base name's file, in the same places, if its hash is the name's) */
-	if (family == _map_family_custom_edition && hashed_name_find(places, count, file, path, size))
 		return TRUE;
-	path[0] = 0;
-	return FALSE;
+	}
+	return find_any(family, file, path, size);
+}
+
+boolean map_family_find_version(
+	short family,
+	char const *file,
+	unsigned long version,
+	char *path,
+	long size)
+{
+	if (!file_name_valid(file))
+		return FALSE;
+	return version ? find_version(family, file, version, path, size) : find_any(family, file, path, size);
+}
+
+void map_family_set_game_version(
+	char const *map,
+	unsigned long version)
+{
+	char file[MAP_FAMILY_FILE_LENGTH];
+	short family = map_family_parse(map ? map : "", file, sizeof(file));
+
+	if (!map || family == _map_family_xbox || !version)
+	{
+		map_family_game.version = 0;
+		return;
+	}
+	map_family_game.family = family;
+	snprintf(map_family_game.file, sizeof(map_family_game.file), "%s", file);
+	map_family_game.version = version;
 }
 
 void map_family_list(
