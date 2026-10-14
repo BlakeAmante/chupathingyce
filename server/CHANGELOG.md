@@ -4,6 +4,15 @@ What changed in the ChupathingyCE Dedicated Server. The server is released
 with the game and has its version; the game's own changes are in its
 release notes.
 
+## 0.7.5a
+
+- OpenCE's network version 29 (build-206). No message changed, but a game
+  on a Custom Edition map names it by the map's own name, and its map
+  version is the first 32 bits of the map's hash (the header checksum
+  before). The server hosts its Custom Edition maps that way.
+- Announces network version 29; joins as a client hosts of 11 through 30.
+  Redeploy: a legacy table can't follow this one (wire `chupa-29a`).
+
 ## 0.7.5
 
 - `sv_name_filter`: players whose name is on the blocked names list
