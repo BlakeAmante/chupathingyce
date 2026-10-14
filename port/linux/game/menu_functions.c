@@ -4068,7 +4068,8 @@ static boolean lobby_browser_select(struct widget_instance *widget, short contro
 	{
 		wchar_t blocked[ROW_TEXT_LENGTH * 2];
 
-		if (server_browser_map_blocked(game->map, blocked, NUMBEROF(blocked)))
+		if (server_browser_map_blocked(game->map, blocked, NUMBEROF(blocked)) &&
+			!server_browser_map_downloadable(game->map))
 		{
 			lobby_browser_message(blocked);
 			return campaign_fail();
