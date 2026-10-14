@@ -498,12 +498,60 @@ host with the same number. OpenCE raises it often, usually for additive
 changes (a message older machines drop). Delta handles it with a
 compatibility table and automation, so it stops being hand work.
 
+What each side checks, since 0.7.5a:
+
+- **Delta games go by our wire, not OpenCE's number.** A host that speaks
+  Delta puts its Delta major and its wire ID (`chupa-28a`, `DELTA_WIRE`)
+  in its advertisement, in reserved bytes after the port's version and
+  flags (`DELTA_ADVERTISED_WIRE_OFFSET`; OpenCE's machines leave them zero
+  and never read them). Our client, unless set to `network.protocol =
+  "opence"`, joins a host of its own major and wire whatever OpenCE number
+  either one announces, and refuses a host of another wire with a message
+  naming both. A host of another major, or one built before the wire was
+  advertised, is joined by its number, as before. The Online Games list
+  keeps a Delta host whose number is out of range, so that it can be joined
+  this way.
+- **OpenCE hosts and clients are unchanged.** Our client joins an OpenCE
+  host by its number: back to the newest breaking version, up to the
+  maximum. Our host announces one number. It can't let in OpenCE clients
+  of other numbers: an OpenCE client compares the advertised number with
+  its own and joins only on an exact match, before it sends anything, and
+  its join request doesn't say its number. So an OpenCE client of a newer
+  number sees our games only once we announce that number (a signed table
+  or a release, below).
+- **The next number is presumed additive.** Our client joins hosts of the
+  next OpenCE number (`DELTA_LEGACY_PRESUMED`, 1, past the one announced)
+  from the day OpenCE raises it, before anything is followed. The built-in
+  maximum is at least the built-in number plus one, and a signed table's
+  row gets the same: a row that announces 30 joins up to at least 31,
+  whatever its `maximum` says. The rule for such a game: what the client
+  doesn't know it drops, as with any additive raise, and content it can't
+  match ends its join instead of playing on: a map of another version
+  (a Custom Edition map's version is in the game record) is refused as a
+  missing map, before the game loads. A raise that changes an existing
+  message, its layout or what it means, is breaking, not additive: it gets
+  a `breaking` row and a release. Builds already out can't be narrowed by a
+  table, so until they update they would still join such a host; that is
+  the one risk of the window, the same the built-in maximum has carried
+  since it was set two past the number (30 for 28). The join logs
+  "presumed additive", so a report from such a game says so.
+
 ### Following policy
 
 ChupathingyCE has its own code and roadmap. Since October 9, 2026 it takes no
 code from OpenCE; it follows OpenCE's **network version**, so players of both
 keep sharing games.
 
+- **Delta players aren't held up.** Between our own builds the wire
+  decides, not OpenCE's number, so a raise never splits our players from
+  each other; a release that changes our game protocol gives itself a new
+  wire ID, and builds of an older wire are told to update. Following
+  OpenCE only decides which OpenCE players see our games.
+- **The next number is joined at once.** Our clients join OpenCE hosts of
+  the next number on day one (presumed additive, above). Our hosts keep
+  announcing the number they have proven until the cross-play gate passes:
+  announcing a number early would let in OpenCE clients that might not play
+  the same game.
 - **Bumps, not features, by hand.** When OpenCE raises its network version,
   Donut posts it in #crossplay-watch on the Discord, and a person decides
   whether to follow. Nothing follows on its own. An additive raise (messages
@@ -1125,6 +1173,9 @@ the next serial, and `verify` checks the epoch against `delta_key.h`'s keys
   least the built-in number, minimum at most the built-in minimum, maximum at
   least the built-in maximum. Nothing the network sends can make a build
   stricter than it shipped; a table whose row narrows is dropped whole.
+- A taken row's maximum is at least its announce plus
+  `DELTA_LEGACY_PRESUMED` (since 0.7.5a): the next number is presumed
+  additive (see "The legacy number").
 - A table that doesn't verify is dropped quietly (one line in the log, never
   an address); nothing is shown to the player.
 
