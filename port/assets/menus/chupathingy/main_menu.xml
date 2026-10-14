@@ -6,8 +6,8 @@ PROFILES, SETTINGS and QUIT the PC version's, which the Xbox has not. -->
 <menus>
 	<widget name="chupathingy/main_menu" width="640" height="480" flags="pass_unhandled_to_focused_child">
 		<on event="created" run="main menu intialize" label="ring_loop"/>
-		<on event="back" run="NULL"/>
-		<on event="b" run="NULL"/>
+		<on event="back" open="chupathingy/quit_screen"/>
+		<on event="b" open="chupathingy/quit_screen"/>
 		<child widget="main_menu/halo_logo" y="28"/>
 		<child widget="chupathingy/main_menu_list"/>
 		<child widget="main_menu/build_number" x="450" y="400"/>
@@ -16,9 +16,9 @@ PROFILES, SETTINGS and QUIT the PC version's, which the Xbox has not. -->
 		<data input="main menu fake animate"/>
 		<child widget="chupathingy/main_menu_campaign" x="194" y="247"/>
 		<child widget="chupathingy/main_menu_multiplayer" x="192" y="283"/>
-		<child widget="main_menu/main_menu_item_profile" x="192" y="319"/>
+		<child widget="chupathingy/main_menu_profiles" x="192" y="319"/>
 		<child widget="chupathingy/main_menu_settings" x="192" y="355"/>
-		<child widget="main_menu/main_menu_item_quit_game" x="192" y="391"/>
+		<child widget="chupathingy/main_menu_quit" x="192" y="391"/>
 	</widget>
 	<!-- (the Xbox's CAMPAIGN and MULTIPLAYER, as ui.map has them) -->
 	<widget name="chupathingy/main_menu_campaign" type="text" width="256" height="33" bitmap="main_menu/menu_load_campaign" string_list="main_menu/main_menu_options" string_index="1" font="ui\small_ui" color="#000080FF">
@@ -30,6 +30,19 @@ PROFILES, SETTINGS and QUIT the PC version's, which the Xbox has not. -->
 	<widget name="chupathingy/main_menu_multiplayer" type="text" width="256" height="33" bitmap="main_menu/menu_multiplayer" string_list="main_menu/main_menu_options" string_index="2" font="ui\small_ui" color="#000080FF">
 		<on event="a" label="multiplayer" open="ui\shell\main_menu\multiplayer_type_select\multiplayer_type_select_screen"/>
 		<on event="start" label="multiplayer" open="ui\shell\main_menu\multiplayer_type_select\multiplayer_type_select_screen"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+	</widget>
+	<!-- (the PC version's PROFILES and QUIT, their screens in the Xbox's look:
+	profiles.xml, quit.xml) -->
+	<widget name="chupathingy/main_menu_profiles" type="text" width="256" height="33" bitmap="main_menu/menu_profile" string_list="main_menu/main_menu_options" string_index="2" font="ui\small_ui" color="#000080FF">
+		<on event="a" run="new game if no plyr profiles" open="chupathingy/profiles/screen" branch="true"/>
+		<on event="start" run="new game if no plyr profiles" open="chupathingy/profiles/screen" branch="true"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+		<conditional widget="main_menu/profile_manager/pm_entry_creating_profile" if_failed="true"/>
+	</widget>
+	<widget name="chupathingy/main_menu_quit" type="text" width="256" height="33" bitmap="main_menu/menu_quit">
+		<on event="a" open="chupathingy/quit_screen"/>
+		<on event="start" open="chupathingy/quit_screen"/>
 		<on event="left_mouse" run="mouse emit accept event"/>
 	</widget>
 	<!-- (the PC version's SETTINGS, its screen in the Xbox's look) -->

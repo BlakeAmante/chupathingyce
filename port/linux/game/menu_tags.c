@@ -402,6 +402,8 @@ static char const *const port_game_data_input_names[] =
 	/* (the profile settings' picture: the Xbox's of the button settings,
 	on Gamepad Setup's row) */
 	"port gamepad layout preview",
+	/* (the Chupathingy menus' settings picture: the same, on its own frames) */
+	"chupathingy settings picture",
 };
 
 static struct

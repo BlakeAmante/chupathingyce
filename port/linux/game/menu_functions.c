@@ -1550,6 +1550,24 @@ static void profile_gamepad_layout(struct widget_instance *picture)
 	}
 }
 
+/* the Chupathingy menus' settings picture (port/assets/menus/chupathingy):
+a frame for each of its ten rows, then the Xbox's five button settings,
+which Gamepad Setup's row shows for the edited profile */
+#define CHUPATHINGY_FIRST_LAYOUT_FRAME 10
+
+/* "chupathingy settings picture" (the picture's own) */
+static void chupathingy_settings_picture(struct widget_instance *picture)
+{
+	struct player_profile *profile = player_ui_get_edit_player_profile();
+
+	if (picture->animation.current_frame_index == PROFILE_GAMEPAD_FRAME)
+	{
+		picture->animation.current_frame_index = (short)(CHUPATHINGY_FIRST_LAYOUT_FRAME +
+			(profile && profile->controller_settings.button_preset < NUMBER_OF_BUTTON_PRESETS ?
+				profile->controller_settings.button_preset : _button_preset_standard));
+	}
+}
+
 /* ---------- Profiles: the player profiles, and a row to make one (as the
 PC version's list has them, but by the Xbox's names for its spinner's
 functions); choosing one makes it player 1's, the profile the campaign and
@@ -6084,4 +6102,6 @@ void pc_menu_game_data_function_invoke(
 		saved_game_list_update(widget);
 	else if (!strcmp(name, "port gamepad layout preview"))
 		profile_gamepad_layout(widget);
+	else if (!strcmp(name, "chupathingy settings picture"))
+		chupathingy_settings_picture(widget);
 }

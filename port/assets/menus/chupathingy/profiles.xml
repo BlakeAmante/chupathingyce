@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The Chupathingy menus' PROFILES: the PC version's profile list (the
+profile chosen becomes player 1's), laid out as the Xbox's screens are: a
+list on the left, the Xbox's profile card on the right, and its prompts (Y
+makes a profile, X deletes one, B goes back, A chooses). The label above
+the card names the kind of profile: Halo's, with room beside it for others
+later. -->
+<menus>
+	<widget name="chupathingy/profiles/screen" width="640" height="480" flags="pass_unhandled_to_focused_child" bitmap="bitmaps/gradient">
+		<on event="b" back="true"/>
+		<on event="back" back="true"/>
+		<on event="x" run="request del player profile" open="chupathingy/profiles/confirm_delete"/>
+		<on event="y" run="new campaign chosen" open="main_menu/profile_manager/pm_empty_creating_profile"/>
+		<child widget="main_menu/player_profiles_select/header_select_profile"/>
+		<child widget="chupathingy/profiles/kind" x="406" y="52"/>
+		<child widget="chupathingy/profiles/list"/>
+		<child widget="ui\shell\main_menu\y_butn" x="78" y="414"/>
+		<child widget="ui\shell\main_menu\=create_new" x="100" y="414"/>
+		<child widget="ui\shell\main_menu\x_butn" x="250" y="414"/>
+		<child widget="ui\shell\main_menu\=delete" x="272" y="414"/>
+		<child widget="ui\shell\main_menu\b_butn" x="371" y="414"/>
+		<child widget="ui\shell\main_menu\=back" x="392" y="414"/>
+		<child widget="ui\shell\main_menu\a_butn" x="471" y="414"/>
+		<child widget="ui\shell\main_menu\=accept" x="492" y="414"/>
+	</widget>
+	<widget name="chupathingy/profiles/kind" type="text" controller="1" width="162" height="20" text="HALO PROFILES" font="ui\small_ui" color="#FFFFFFFF" align="center">
+	</widget>
+	<widget name="chupathingy/profiles/list" type="column_list" width="640" height="480" flags="pass_unhandled_to_focused_child up_down_tabs_children" description="chupathingy/profiles/card">
+		<data input="3wide player profile list update"/>
+		<on event="created" run="player profile list initialize"/>
+		<on event="deleted" run="player profile list dispose"/>
+		<on event="custom_activation" run="profile manager select" back="true" branch="true"/>
+		<conditional widget="main_menu/profile_manager/pm_empty_selected" if_failed="true"/>
+		<child widget="chupathingy/profiles/list_item_0" x="51" y="73"/>
+		<child widget="chupathingy/profiles/list_item_1" x="51" y="103"/>
+		<child widget="chupathingy/profiles/list_item_2" x="51" y="133"/>
+		<child widget="chupathingy/profiles/list_item_3" x="51" y="163"/>
+		<child widget="chupathingy/profiles/list_item_4" x="51" y="193"/>
+		<child widget="chupathingy/profiles/list_item_5" x="51" y="223"/>
+		<child widget="chupathingy/profiles/list_item_6" x="51" y="253"/>
+		<child widget="chupathingy/profiles/list_item_7" x="51" y="283"/>
+		<child widget="chupathingy/profiles/list_item_8" x="51" y="313"/>
+		<child widget="chupathingy/profiles/list_item_9" x="51" y="343"/>
+		<child widget="chupathingy/profiles/list_item_10" x="51" y="373"/>
+	</widget>
+	<!-- (the Xbox's card of a profile, as its own screens place it) -->
+	<widget name="chupathingy/profiles/card" width="640" height="480">
+		<child widget="main_menu/player_profiles_select/player_profile_right_item"/>
+	</widget>
+	<widget name="chupathingy/profiles/list_item_0" controller="1" width="256" height="32" bitmap="bitmaps/list_item_bkd_top">
+		<on event="a" run="single prev cl item activated"/>
+		<on event="start" run="single prev cl item activated"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+		<child widget="chupathingy/profiles/list_item_text"/>
+	</widget>
+	<widget name="chupathingy/profiles/list_item_1" controller="1" width="256" height="32" bitmap="bitmaps/list_item_bkd">
+		<on event="a" run="single prev cl item activated"/>
+		<on event="start" run="single prev cl item activated"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+		<child widget="chupathingy/profiles/list_item_text"/>
+	</widget>
+	<widget name="chupathingy/profiles/list_item_2" controller="1" width="256" height="32" bitmap="bitmaps/list_item_bkd">
+		<on event="a" run="single prev cl item activated"/>
+		<on event="start" run="single prev cl item activated"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+		<child widget="chupathingy/profiles/list_item_text"/>
+	</widget>
+	<widget name="chupathingy/profiles/list_item_3" controller="1" width="256" height="32" bitmap="bitmaps/list_item_bkd">
+		<on event="a" run="single prev cl item activated"/>
+		<on event="start" run="single prev cl item activated"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+		<child widget="chupathingy/profiles/list_item_text"/>
+	</widget>
+	<widget name="chupathingy/profiles/list_item_4" controller="1" width="256" height="32" bitmap="bitmaps/list_item_bkd">
+		<on event="a" run="single prev cl item activated"/>
+		<on event="start" run="single prev cl item activated"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+		<child widget="chupathingy/profiles/list_item_text"/>
+	</widget>
+	<widget name="chupathingy/profiles/list_item_5" controller="1" width="256" height="32" bitmap="bitmaps/list_item_bkd">
+		<on event="a" run="single prev cl item activated"/>
+		<on event="start" run="single prev cl item activated"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+		<child widget="chupathingy/profiles/list_item_text"/>
+	</widget>
+	<widget name="chupathingy/profiles/list_item_6" controller="1" width="256" height="32" bitmap="bitmaps/list_item_bkd">
+		<on event="a" run="single prev cl item activated"/>
+		<on event="start" run="single prev cl item activated"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+		<child widget="chupathingy/profiles/list_item_text"/>
+	</widget>
+	<widget name="chupathingy/profiles/list_item_7" controller="1" width="256" height="32" bitmap="bitmaps/list_item_bkd">
+		<on event="a" run="single prev cl item activated"/>
+		<on event="start" run="single prev cl item activated"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+		<child widget="chupathingy/profiles/list_item_text"/>
+	</widget>
+	<widget name="chupathingy/profiles/list_item_8" controller="1" width="256" height="32" bitmap="bitmaps/list_item_bkd">
+		<on event="a" run="single prev cl item activated"/>
+		<on event="start" run="single prev cl item activated"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+		<child widget="chupathingy/profiles/list_item_text"/>
+	</widget>
+	<widget name="chupathingy/profiles/list_item_9" controller="1" width="256" height="32" bitmap="bitmaps/list_item_bkd">
+		<on event="a" run="single prev cl item activated"/>
+		<on event="start" run="single prev cl item activated"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+		<child widget="chupathingy/profiles/list_item_text"/>
+	</widget>
+	<widget name="chupathingy/profiles/list_item_10" controller="1" width="256" height="32" bitmap="bitmaps/list_item_bkd">
+		<on event="a" run="single prev cl item activated"/>
+		<on event="start" run="single prev cl item activated"/>
+		<on event="left_mouse" run="mouse emit accept event"/>
+		<child widget="chupathingy/profiles/list_item_text"/>
+	</widget>
+	<widget name="chupathingy/profiles/list_item_text" type="text" controller="1" width="256" height="32" font="ui\large_ui" color="#FF2896FF" text_flags="no_focus_test" text_x="13" text_y="5">
+	</widget>
+	<!-- (deleting one: the Xbox's question, its small B and A prompts) -->
+	<widget name="chupathingy/profiles/confirm_delete" width="640" height="480" flags="pass_unhandled_to_focused_child" bitmap="ui\shell\bitmaps\semi_transparent_grey">
+		<on event="a" run="final del player profile" close="current"/>
+		<on event="start" run="final del player profile" close="current"/>
+		<on event="b" run="cancel profile delete" close="current" sound="sound\sfx\ui\back"/>
+		<on event="back" run="cancel profile delete" close="current" sound="sound\sfx\ui\back"/>
+		<child widget="error/confirm_delete_profile_text_box" x="192" y="176"/>
+		<child widget="error/header_warning" x="201" y="180"/>
+		<child widget="chupathingy/dialog_prompts"/>
+	</widget>
+</menus>

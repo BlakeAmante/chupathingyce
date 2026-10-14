@@ -350,6 +350,90 @@ def settings_files() -> dict:
                    "<menus>", *lines, "</menus>", ""] for name, lines in files.items()}
 
 
+# ---------- the Chupathingy menus' settings pages
+
+# (display.menus "chupathingy": port/assets/menus/chupathingy) the same rows
+# and help as the screens above, laid out as the Xbox's ADVANCED CONTROLS:
+# no button bar, the Xbox's prompts instead (B cancels, A accepts, Y shows the
+# defaults; Controls Setup's A changes a key, so X accepts there)
+CHUPATHINGY = "chupathingy/settings"
+CHUPATHINGY_PAGES = ["controls_setup", "gamepad_setup", "mouse_settings", "audio_settings", "video_settings",
+                     "network_setup"]
+XBOX_MAIN_MENU = "ui\\shell\\main_menu"
+
+
+def _setting_places(spec: dict) -> list:
+    """each row's key, platform and place (as _setting_screen lays them)"""
+    places, place = [], -1
+    for label, setting, choices, _, platform, *named in spec["rows"]:
+        key = named[0] if named else setting.split(".", 1)[1]
+        if setting not in spec.get("same_place", ()) and key not in spec.get("same_place", ()):
+            place += 1
+        places.append((key, platform, place))
+    return places
+
+
+def _xbox_prompt(button: str, x: int, text: str = None, caption: int = None) -> list:
+    """an Xbox prompt: its button's picture, and its text (the Xbox's
+    button_key string, else one of ours)"""
+    picture = XBOX_MAIN_MENU + "\\" + button + "_butn"
+    lines = [f'<child{attributes([("widget", picture), ("x", x), ("y", 414)])}/>']
+    if caption is not None:
+        lines.append(f'<child{attributes([("widget", caption), ("x", x + 22), ("y", 414)])}/>')
+    else:
+        lines.append(f'<child{attributes([("widget", f"{CHUPATHINGY}/prompt_{text}"), ("x", x + 22), ("y", 414)])}/>')
+    return lines
+
+
+def chupathingy_settings_pages() -> list:
+    """the pages' file (chupathingy/settings_pages.xml)"""
+    lines = ['<?xml version="1.0" encoding="UTF-8"?>',
+             "<!-- The Chupathingy menus' settings pages, in the Xbox's look (tools/port_settings.py) -->",
+             "<menus>"]
+    for folder in CHUPATHINGY_PAGES:
+        base = f"{PE}/{folder}"
+        if folder == "controls_setup":
+            spec = {"screen": "controls_settings_screen", "spacing": 30,
+                    "header": ("header_profile_controls_settings", None)}
+            rows = [(f"{base}/op_group", None, 0)] + [(f"{base}/op_command_{index + 1}", None, index + 1)
+                                                       for index in range(CONTROL_ROWS)]
+            inputs = ["controls update menu"]
+            handlers = ['<on event="created" run="controls screen init"/>',
+                        '<on event="x" run="controls screen change set" back="true"/>',
+                        '<on event="y" run="controls screen defaults"/>']
+            prompts = (_xbox_prompt("y", 78, "defaults") + _xbox_prompt("x", 220, "accept_short") +
+                       _xbox_prompt("b", 346, caption=XBOX_MAIN_MENU + "\\=cancel") +
+                       _xbox_prompt("a", 471, "change"))
+        else:
+            spec = SCREENS[folder]
+            rows = [(f"{base}/op_{key}", platform, place) for key, platform, place in _setting_places(spec)]
+            inputs = ["port settings help"]
+            handlers = ['<on event="a" run="port settings save" back="true"/>',
+                        '<on event="y" run="port settings defaults"/>']
+            prompts = (_xbox_prompt("y", 78, "defaults") +
+                       _xbox_prompt("b", 346, caption=XBOX_MAIN_MENU + "\\=cancel") +
+                       _xbox_prompt("a", 471, caption=XBOX_MAIN_MENU + "\\=accept_new"))
+        header = spec["header"][0]
+        lines += _widget(f"{CHUPATHINGY}/{folder}_screen",
+                         [("width", 640), ("height", 480), ("flags", "pass_unhandled_to_focused_child pause_game"),
+                          ("bitmap", "bitmaps/gradient")],
+                         ['<on event="b" back="true"/>', '<on event="back" back="true"/>',
+                          f'<child{attributes([("widget", f"{base}/{header}")])}/>',
+                          f'<child{attributes([("widget", f"{CHUPATHINGY}/{folder}_list")])}/>', *prompts])
+        children = [f'<data input="{name}"/>' for name in inputs] + handlers
+        for row, platform, place in rows:
+            children.append(f'<child{attributes([("widget", row), ("x", 54), ("y", 73 + place * spec["spacing"]), ("platform", platform)])}/>')
+        lines += _widget(f"{CHUPATHINGY}/{folder}_list",
+                         [("type", "column_list"), ("width", 640), ("height", 480),
+                          ("flags", "pass_unhandled_to_focused_child up_down_tabs_children"),
+                          ("description", f"{base}/help")], children)
+    for name, text in [("defaults", "=DEFAULTS"), ("accept_short", "=ACCEPT"), ("change", "=CHANGE")]:
+        lines += _widget(f"{CHUPATHINGY}/prompt_{name}",
+                         [("type", "text"), ("controller", 1), ("width", 120), ("height", 22), ("text", text),
+                          ("font", "ui\\large_ui"), ("color", "#FF2896FF")], [])
+    return lines + ["</menus>", ""]
+
+
 def replaced(folder: str) -> bool:
     """whether the PC version's folder of widgets is replaced by ours (and
     those below it: the controls' advanced screen, the video test)"""
