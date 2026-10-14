@@ -94,7 +94,10 @@ To make the portable build you need, in addition to the tools above,
 CMake, `pkg-config` and `wayland-scanner`: `cmake`, `pkg-config` and
 `libwayland-bin` on Debian and Ubuntu, `cmake`, `pkgconf` and `wayland` on
 Arch Linux. You do not need the
-system's SDL3. You need the 32-bit glibc only for the tests.
+system's SDL3. You need the 32-bit glibc only for the tests. Keep the
+checkout in a folder whose path has no spaces: SDL's build takes the system
+root's include folders from `pkg-config`, which splits a path at its spaces,
+so the portable build stops with a message there.
 
 To see the glibc version that a build needs, enter
 `readelf -V build/linux/halo | grep -o 'GLIBC_[0-9.]*' | sort -uV | tail -1`.
