@@ -14,7 +14,15 @@ Automated system link sessions for testing the netcode without the menus
   the variant "coop" makes the game network co-op on it, at normal
   difficulty, as the Map screen does for a campaign level;
 - "join" searches for games and joins the first it finds, as picking it in
-  the system link list does.
+  the system link list does;
+- "download:<name>[:<checksum>]" downloads the Custom Edition map <name>
+  from the community map repositories once the main menu is up, as the
+  Online Games screen does when a game needs it (map_download.c; the host's
+  checksum, in hex, when given, is the version it must be), logs the result
+  ("network test: map download ..."), and quits;
+- "offer:<name>[:<checksum>]" shows the Online Games screen's offer of that
+  map over the main menu, as a join left for want of it does
+  (browser_screen_map_missing), for its panel to be seen and driven.
 
 Once the game runs, every second each machine logs where every player's
 unit is, so the machines' views of the game can be compared.
@@ -56,10 +64,13 @@ Called from the main loop every frame (main.c).
 #include "scenario/scenario.h"
 #include "tag_files/tag_files.h"
 #include "camera/observer.h"
+#include "halo_map_families.h"
+#include "../src/map_download.h"
 
 #include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 /* players.c's (not in players.h) */
 boolean player_handle_powerup(long player_index, short powerup_type, short duration);
@@ -84,6 +95,8 @@ enum
 	_network_test_off,
 	_network_test_host,
 	_network_test_join,
+	_network_test_download,
+	_network_test_offer,
 };
 
 static struct
@@ -114,6 +127,9 @@ static struct
 	char pickup_weapon[64];
 	long score_to_win;
 	long logged_time;
+	/* download: the host's checksum, and the download started */
+	unsigned long download_version;
+	boolean download_started;
 } network_test;
 
 /* the variant at the index of the list (copied to name), FALSE past its end */
@@ -165,6 +181,19 @@ static void network_test_read_settings(
 	{
 		network_test.mode = _network_test_join;
 	}
+	else if ((!strncmp(setting, "download:", 9) && setting[9]) || (!strncmp(setting, "offer:", 6) && setting[6]))
+	{
+		char *colon;
+
+		network_test.mode = setting[0] == 'd' ? _network_test_download : _network_test_offer;
+		snprintf(network_test.map_name, sizeof(network_test.map_name), "%s", strchr(setting, ':') + 1);
+		colon = strchr(network_test.map_name, ':');
+		if (colon)
+		{
+			*colon = 0;
+			network_test.download_version = strtoul(colon + 1, NULL, 16);
+		}
+	}
 	network_test.start_delay = (real)config_real("debug.network_test_start");
 	network_test.kill_interval = (real)config_real("debug.network_test_kill");
 	network_test.shoot_interval = (real)config_real("debug.network_test_shoot");
@@ -175,6 +204,42 @@ static void network_test_read_settings(
 	network_test.score_to_win = (long)config_integer("debug.network_test_score");
 	if (network_test.mode != _network_test_off)
 		platform_log("network test: %s", setting);
+}
+
+/* download: the map downloaded once the main menu is up, the result logged,
+and the game quit */
+static void network_test_download(
+	boolean main_menu_loaded)
+{
+	struct map_download_progress progress;
+
+	if (!main_menu_loaded)
+		return;
+	if (!network_test.download_started)
+	{
+		network_test.download_started = TRUE;
+		if (!map_download_start(network_test.map_name, (unsigned int)network_test.download_version))
+		{
+			platform_log("network test: map download %s could not start", network_test.map_name);
+			exit(1);
+		}
+		return;
+	}
+	map_download_get(&progress);
+	if (progress.state == MAP_DOWNLOAD_RUNNING)
+		return;
+	if (progress.state == MAP_DOWNLOAD_DONE)
+	{
+		char path[256], map_name[80];
+
+		snprintf(map_name, sizeof(map_name), "%s@ce", network_test.map_name);
+		platform_log("network test: map download %s done; found in its family's folders: %s; downloaded: %s",
+			network_test.map_name, map_family_find(_map_family_custom_edition, network_test.map_name, path,
+			sizeof(path)) ? path : "no", map_is_downloaded(map_name) ? "yes" : "no");
+		exit(0);
+	}
+	platform_log("network test: map download %s failed: %s", network_test.map_name, progress.message);
+	exit(1);
 }
 
 /* appends to a line, cut short when it is full */
@@ -735,6 +800,32 @@ void network_test_update(
 		network_test_read_settings();
 	if (network_test.mode == _network_test_off)
 		return;
+	if (network_test.mode == _network_test_download)
+	{
+		network_test_download(main_menu_loaded);
+		return;
+	}
+	if (network_test.mode == _network_test_offer)
+	{
+		/* (once, a few seconds after the main menu is up) */
+#ifdef HALO_GAME_BROWSER
+		if (main_menu_loaded && !network_test.download_started)
+		{
+			network_test.menu_seconds += seconds;
+			if (network_test.menu_seconds > 3.0f)
+			{
+				void browser_screen_map_missing(char const *file, unsigned long version);
+				boolean browser_screen_open_map_offer(void);
+
+				network_test.download_started = TRUE;
+				browser_screen_map_missing(network_test.map_name, network_test.download_version);
+				platform_log("network test: offer %s: %s", network_test.map_name,
+					browser_screen_open_map_offer() ? "shown" : "not shown");
+			}
+		}
+#endif
+		return;
+	}
 
 	/* the game running: report (from the start of each game: the next
 	game's time starts over) */

@@ -437,17 +437,24 @@ download, once there is one) are played as any other, but their scripts are
 held to tighter rules (hs.c, hs_scenario_functions_check): they may not call
 what changes the player's settings or other players' games, nor set the
 globals that outlive the map. A map is downloaded if the downloader marked
-it so (map_downloaded_mark), or if game.downloaded_maps names it (or is "*",
-every map), which lets the rules be tried before there is a downloader. */
+it so (map_downloaded_remember: Custom Edition maps from the community map
+repositories, port/linux/src/map_download.c, listed in
+maps_ce/downloaded_maps.txt for the next runs), or if game.downloaded_maps
+names it (or is "*", every map). */
 
 enum
 {
-	MAXIMUM_DOWNLOADED_MAPS = 32,
+	MAXIMUM_DOWNLOADED_MAPS = 512,
 	DOWNLOADED_MAP_NAME_LENGTH = 64,
 };
 
+/* the maps the downloader put in maps_ce, one name a line (map_download.c):
+they stay downloaded maps when the game starts again */
+#define DOWNLOADED_MAPS_LIST "d:\\maps_ce\\downloaded_maps.txt"
+
 static char map_downloaded_names[MAXIMUM_DOWNLOADED_MAPS][DOWNLOADED_MAP_NAME_LENGTH];
 static long map_downloaded_count;
+static boolean map_downloaded_list_read;
 
 const char *config_string(const char *name);
 
@@ -463,11 +470,68 @@ static boolean map_downloaded_name_is(
 	return length > 0 && (long)strlen(stripped) == length && !_strnicmp(name, stripped, length);
 }
 
+/* the list of the maps the downloader put in maps_ce, read once */
+static void map_downloaded_read_list(
+	void)
+{
+	static char text[MAXIMUM_DOWNLOADED_MAPS * DOWNLOADED_MAP_NAME_LENGTH];
+	unsigned long bytes_read = 0;
+	HANDLE file;
+	char *line;
+
+	if (map_downloaded_list_read)
+		return;
+	map_downloaded_list_read = TRUE;
+	file = CreateFileA(DOWNLOADED_MAPS_LIST, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (file == INVALID_HANDLE_VALUE)
+		return;
+	if (!ReadFile(file, text, sizeof(text) - 1, &bytes_read, NULL))
+		bytes_read = 0;
+	CloseHandle(file);
+	text[bytes_read] = 0;
+	for (line = text; *line;)
+	{
+		size_t length = strcspn(line, "\r\n");
+		char name[DOWNLOADED_MAP_NAME_LENGTH];
+
+		if (length && length < sizeof(name))
+		{
+			snprintf(name, sizeof(name), "%.*s", (int)length, line);
+			map_downloaded_mark(name);
+		}
+		line += length;
+		line += strspn(line, "\r\n");
+	}
+}
+
+void map_downloaded_remember(
+	char const *map_name)
+{
+	unsigned long written = 0;
+	char line[DOWNLOADED_MAP_NAME_LENGTH + 2];
+	HANDLE file;
+
+	if (!map_name || !*map_name || strlen(map_name) >= DOWNLOADED_MAP_NAME_LENGTH)
+		return;
+	map_downloaded_read_list();
+	if (map_is_downloaded(map_name))
+		return;
+	map_downloaded_mark(map_name);
+	file = CreateFileA(DOWNLOADED_MAPS_LIST, GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (file == INVALID_HANDLE_VALUE)
+		return;
+	SetFilePointer(file, 0, NULL, FILE_END);
+	snprintf(line, sizeof(line), "%s\n", map_name);
+	WriteFile(file, line, (unsigned long)strlen(line), &written, NULL);
+	CloseHandle(file);
+}
+
 void map_downloaded_mark(
 	char const *map_name)
 {
 	long index;
 
+	map_downloaded_read_list();
 	if (!map_name || !*map_name || map_is_downloaded(map_name))
 		return;
 	index = map_downloaded_count < MAXIMUM_DOWNLOADED_MAPS ? map_downloaded_count++ : MAXIMUM_DOWNLOADED_MAPS - 1;
@@ -482,6 +546,7 @@ boolean map_is_downloaded(
 
 	if (!map_name || !*map_name)
 		return FALSE;
+	map_downloaded_read_list();
 	for (index = 0; index < map_downloaded_count; index++)
 	{
 		if (map_downloaded_name_is(map_downloaded_names[index], (long)strlen(map_downloaded_names[index]), map_name))

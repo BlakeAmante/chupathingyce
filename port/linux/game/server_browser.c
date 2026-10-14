@@ -6,7 +6,10 @@ a game whose map is announced as <file>@ce (Custom Edition) or <file>@md
 (HaloMD) is named as the menus' map list names the map (ui_map_list.c), and
 joined only with the map in its family's folders (halo_map_families.h), on
 a build with Halo PC map support (HALO_CUSTOM_EDITION), as the game list's
-Online Games screen joins one (browser_screen.c's words).
+Online Games screen joins one (browser_screen.c's words). A Custom Edition
+map that may be downloaded (map_download.c) does not stop the join: the
+join is left when the host names it, and Online Games offers it over the
+main menu, then joins that host again (browser_screen_map_missing).
 */
 
 #include "cseries.h"
@@ -16,6 +19,7 @@ Online Games screen joins one (browser_screen.c's words).
 #include "halo_map_families.h"
 #include "halo_server_browser.h"
 #include "halo_ui_map_list.h"
+#include "../src/map_download.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -101,6 +105,14 @@ short server_browser_map_family(char const *map, wchar_t *text, short length)
 	return family;
 }
 
+boolean server_browser_map_downloadable(char const *map)
+{
+	char file[MAP_FILE_LENGTH];
+
+	return map_family_parse(map, file, sizeof(file)) == _map_family_custom_edition &&
+		ce_map_state(map) == _ce_map_missing && map_download_possible(file);
+}
+
 boolean server_browser_map_blocked(char const *map, wchar_t *message, short length)
 {
 	char file[MAP_FILE_LENGTH], text[MAP_FILE_LENGTH + 64];
@@ -109,7 +121,8 @@ boolean server_browser_map_blocked(char const *map, wchar_t *message, short leng
 	switch (ce_map_state(map))
 	{
 	case _ce_map_missing:
-		snprintf(text, sizeof(text), "Needs %s/%s.map to join", map_family_folder(family), file);
+		snprintf(text, sizeof(text), server_browser_map_downloadable(map) ?
+			"Needs %s/%s.map: joining offers to download it" : "Needs %s/%s.map to join", map_family_folder(family), file);
 		break;
 	case _ce_map_unsupported:
 		snprintf(text, sizeof(text), "%s maps need ChupathingyCE with Halo PC map support.",

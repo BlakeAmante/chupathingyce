@@ -1195,6 +1195,17 @@ boolean cache_files_map_present(
 		{
 			snprintf(message, sizeof(message), "You don't have the %s map %.63s. If you have it, copy %.63s.map into %s.",
 				map_family_badge(family), file, file, map_family_folder(family));
+#ifdef HALO_GAME_BROWSER
+			/* (a Custom Edition map the player may download: Online Games
+			offers it in place of this error once the main menu is back, and
+			joins the game again: port/linux/game/browser_screen.c) */
+			if (family == _map_family_custom_edition)
+			{
+				void browser_screen_map_missing(char const *file, unsigned long version);
+
+				browser_screen_map_missing(file, version);
+			}
+#endif
 		}
 	}
 	else
