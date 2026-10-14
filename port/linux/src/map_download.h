@@ -60,8 +60,10 @@ asked for */
 int map_download_possible(const char *name);
 
 /* the Custom Edition map name (its file's name) downloaded into maps_ce, on
-a thread of its own; version, when not 0, the host's (its header's
-checksum), which the file must have. 1 if it started (none was running) */
+a thread of its own; version, when not 0, the host's (its whole-file
+hash's first 32 bits, or from a host older than network version 29 its
+header's checksum: map_archive_version_matches), which the file must have.
+1 if it started (none was running) */
 int map_download_start(const char *name, unsigned int version);
 /* the running download stopped (its partial files deleted) */
 void map_download_cancel(void);

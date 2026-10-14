@@ -350,8 +350,9 @@ plays, with `ce_maps` agreed by both:
   (`cache_files_map_present`), or offers to download a Custom Edition map
   from the community map repositories (`port/linux/src/map_download.c`),
   checked against the version the host advertises in the legacy protocol
-  (its header's checksum). Once it is joined, MAP checks the whole file
-  as for any other.
+  (the first 32 bits of its whole-file hash since network version 29, its
+  header's checksum from an older host). Once it is joined, MAP checks the
+  whole file as for any other.
 - **Hostile input**: a MAP is read only from the client's host, of its
   session, with `ce_maps` agreed and not turned off by the kill switch; a
   name that is not a plain file name, a Halo PC map without its hash, or
@@ -540,7 +541,8 @@ breaking:
 	X(25, "build-169", additive) /* units' integrated lights in the object states; a banned machine told so */ \
 	X(26, "build-184", additive) /* internet play's signalling, version 4 (WebRTC, for browsers; p2p_signal.c reads 3 and 4); game messages as 25 */ \
 	X(27, "build-189", additive) /* Custom Edition map sharing's messages (a machine of 26 drops them); game messages as 25 */ \
-	X(28, "build-201", additive) /* no message changed: a script's switch_bsp keeps a multiplayer game's first, the flashlight past the Xbox limits, a second weapon readied while firing (wire chupa-28a) */
+	X(28, "build-201", additive) /* no message changed: a script's switch_bsp keeps a multiplayer game's first, the flashlight past the Xbox limits, a second weapon readied while firing (wire chupa-28a) */ \
+	X(29, "build-206", additive) /* a Custom Edition map by its own name, its hash's first 32 bits its version in the game record (a client of 29 also takes 28's hashed names and header checksums; wire chupa-29a) */
 ```
 
 `tools/test_delta.py` (in CI) checks `halo_port_limits.h` against it: hosts
@@ -581,6 +583,7 @@ Known history, from `port/linux/NETCODE.md` and OpenCE's commits:
 | 26 | build-184 | internet play's signalling (not the game's messages, which are 25's): JOIN and ACCEPT say each machine's WebRTC, for OpenCE's browsers, in signalling version 4, which OpenCE reads alone. A release, not a table row: `p2p_signal.c` reads and answers both 3 and 4, and asks in both until a host answers one (wire `chupa-26a`; no WebRTC, so browsers can't join our games) | additive |
 | 27 | build-189 | OpenCE's Custom Edition map sharing: new messages, which a machine of 26 drops (we don't share maps: a joining machine without the map is told which one it misses, as before). Signalling as 26, a token joined more than once | additive |
 | 28 | build-201 | no message, kind or struct changed: a multiplayer script's `switch_bsp` keeps the game's first BSP (a map with a copy of its place per sky no longer reloads), the flashlight and dynamic lights stay on past the Xbox's player and vehicle limits, and a second weapon picked up while firing is readied. A release (wire `chupa-28a`), so older builds' wire never gets a row for it: a host of 27 would reload such a map while its OpenCE clients of 28 kept it | additive |
+| 29 | build-206 | no message or struct changed, but two fields mean something else: a Custom Edition map's level name is its own (`custom_maps\hugeass`, not `custom_maps\hugeass_<8 hex digits>`), and the game record's map version is the first 32 bits of the map's whole-file hash, where 23 to 28 sent its header checksum. Our clients of 29 take both meanings, so they still join hosts of 28; our clients of 28 refuse a host of 29's Custom Edition map as another version (Xbox maps play). A release (wire `chupa-29a`), so older builds' wire never gets a row for it: a host of 28 sends the header checksum, which OpenCE's clients of 29 take for another version | additive |
 
 ### Automation
 
@@ -980,7 +983,7 @@ check it too):
 - **`serial`**: 1 to 4294967294 (0xFFFFFFFF says "takes no tables" on the wire); each table published gets a higher one.
   **`issued`**: when it was made (Unix seconds), for people; optional.
 - **Rows by wire, not by build.** Each build has a wire ID (`DELTA_WIRE` in
-  `delta.h`, `chupa-28a` today; `chupa-26a` was 0.7.2e's and 0.7.3e's, `chupa-24a` was 0.7.1e's, `chupa-23a` 0.7.1b's, `chupa-20a` 0.7.0b's): the revision of the game protocol it
+  `delta.h`, `chupa-29a` today; `chupa-28a` was 0.7.4e's and 0.7.5's, `chupa-26a` was 0.7.2e's and 0.7.3e's, `chupa-24a` was 0.7.1e's, `chupa-23a` 0.7.1b's, `chupa-20a` 0.7.0b's): the revision of the game protocol it
   actually speaks. A row says which OpenCE numbers that wire was proven to
   play with: the number a host announces, and the range of hosts' numbers a
   client joins (each 1 to 65535, `minimum <= announce <= maximum`). An old
