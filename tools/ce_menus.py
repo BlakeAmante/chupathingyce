@@ -622,11 +622,6 @@ def main() -> None:
              " (NON_HANDDRAWN.md; tools/ce_menus.py) -->", "<menus>"]
     lines += [art.bitmap(tag) for tag in sorted(bitmaps)]
     lines += [art.title(name, text) for name, text in sorted(port_settings.TITLES.items())]
-    # (the in-game pause menu's taller box: menu_tags.c's pause_patch)
-    for piece in ("left", "center", "right"):
-        lines.append(art.port_picture(f"pause/pausebox_{piece}", [
-            (port_settings.pause_box_svg(piece, port_settings.pause_box_height(buttons)), 4 if piece == "center" else 16,
-             256) for buttons in port_settings.PAUSE_BOX_BUTTONS]))
     # (nothing: what a game map draws for a frame of ui.map's it has not,
     # menu_tags.c)
     lines.append(art.port_picture("blank", [

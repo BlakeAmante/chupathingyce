@@ -323,16 +323,17 @@ of the screen stays until the game ends. A game under way shows its own
 screen before JOIN GAME: players join there the same way, START or ADD
 PLAYER then START, and JOIN GAME brings them all into the game.
 
-In a multiplayer game, the pause menu (escape) has SETTINGS, which opens
-the profile's settings while the game goes on, and for the host END GAME.
-END GAME ends the game as its time limit does: the players stay, and after
-the carnage report the host picks the next map and gametype (PICK GAME).
-LEAVE GAME of the host still ends the game for everyone. The buttons go into
-the map's own pause menu, before LEAVE GAME, so the buttons of a custom map
-stay. The Xbox's pause box is drawn taller to hold them (a redraw,
-`port/assets/menus/port_svg/pause`); a custom map's box keeps its size, and
-what is below its list moves down. The few pictures of the settings that
-come from the main menu's map are not drawn there.
+With the PC menus, the pause menu (escape) has SETTINGS after RESUME GAME,
+which opens the profile's settings: in the campaign the game stays paused,
+in a multiplayer game it goes on. A multiplayer game's host also gets END
+GAME, which ends the game as its time limit does: the players stay, and
+after the carnage report the host picks the next map and gametype (PICK
+GAME). LEAVE GAME of the host still ends the game for everyone. The buttons
+go into the map's own pause menu, so the buttons of a custom map stay. The
+Xbox's pause box is drawn as it is, its middle longer to hold them; a custom
+map's box keeps its size, and what is below its list moves down. The few
+pictures of the settings that come from the main menu's map are not drawn
+there.
 
 The menus are XML files in `port/assets/menus` (`tools/ce_menus.py` writes
 them from the PC version's tags), which the game contains. To change them,

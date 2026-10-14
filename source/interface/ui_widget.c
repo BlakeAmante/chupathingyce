@@ -1401,7 +1401,11 @@ boolean pc_menu_frame_placement(
 	short *x,
 	short *y,
 	short *width,
-	short *height);
+	short *height,
+	short *texel_y);
+/* port: the row of the bitmap draw_bitmap_in_rect starts from (a frame the
+menus place, pc_menu_frame_placement): 0 but while one is drawn */
+static short draw_bitmap_texel_y = 0;
 static void widget_instance_initialize(
 	struct widget_instance *widget,
 	struct widget_instance *parent,
@@ -1785,8 +1789,9 @@ void draw_bitmap_in_rect(
 			vertices[vertex_index].color = argb;
 			vertices[vertex_index].texture_coordinates.x =
 				(vertex_index % 3) ? texture_width : 0.0f;
-			vertices[vertex_index].texture_coordinates.y =
-				(vertex_index > 1) ? texture_height : 0.0f;
+			/* port: from the row the menus place it from (draw_bitmap_texel_y) */
+			vertices[vertex_index].texture_coordinates.y = draw_bitmap_texel_y / bitmap_height +
+				((vertex_index > 1) ? texture_height : 0.0f);
 			vertices[vertex_index].position = points[vertex_index];
 		}
 
@@ -7337,10 +7342,10 @@ static void widget_instance_render_recursive(
 			box): drawn at their size, from where they place it, in units of
 			that size rather than one to a texel */
 			rectangle2d texels = bounds;
-			short frame_x, frame_y, frame_width, frame_height;
+			short frame_x, frame_y, frame_width, frame_height, texel_y = 0;
 			boolean shown = TRUE;
 
-			if (pc_menu_frame_placement(bitmap, &frame_x, &frame_y, &frame_width, &frame_height))
+			if (pc_menu_frame_placement(bitmap, &frame_x, &frame_y, &frame_width, &frame_height, &texel_y))
 			{
 				bounds.x0 += frame_x;
 				bounds.y0 += frame_y;
@@ -7352,6 +7357,7 @@ static void widget_instance_render_recursive(
 			}
 			if (shown)
 			{
+				draw_bitmap_texel_y = texel_y;
 				draw_bitmap_in_rect(
 					bitmap,
 					&bounds,
@@ -7360,6 +7366,7 @@ static void widget_instance_render_recursive(
 					color,
 					&multitexture_params,
 					FALSE);
+				draw_bitmap_texel_y = 0;
 			}
 		}
 		if (use_nifty_plasma_fx)
