@@ -2902,10 +2902,15 @@ static void screenshot_render(
 	return;
 }
 
+/* port: when the main menu's build number box (set_textbox_to_build_number,
+empty) was last drawn: the main menu's screen is up while it is */
+unsigned long main_version_box_shown;
+
 /* port: this build's version (build_identity_watermark), small and faint
-in the bottom right corner, where the Xbox's build number was (the main
-menu's, set_textbox_to_build_number, is empty), clear of the HUD: always at
-the main menu, and in a game with display.version_watermark */
+in the bottom right corner, where the Xbox's build number was, clear of the
+HUD: on the main menu's own screen (none of the screens it leads to, whose
+button prompts are there), and in a game with display.version_watermark
+while no menu is up */
 static void main_version_watermark_render(
 	void)
 {
@@ -2916,8 +2921,13 @@ static void main_version_watermark_render(
 	real_argb_color color = { 0.4f, 0.8f, 0.8f, 0.8f };
 	long font_tag_index;
 	rectangle2d bounds;
+	boolean shown;
 
-	if (!main_menu_is_active() && !config_boolean("display.version_watermark"))
+	if (main_menu_is_active())
+		shown = system_milliseconds() - main_version_box_shown < 250;
+	else
+		shown = config_boolean("display.version_watermark") && !ui_widgets_active();
+	if (!shown)
 		return;
 	font_tag_index = tag_loaded(FONT_GROUP_TAG, "ui\\small_ui");
 	if (font_tag_index == NONE)
