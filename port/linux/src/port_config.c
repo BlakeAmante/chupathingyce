@@ -162,7 +162,9 @@ static const struct config_setting config_settings[] =
 		"The menus: \"xbox\" for the Xbox's (with Online Games), \"pc\" for the\n"
 		"PC version's screens and Server Browser, rebuilt from port/assets/menus\n"
 		"(a menus folder here for your own) with this port's fonts and redrawn\n"
-		"pictures, not Halo PC's files. Read when the game starts: restart it\n"
+		"pictures, not Halo PC's files, or \"chupathingy\" for the Xbox's with\n"
+		"some screens drawn larger, as Online Games is (a preview: the main menu\n"
+		"and the map and gametype pickers). Read when the game starts: restart it\n"
 		"after a change. Not all of the PC screens are wired yet." },
 	{ "display.player_names", _config_string, "\"all\"", "HALO_PLAYER_NAMES", _environment_value, _platform_all,
 		"In multiplayer, whose names are drawn above their heads: \"all\",\n"
@@ -616,6 +618,11 @@ static const struct config_setting config_settings[] =
 		"A folder to save frames to (with screenshot_every); empty none." },
 	{ "debug.screenshot_every", _config_integer, "0", "HALO_SCREENSHOT_EVERY", _environment_value, _platform_all,
 		"Save every this many frames to screenshot_directory; 0 none." },
+	{ "debug.screenshot_window", _config_boolean, "false", "HALO_SCREENSHOT_WINDOW", _environment_set_is_true,
+		_platform_all,
+		"With screenshot_every, save the window as shown (windowNNNNN.bmp, at its\n"
+		"size, the overlay's screens such as Online Games included) instead of\n"
+		"the game's frame (frameNNNNN.bmp)." },
 	{ "debug.texture_dump_directory", _config_string, "\"\"", "HALO_TEXTURE_DUMP", _environment_value, _platform_all,
 		"A folder to write every texture to as it is uploaded; empty none." },
 	{ "debug.texture_log", _config_boolean, "false", "HALO_TEXTURE_LOG", _environment_set_is_true, _platform_all,
@@ -1437,7 +1444,7 @@ static const struct
 	{ "display.mode", { "", "fullscreen", "borderless", "windowed", NULL }, "display.fullscreen's" },
 	{ "display.resolution_scaling", { "native", "original", NULL }, "\"native\"" },
 	{ "display.anti_aliasing", { "off", "fxaa", "smaa", "ssaa2x", "msaa2x", "msaa4x", "msaa8x", NULL }, NULL },
-	{ "display.menus", { "xbox", "pc", NULL }, NULL },
+	{ "display.menus", { "xbox", "pc", "chupathingy", NULL }, NULL },
 	{ "display.player_names", { "all", "allies", "allys", "enemies", "none", NULL }, "\"all\"" },
 	{ "display.scoreboard_team_layout", { "teams", "score", NULL }, "\"teams\"" },
 	{ "audio.resampling", { "sinc", "linear", NULL }, "\"sinc\"" },

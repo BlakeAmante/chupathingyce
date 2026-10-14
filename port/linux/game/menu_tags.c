@@ -1811,12 +1811,13 @@ static void pause_patch(struct cache_file_tag_instance *instances)
 }
 
 /* whether display.menus asks for the PC version's menus: "pc" in any case
-(a value neither "pc" nor "xbox" is said once in the log, and is the Xbox's) */
+(a value neither "pc", "xbox" nor "chupathingy", the Xbox's drawn in our
+style by menu_style.c, is said once in the log, and is the Xbox's) */
 static boolean menus_pc_chosen(void)
 {
 	static boolean said;
 	char const *value = config_string("display.menus");
-	char lower[8];
+	char lower[16];
 	size_t index;
 
 	for (index = 0; index + 1 < sizeof(lower) && value[index]; index++)
@@ -1826,9 +1827,9 @@ static boolean menus_pc_chosen(void)
 		lower[0] = 0;
 	if (!strcmp(lower, "pc"))
 		return TRUE;
-	if (strcmp(lower, "xbox") && !said)
+	if (strcmp(lower, "xbox") && strcmp(lower, "chupathingy") && !said)
 	{
-		platform_log("menus: display.menus \"%s\" is not \"xbox\" or \"pc\": the Xbox's", value);
+		platform_log("menus: display.menus \"%s\" is not \"xbox\", \"pc\" or \"chupathingy\": the Xbox's", value);
 		said = TRUE;
 	}
 	return FALSE;

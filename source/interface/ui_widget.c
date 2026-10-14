@@ -701,6 +701,11 @@ void moderation_screen_render(void);
 void browser_screen_pointer(struct halo_ui_pointer const *pointer);
 /* (ONLINE GAMES, below: its list moves focus item by item) */
 boolean ui_widget_online_games_list(struct widget_instance *widget);
+/* port: the Chupathingy menu style (port/linux/game/menu_style.c), drawn
+over the Xbox's screens */
+void menu_style_render(struct widget_instance *root);
+short menu_style_event(struct widget_instance *widget, struct event_record *event);
+boolean menu_style_pointer(struct halo_ui_pointer const *pointer);
 #endif
 
 /* ---------- constants */
@@ -7038,6 +7043,8 @@ static void ui_widgets_process_mouse(
 #ifdef HALO_GAME_BROWSER
 		/* (nor over Online Games: a click left in the queue would pick a game) */
 		|| browser_screen_active()
+		/* (nor over a list the Chupathingy style draws, which takes it) */
+		|| menu_style_pointer(&pointer)
 #endif
 		)
 	{
@@ -7641,6 +7648,8 @@ void render_ui_widgets(
 		virtual_keyboard_render();
 	}
 #ifdef HALO_GAME_BROWSER
+	if (first_players_render && !virtual_keyboard_active() && !browser_screen_active())
+		menu_style_render(widget_globals.active_widgets[0]);
 	if (browser_screen_active())
 		browser_screen_render();
 	if (first_players_render)
@@ -7931,6 +7940,20 @@ static void widget_instance_process_one_event_recursive(
 	{
 		event->data.button.value = 1;
 	}
+#ifdef HALO_GAME_BROWSER
+	/* port: a list the Chupathingy style draws steps with up and down too,
+	as its cards' left and right; the held d-pad repeats as up and down's */
+	{
+		short direction = menu_style_event(widget, event);
+
+		if (direction != NONE && event->data.button.value == 1 &&
+			event->controller_index >= 0 && event->controller_index < MAXIMUM_NUMBER_OF_LOCAL_PLAYERS)
+		{
+			dpad_event_times[event->controller_index][direction - _widget_event_dpad_up] =
+				widget_globals.current_system_milliseconds;
+		}
+	}
+#endif
 	if (widget->close_if_local_player_controller_present == TRUE)
 	{
 		if (widget->local_player_index >= 0 &&
