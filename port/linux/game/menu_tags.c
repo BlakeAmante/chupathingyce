@@ -1058,9 +1058,10 @@ static void *widget_build(long widget_index)
 	definition->bounds.x1 = (short)(source->left + (source->has_width ? source->width : 640));
 	definition->flags = flags_parse(source->flags, widget_flag_names, NUMBEROF(widget_flag_names),
 		source->file, source->line);
-	/* (in a network game the clock runs on) */
-	if (build.game_map)
-		definition->flags &= ~FLAG(1); /* pause_game */
+	/* (no screen pauses the game: in a network game the clock runs on, and
+	at the main menu the title's background and music play on through
+	Settings and the multiplayer screens, which Halo PC's tags paused) */
+	definition->flags &= ~FLAG(1); /* pause_game */
 	definition->milliseconds_to_auto_close = source->auto_close;
 	definition->auto_close_fade_time = source->auto_close_fade;
 	reference_clear(&definition->background_bitmap, BITMAP_GROUP_TAG);
