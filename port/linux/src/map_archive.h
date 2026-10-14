@@ -1,0 +1,91 @@
+/*
+MAP_ARCHIVE.H
+
+What a Custom Edition map downloaded from the community map repositories
+is checked and unpacked by (map_archive.c, for map_download.c): the name it
+is asked for by, the zip archive it comes in, its cache file's header, and
+network.map_downloads's words.
+No file, network or game dependency (zlib alone): the tests build it by
+itself (tools/test_map_download.py).
+
+Plain types only: the game's units (64-bit builds rewrite their long) and
+the tests both call it.
+*/
+
+#ifndef MAP_ARCHIVE_H
+#define MAP_ARCHIVE_H
+
+enum
+{
+	/* the most a download, or the map unpacked from it, may be */
+	MAP_ARCHIVE_MAXIMUM_SIZE = 200 * 1024 * 1024,
+	/* a cache file's header */
+	MAP_ARCHIVE_HEADER_SIZE = 0x800,
+	/* a map's file name, at most (its header's name field, less its
+	terminator) */
+	MAP_ARCHIVE_MAXIMUM_NAME_LENGTH = 31,
+};
+
+/* network.map_downloads */
+enum
+{
+	MAP_DOWNLOADS_ASK,
+	MAP_DOWNLOADS_ALWAYS,
+	MAP_DOWNLOADS_NEVER,
+};
+
+/* the archive's bytes [offset, offset + size) into buffer: 1 if all were
+read */
+typedef int (*map_archive_read_proc)(void *context, unsigned int offset, void *buffer, unsigned int size);
+/* the map's next size bytes written: 1 on success */
+typedef int (*map_archive_write_proc)(void *context, const void *buffer, unsigned int size);
+/* whether to stop (the player cancelled): nonzero stops */
+typedef int (*map_archive_stop_proc)(void *context);
+
+struct map_archive_io
+{
+	void *context;
+	/* the archive's size in bytes */
+	unsigned int archive_size;
+	map_archive_read_proc read;
+	map_archive_write_proc write;
+	/* (NULL: never stops) */
+	map_archive_stop_proc stop;
+};
+
+/* whether name is a map's file name the repositories are asked for: 1 to
+MAP_ARCHIVE_MAXIMUM_NAME_LENGTH letters, digits, '_', '-' and '.', not
+starting with '.' and holding no "..": nothing a path or a URL reads as
+more than a name */
+int map_archive_name_valid(const char *name);
+
+/* <name>.map unpacked from the zip archive io reads, written through io's
+write (nothing else in the archive is written anywhere): 1 with its size in
+*map_size, else 0 with why in error. Refused whole: an archive that is not
+a zip this reads (no ZIP64, nothing split, encrypted or compressed but by
+deflate), that names any entry with a path that leaves its folder ("..", an
+absolute path, a drive), that has no entry <name>.map at its top or more than
+one, or whose entry is larger than MAP_ARCHIVE_MAXIMUM_SIZE, lies outside the
+archive, or does not unpack to its stated size and CRC-32 */
+int map_archive_extract(const struct map_archive_io *io, const char *name, unsigned int *map_size, char *error,
+	int error_size);
+
+/* whether the first MAP_ARCHIVE_HEADER_SIZE bytes of a map file of
+file_size bytes are a Custom Edition (cache version 609) multiplayer map's
+header, as the game's loader reads it, with its own name name (any case);
+version, when not 0, is the host's (its header's checksum, which the host
+advertises as its game's map version) and must be the file's. 1, else 0
+with why in error */
+int map_archive_check_header(const unsigned char *header, unsigned int file_size, const char *name,
+	unsigned int version, char *error, int error_size);
+
+/* network.map_downloads's value (MAP_DOWNLOADS_*): "ask", "always" or
+"never", in any case; anything else asks */
+int map_archive_setting(const char *text);
+/* ... and a value's word */
+const char *map_archive_setting_word(int setting);
+
+/* a header's checksum (the host's map version) */
+unsigned int map_archive_header_checksum(const unsigned char *header);
+
+#endif
