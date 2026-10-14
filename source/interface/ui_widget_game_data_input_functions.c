@@ -2027,8 +2027,13 @@ static void set_textbox_to_build_number(
 	static wchar_t build_number_string[64];
 
 	/* port: none: this build's version is drawn at the bottom of the screen
-	instead (main.c's main_version_watermark_render), and the box stays
-	empty */
+	instead (main.c's main_version_watermark_render), while this box is (the
+	main menu's alone), and the box stays empty */
+	{
+		extern unsigned long main_version_box_shown;
+
+		main_version_box_shown = system_milliseconds();
+	}
 
 	if (!widget->parameters.text_box.text)
 	{
