@@ -1651,7 +1651,13 @@ static void profile_row_text(short row, wchar_t *text)
 	}
 	else
 	{
-		string_get("pc\\main_menu\\player_profiles_select\\profile_description_labels", 4, text);
+		extern boolean pc_menus_chupathingy(void);
+
+		/* (the Chupathingy menus' list is narrower: chupathingy/profiles.xml) */
+		if (pc_menus_chupathingy())
+			string_get("pc\\chupathingy\\profiles\\new_row", 0, text);
+		else
+			string_get("pc\\main_menu\\player_profiles_select\\profile_description_labels", 4, text);
 	}
 }
 
