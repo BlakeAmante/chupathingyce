@@ -2883,9 +2883,43 @@ static void screenshot_render(
 	return;
 }
 
+/* port: this build's version (build_identity_watermark), small and faint
+in the bottom right corner, where the Xbox's build number was (the main
+menu's, set_textbox_to_build_number, is empty), clear of the HUD: always at
+the main menu, and in a game with display.version_watermark */
+static void main_version_watermark_render(
+	void)
+{
+	extern char const *build_identity_watermark(void);
+	extern int config_boolean(char const *name);
+	extern boolean main_menu_is_active(void);
+	/* (light grey, faint) */
+	real_argb_color color = { 0.4f, 0.8f, 0.8f, 0.8f };
+	long font_tag_index;
+	rectangle2d bounds;
+
+	if (!main_menu_is_active() && !config_boolean("display.version_watermark"))
+		return;
+	font_tag_index = tag_loaded(FONT_GROUP_TAG, "ui\\small_ui");
+	if (font_tag_index == NONE)
+		font_tag_index = hud_globals->messaging.single_player_font.index;
+	if (font_tag_index == NONE)
+		return;
+	bounds = render.camera.window_bounds;
+	bounds.x1 = (short)(bounds.x1 - 8);
+	bounds.y0 = (short)(bounds.y1 - 22);
+	bounds.y1 = (short)(bounds.y1 - 4);
+	draw_string_set_format(NONE, _text_justification_right, 0);
+	draw_string_set_color(&color);
+	draw_string_set_font(font_tag_index);
+	rasterizer_draw_string(&bounds, NULL, NULL, 0, build_identity_watermark());
+}
+
 void main_framerate_render(
 	void)
 {
+	main_version_watermark_render();
+
 	if (display_framerate)
 	{
 		long font_tag_index;

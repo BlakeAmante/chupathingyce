@@ -150,6 +150,10 @@ static const struct config_setting config_settings[] =
 		"(Overpass) at the resolution the game draws at, and the menus' titles\n"
 		"from port/assets/titles; false draws the maps' bitmap fonts and titles.\n"
 		"The Server Browser and moderation overlays use the system's fonts." },
+	{ "display.version_watermark", _config_boolean, "false", "HALO_VERSION_WATERMARK", _environment_value,
+		_platform_all,
+		"Show this build's version (as the main menu does) in the bottom right\n"
+		"corner while playing too: handy for screenshots and bug reports." },
 	{ "display.shadow_resolution", _config_integer, "128", "HALO_SHADOW_RESOLUTION", _environment_value,
 		_platform_all,
 		"The size the objects' shadows are drawn at, in pixels each way: 128 as\n"
