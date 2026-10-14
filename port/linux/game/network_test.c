@@ -12,7 +12,11 @@ Automated system link sessions for testing the netcode without the menus
   makes it short) the next, as the host's button on the scores does. A map
   with a path is that level (custom_maps\a30, a Custom Edition map's), and
   the variant "coop" makes the game network co-op on it, at normal
-  difficulty, as the Map screen does for a campaign level;
+  difficulty, as the Map screen does for a campaign level; a Halo PC map
+  may also be named as the menus name it (putput@ce). Maps joined by
+  "+" (bloodgulch+putput@ce) are the games' maps in turn, the
+  last for the games past them, as a dedicated server's playlist moves its
+  players to the next map;
 - "join" searches for games and joins the first it finds, as picking it in
   the system link list does;
 - "download:<name>[:<checksum>]" downloads the Custom Edition map <name>
@@ -137,6 +141,21 @@ static struct
 	unsigned long download_version;
 	boolean download_started;
 } network_test;
+
+/* the map of the game at the index (of map_name's maps joined by "+", the
+last for the games past them), copied to name */
+static void network_test_map(
+	short index,
+	char *name,
+	size_t size)
+{
+	char const *map = network_test.map_name;
+	char const *next;
+
+	for (; index > 0 && (next = strchr(map, '+')) != NULL; index--)
+		map = next + 1;
+	snprintf(name, size, "%.*s", (int)strcspn(map, "+"), map);
+}
 
 /* the variant at the index of the list (copied to name), FALSE past its end */
 static boolean network_test_variant(
@@ -1054,10 +1073,13 @@ void network_test_update(
 	case _network_test_host:
 		if (!network_test.set_up)
 		{
+			char map[64];
+
 			network_test.set_up = TRUE;
-			main_set_multiplayer_map_name(network_test.map_name);
+			network_test_map(0, map, sizeof(map));
+			main_set_multiplayer_map_name(map);
 			player_ui_fast_setup_network_server();
-			platform_log("network test: hosting %s", network_test.map_name);
+			platform_log("network test: hosting %s", map);
 		}
 		else if (!network_test.started)
 		{
@@ -1067,14 +1089,16 @@ void network_test_update(
 			if (!network_test.map_set && network_test.setup_seconds >= 1.0f && global_network_game_server_get())
 			{
 				char path[128];
+				char map[64];
 				char variant_name[64];
 				struct game_variant variant;
 
 				/* (a level of its own path, else a multiplayer map's name) */
-				if (strchr(network_test.map_name, '\\'))
-					snprintf(path, sizeof(path), "%s", network_test.map_name);
+				network_test_map(network_test.variant_index, map, sizeof(map));
+				if (strchr(map, '\\') || strchr(map, '@'))
+					snprintf(path, sizeof(path), "%s", map);
 				else
-					snprintf(path, sizeof(path), "levels\\test\\%s\\%s", network_test.map_name, network_test.map_name);
+					snprintf(path, sizeof(path), "levels\\test\\%s\\%s", map, map);
 				network_test_variant(network_test.variant_index, variant_name, sizeof(variant_name));
 				if (!strcmp(variant_name, "coop"))
 				{

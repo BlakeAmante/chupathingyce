@@ -37,10 +37,11 @@ TEST = ROOT / "port" / "linux" / "tests" / "map_archive_test.c"
 SANITIZERS = ["-fsanitize=address,undefined", "-fno-sanitize-recover=all"]
 LIMIT = 200 * 1024 * 1024
 
-# a small, well-known Custom Edition map on the repository, and its header's
-# checksum (what a host advertises as its version)
-ONLINE_MAP = "putput"
-ONLINE_CHECKSUM = "af2f0b84"
+# a small, well-known community Custom Edition map on the repository, and its
+# header's checksum (what a host advertises as its version). Never one of
+# Halo PC's own maps, which the downloader never asks for (STOCK_MAPS)
+ONLINE_MAP = "sneak"
+ONLINE_CHECKSUM = "4f8d6f69"
 # a map a host shared by a hashed name (Sneak_af352483): the repository's
 # file, its header's checksum and its whole-file hash's first digits
 HASHED_MAP = "sneak"
@@ -140,7 +141,7 @@ def write(tmp_path, data, name="archive.zip"):
 # ---------- names and the setting
 
 
-@pytest.mark.parametrize("name", ["putput", "bigass_v2.1", "Coldsnap", "a", "x" * 31, "ze-ro_1.2"])
+@pytest.mark.parametrize("name", ["sneak", "bigass_v2.1", "Coldsnap", "a", "x" * 31, "ze-ro_1.2"])
 def test_valid_names(harness, name):
     assert run(harness, "name", name) == "valid"
 
@@ -397,7 +398,7 @@ def test_plain_names(harness, name):
 
 
 @pytest.mark.parametrize("name,display", [("Sneak_af352483", "sneak"), ("Bigass_v2_DEADBEEF", "bigass_v2"),
-                                          ("Sneak", "Sneak"), ("putput", "putput")])
+                                          ("Sneak", "Sneak"), ("coldsnap", "coldsnap")])
 def test_display_names(harness, name, display):
     assert run(harness, "display", name) == display
 
@@ -415,6 +416,64 @@ def test_whole_file_hash_sees_every_byte(harness, tmp_path):
     first = run(harness, "hash", write(tmp_path, data, "a.map"))
     data[0x8FFFF] ^= 1
     assert run(harness, "hash", write(tmp_path, data, "b.map")) != first
+
+
+# ---------- Halo PC's own maps: never downloaded
+
+STOCK_MAPS = ["beavercreek", "bloodgulch", "boardingaction", "carousel", "chillout", "damnation", "dangercanyon",
+              "deathisland", "gephyrophobia", "hangemhigh", "icefields", "infinity", "longest", "prisoner", "putput",
+              "ratrace", "sidewinder", "timberland", "wizard",
+              "a10", "a30", "a50", "b30", "b40", "c10", "c20", "c40", "d20", "d40"]
+STOCK_FILES = ["ui", "bitmaps", "sounds", "loc"]
+
+
+@pytest.mark.parametrize("name", STOCK_MAPS + [name.upper() for name in STOCK_MAPS[:3]] + ["BloodGulch"])
+def test_stock_maps(harness, name):
+    kind, message = run(harness, "stock", name).split("\n")
+    assert kind == "1"
+    base = name.lower()
+    assert message == (f"{base}.map is one of Halo PC's own maps, so Chupathingy can't download it. Copy {base}.map "
+                       "from your Halo PC or Custom Edition install into maps_ce, then join again.")
+
+
+@pytest.mark.parametrize("name", STOCK_FILES + ["UI", "Bitmaps"])
+def test_stock_files(harness, name):
+    kind, message = run(harness, "stock", name).split("\n")
+    assert kind == "2"
+    assert message.startswith(f"{name.lower()}.map is one of Halo PC's own files, so Chupathingy can't download it.")
+
+
+@pytest.mark.parametrize("name,base", [("bloodgulch_1234abcd", "bloodgulch"), ("BloodGulch_DEADBEEF", "bloodgulch"),
+                                       ("ui_00000000", "ui"), ("putput_af2f0b84", "putput")])
+def test_stock_hashed_names(harness, name, base):
+    output = run(harness, "stock", name).split("\n")
+    assert output[0] in ("1", "2")
+    assert output[1].startswith(f"{base}.map is one of Halo PC's own ")
+
+
+@pytest.mark.parametrize("name", ["sneak", "coldsnap", "Sneak_af352483", "bloodgulch2", "bloodgulch_v2", "hugeass",
+                                  "bigass_v2.1", "putputs", "a100", "uix", "bloodgulch_1234abc", ""])
+def test_community_maps_are_not_stock(harness, name):
+    assert run(harness, "stock", name) == "0"
+
+
+def test_downloader_never_asks_for_stock_maps():
+    """map_download_possible and map_download_start both refuse them, before
+    any repository is asked"""
+    download = (SOURCE / "map_download.c").read_text(encoding="utf-8")
+    possible = download[download.index("int map_download_possible("):download.index("int map_download_start(")]
+    assert "!map_archive_stock_name(name)" in possible
+    start = download[download.index("int map_download_start("):]
+    refused = start.index("map_archive_stock_name(name)")
+    assert refused < start.index("pthread_create")
+    assert "is one of the game's own maps; not downloaded" in start[:start.index("pthread_create")]
+
+
+def test_stock_message_in_the_missing_map_paths():
+    cache = (ROOT / "source" / "cache" / "cache_files.c").read_text(encoding="utf-8")
+    assert "Install this map yourself" in cache and "map_archive_stock_message(file" in cache
+    browser = (ROOT / "port" / "linux" / "game" / "browser_screen.c").read_text(encoding="utf-8")
+    assert "MAP_ARCHIVE_STOCK_TITLE" in browser and "so Chupathingy can't download it." in browser
 
 
 # ---------- the real repository
@@ -461,3 +520,101 @@ def test_real_hashed_map(harness, tmp_path):
     assert prefix == HASHED_PREFIX
     assert digest == reference_hash(out.read_bytes())
     assert run(harness, "hashed", "Sneak_" + HASHED_PREFIX) == f"hashed Sneak {HASHED_PREFIX}"
+
+
+# ---------- a host moving its game on to a map the client lacks
+
+# Two copies of the game on this machine's loopback addresses (opt in:
+# HALO_MAP_DOWNLOAD_E2E names the game's binary, HALO_MAP_DOWNLOAD_E2E_DATA
+# the NTSC data's folder: maps/ with the Xbox maps and maps/ce/ with Custom
+# Edition's resource maps and putput; maps_ce/sneak.map beside it; Linux
+# has every 127.x address, macOS needs `sudo ifconfig lo0 alias 127.0.0.2`
+# and .3). The host's network test plays Blood Gulch, then the next game on
+# a Custom Edition map the client doesn't have (port/linux/game/network_test.c,
+# "host:bloodgulch+<map>@ce"); the client, as network.map_downloads says,
+# leaves, downloads it from the real repository and joins the same host again
+# (browser_screen.c), or says the map is missing. Each copy's home, save root
+# and data are folders of the test's own.
+
+E2E_BINARY = os.environ.get("HALO_MAP_DOWNLOAD_E2E")
+E2E_DATA = os.environ.get("HALO_MAP_DOWNLOAD_E2E_DATA")
+E2E_SECONDS = 80
+
+
+def e2e_copy(folder, address, other, test, setting, ce_map, ce_source, changed=False):
+    data = folder / "data"
+    for sub in ("home", "saves", "data/maps", "data/maps_ce"):
+        (folder / sub).mkdir(parents=True)
+    maps = Path(E2E_DATA) / "maps"
+    for entry in maps.glob("*.map"):
+        if entry.name != "putput.map":
+            (data / "maps" / entry.name).symlink_to(entry)
+    for name in ("bitmaps.map", "sounds.map", "loc.map"):
+        (data / "maps_ce" / name).symlink_to(maps / "ce" / name)
+    if ce_map:
+        target = data / "maps_ce" / f"{ce_map}.map"
+        if changed:
+            # (another version than the repository's: its header's checksum)
+            contents = bytearray(ce_source.read_bytes())
+            contents[0x64] ^= 0x5A
+            target.write_bytes(contents)
+        else:
+            target.symlink_to(ce_source)
+    env = {"PATH": "/usr/bin:/bin", "HOME": str(folder / "home"), "HALO_DATA_ROOT": str(data),
+           "HALO_SAVE_ROOT": str(folder / "saves"), "HALO_UPDATE_AUTO": "false", "HALO_DISCORD_APPLICATION": "",
+           "HALO_NET_ONLINE": "false", "HALO_NET_LIST_GAMES": "false", "HALO_NET_REPORT_GAMES": "false",
+           "HALO_NET_BROWSER": "http://127.0.0.1:9", "HALO_NET_JOIN_FROM_CLIPBOARD": "false",
+           "HALO_NET_ALLOW_UPNP": "false", "HALO_NET_ADDRESS": address, "HALO_NET_BROADCAST": other,
+           "HALO_NETWORK_TEST": test, "HALO_NETWORK_TEST_START": "4", "HALO_NETWORK_TEST_KILL": "3",
+           "HALO_NETWORK_TEST_SCORE": "2", "HALO_NET_MAP_DOWNLOADS": setting,
+           "SDL_VIDEO_DRIVER": "dummy", "SDL_AUDIO_DRIVER": "dummy"}
+    output = open(folder / "out.log", "wb")
+    return subprocess.Popen([E2E_BINARY], cwd=data, env=env, stdout=output, stderr=subprocess.STDOUT,
+                            start_new_session=True)
+
+
+@pytest.mark.skipif(not E2E_BINARY or not E2E_DATA, reason="HALO_MAP_DOWNLOAD_E2E and _DATA not set")
+@pytest.mark.parametrize("scenario,setting", [("download", "always"), ("never", "never"), ("other_version", "always"),
+                                              ("stock", "always")])
+def test_host_changes_map(tmp_path, scenario, setting):
+    import signal
+    import time
+
+    ce_map = "putput" if scenario == "stock" else ONLINE_MAP
+    ce_source = (Path(E2E_DATA) / "maps" / "ce" / "putput.map" if scenario == "stock" else
+                 Path(E2E_DATA) / "maps_ce" / f"{ONLINE_MAP}.map")
+    if not ce_source.exists():
+        pytest.skip(f"no {ce_source}")
+    host = e2e_copy(tmp_path / "host", "127.0.0.2", "127.0.0.3", f"host:bloodgulch+{ce_map}@ce:slayer,slayer,slayer",
+                    setting, ce_map, ce_source, changed=scenario == "other_version")
+    time.sleep(3)
+    client = e2e_copy(tmp_path / "client", "127.0.0.3", "127.0.0.2", "join", setting, None, None)
+    try:
+        time.sleep(E2E_SECONDS)
+    finally:
+        for process in (host, client):
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+    log = (tmp_path / "client" / "out.log").read_text(errors="replace")
+    if "network test: joining" not in log:
+        pytest.skip("the client found no host (loopback addresses 127.0.0.2 and .3?)")
+    if scenario == "download":
+        if "map download: GET" in log and "installed in maps_ce" not in log:
+            pytest.skip("the repository can't be reached")
+        assert f"(host's checksum {ONLINE_CHECKSUM})" in log
+        assert f"map download: {ce_map}.map in place: joining the game again" in log
+        assert f"Delta Peer: map identity: {ce_map}@ce is the host's" in log
+    elif scenario == "never":
+        assert f"map missing: You don't have the HALO PC map {ce_map}." in log
+        assert "map download: GET" not in log
+    elif scenario == "other_version":
+        if "map download: GET" in log and "unpacked" not in log:
+            pytest.skip("the repository can't be reached")
+        assert "another version of the map" in log
+        assert "the game is not joined again" in log
+        assert "joining the game again" not in log
+    else:
+        assert "map download: putput is one of the game's own maps; not downloaded" in log
+        assert "map download: GET" not in log

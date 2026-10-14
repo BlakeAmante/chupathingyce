@@ -519,6 +519,61 @@ int map_archive_hashed_name(const char *name, char *base, int base_size, unsigne
 	return 1;
 }
 
+/* Halo PC's own maps and files, by their file names */
+static const char *const stock_maps[] =
+{
+	/* multiplayer */
+	"beavercreek", "bloodgulch", "boardingaction", "carousel", "chillout", "damnation", "dangercanyon", "deathisland",
+	"gephyrophobia", "hangemhigh", "icefields", "infinity", "longest", "prisoner", "putput", "ratrace", "sidewinder",
+	"timberland", "wizard",
+	/* the campaign */
+	"a10", "a30", "a50", "b30", "b40", "c10", "c20", "c40", "d20", "d40",
+};
+static const char *const stock_files[] = { "ui", "bitmaps", "sounds", "loc" };
+
+int map_archive_stock_name(const char *name)
+{
+	char base[64];
+	size_t index;
+
+	if (!name || !*name)
+		return 0;
+	/* (a hashed name's base: map_archive_display_name, lowercase) */
+	map_archive_display_name(name, base, (int)sizeof(base));
+	for (index = 0; base[index]; index++)
+		base[index] = (char)lower((unsigned char)base[index]);
+	for (index = 0; index < sizeof(stock_maps) / sizeof(stock_maps[0]); index++)
+	{
+		if (!strcmp(base, stock_maps[index]))
+			return MAP_ARCHIVE_STOCK_MAP;
+	}
+	for (index = 0; index < sizeof(stock_files) / sizeof(stock_files[0]); index++)
+	{
+		if (!strcmp(base, stock_files[index]))
+			return MAP_ARCHIVE_STOCK_FILE;
+	}
+	return 0;
+}
+
+int map_archive_stock_message(const char *name, char *text, int size)
+{
+	char base[64];
+	int stock = map_archive_stock_name(name);
+	size_t index;
+
+	if (!stock || size <= 0)
+		return 0;
+
+	map_archive_display_name(name, base, (int)sizeof(base));
+	/* (the install's file names, lowercase) */
+	for (index = 0; base[index]; index++)
+		base[index] = (char)lower((unsigned char)base[index]);
+	snprintf(text, (size_t)size, "%s.map is one of Halo PC's own %s, so Chupathingy can't download it. "
+		"Copy %s.map from your Halo PC or Custom Edition install into maps_ce, then join again.", base,
+		stock == MAP_ARCHIVE_STOCK_FILE ? "files" : "maps", base);
+	return 1;
+}
+
 void map_archive_display_name(const char *name, char *display, int size)
 {
 	size_t index;

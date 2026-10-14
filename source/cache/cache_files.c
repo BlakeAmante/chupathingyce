@@ -1165,6 +1165,11 @@ boolean cache_files_map_present(
 {
 	void platform_log(char const *format, ...);
 	char const *cache_files_map_directory(void);
+#ifdef HALO_CUSTOM_EDITION
+	/* (port/linux/src/map_archive.h: Halo PC's own maps) */
+	int map_archive_stock_name(char const *name);
+	int map_archive_stock_message(char const *name, char *text, int size);
+#endif
 	wchar_t error_text[512];
 	char file[64];
 	char message[512];
@@ -1190,6 +1195,25 @@ boolean cache_files_map_present(
 			snprintf(message, sizeof(message),
 				"Your %s map %.63s is another version than the host's. Copy the host's %.63s.map into %s.",
 				map_family_badge(family), file, file, map_family_folder(family));
+		}
+		/* (one of Halo PC's own maps, by its name or a hashed name's base:
+		the player's to copy from their install, never downloaded:
+		port/linux/src/map_archive.h) */
+		else if (family == _map_family_custom_edition && map_archive_stock_name(file))
+		{
+			char stock[384];
+
+			map_archive_stock_message(file, stock, sizeof(stock));
+			snprintf(message, sizeof(message), "Install this map yourself\r\n%s", stock);
+#ifdef HALO_GAME_BROWSER
+			/* (Online Games says so over the main menu, in place of this
+			error: port/linux/game/browser_screen.c) */
+			{
+				void browser_screen_map_missing(char const *file, unsigned long version);
+
+				browser_screen_map_missing(file, version);
+			}
+#endif
 		}
 		else
 		{

@@ -25,9 +25,15 @@ downloaded from the community map repositories (map_download.c, as
 network.map_downloads says): A joins the game's invite, and once its host
 advertises the game, the screen offers the map (Yes, No, Don't ask again),
 downloads it with its progress shown (B cancels), checks it against the
-host's version of it, and joins. A join through another screen that is
-left for want of such a map (cache_files_map_present) opens this screen
-over the main menu with the same offer, and joins that host again.
+host's version of it, and joins. A game left for want of such a map
+(cache_files_map_present: a join through another screen, or the host moving
+its game on to the map, as a dedicated server's playlist does) opens this
+screen over the main menu with the same offer, and joins that host again,
+in its next lobby or its game in progress (the game's protocol has the host
+wait a minute at most for a machine to load a map, too short for most
+downloads, so the game is left and joined again). If the map is not
+downloaded after all, Online Games closes and the main menu says the map is
+missing, as without the downloader.
 
 Start opens the player's profile page in the web browser; RB opens Link
 Profile over the list, for where no web browser opens: a code (and a QR
@@ -119,6 +125,9 @@ enum
 	_offer_downloading,
 	/* the download failed: why, until B */
 	_offer_failed,
+	/* one of Halo PC's own maps, never downloaded: where to copy it from,
+	until B (map_archive_stock_name) */
+	_offer_stock,
 };
 
 /* the game's engines, short (as players say them) to fit the column */
@@ -194,6 +203,10 @@ static struct
 	local network) and its host's identifier (12 hex digits, as an invite
 	starts) */
 	boolean rejoin_pending;
+	/* a game left for one of Halo PC's own maps (browser_screen_map_missing):
+	its panel opened over the main menu, and Online Games closed with it */
+	boolean stock_pending;
+	boolean offer_closes_screen;
 	char rejoin_invite[BROWSER_INVITE_LENGTH + 1];
 	char rejoin_host[13];
 	/* what the last frame drew for the pointer: the button each prompt
@@ -310,6 +323,17 @@ static boolean ce_map_downloadable(
 		ce_map_state(game, FALSE) == _ce_map_missing && map_download_possible(file);
 }
 
+/* whether a game's missing map is one of Halo PC's own (map_archive.h):
+never downloaded, the player told to copy it from their install */
+static boolean ce_map_stock(
+	struct browser_game const *game)
+{
+	char file[BROWSER_MAP_LENGTH];
+
+	return map_file(game->map, file, sizeof(file)) == _map_family_custom_edition &&
+		ce_map_state(game, FALSE) == _ce_map_missing && map_archive_stock_name(file);
+}
+
 /* (network_client_manager.c: the game whose host's identifier the invite
 starts with, joined once it is advertised) */
 long network_game_client_join_invite_host(char const *invite);
@@ -367,6 +391,37 @@ static void join_first_player(
 
 /* (p2p.c: the invite this machine joined last, its hex digits) */
 int p2p_joined_invite(char *text, int size);
+void platform_log(char const *format, ...);
+void display_error_text_deferred(wchar_t const *text, short local_player_index);
+
+/* a game left for want of the map, which is not downloaded after all (the
+player said no, cancelled it, or it failed: why, or NULL): Online Games
+closed, and the main menu's error says the map is missing, as it does with
+network.map_downloads "never" (cache_files_map_present's words) */
+static void rejoin_given_up(
+	char const *why)
+{
+	static wchar_t message[256];
+	char text[256];
+	long index;
+
+	platform_log("map download: %s.map not downloaded (%s): the game is not joined again", browser_screen.offer_file,
+		why ? why : "not wanted");
+	browser_screen.offer = _offer_none;
+	browser_screen.connecting = FALSE;
+	browser_screen.rejoin_pending = FALSE;
+	browser_screen.active = FALSE;
+	map_download_reset();
+	/* (the words the error has without the downloader: why the download
+	failed is in the log, the dialog having no room for more) */
+	snprintf(text, sizeof(text), "You don't have the %s map %.31s. If you have it, copy %.31s.map into %s.",
+		map_family_badge(_map_family_custom_edition), browser_screen.offer_file, browser_screen.offer_file,
+		map_family_folder(_map_family_custom_edition));
+	for (index = 0; text[index] && index < NUMBEROF(message) - 1; index++)
+		message[index] = (wchar_t)(unsigned char)text[index];
+	message[index] = 0;
+	display_error_text_deferred(message, NONE);
+}
 
 static void start_offered_download(
 	void)
@@ -376,6 +431,8 @@ static void start_offered_download(
 		browser_screen.offer = _offer_downloading;
 		map_download_get(&browser_screen.offer_progress);
 	}
+	else if (browser_screen.rejoin_pending)
+		rejoin_given_up("another download is running");
 	else
 	{
 		browser_screen.offer = _offer_failed;
@@ -383,6 +440,31 @@ static void start_offered_download(
 		snprintf(browser_screen.offer_progress.message, sizeof(browser_screen.offer_progress.message),
 			"another download is running");
 	}
+}
+
+/* one of Halo PC's own maps a game needs: its panel says to copy it from
+the player's install (never downloaded) */
+static void offer_stock(
+	char const *file)
+{
+	csstrncpy(browser_screen.offer_file, file, sizeof(browser_screen.offer_file) - 1);
+	browser_screen.offer_file[sizeof(browser_screen.offer_file) - 1] = 0;
+	map_archive_display_name(browser_screen.offer_file, browser_screen.offer_display,
+		(int)sizeof(browser_screen.offer_display));
+	/* (the install's file names, lowercase) */
+	{
+		char *cursor;
+
+		for (cursor = browser_screen.offer_display; *cursor; cursor++)
+		{
+			if (*cursor >= 'A' && *cursor <= 'Z')
+				*cursor = (char)(*cursor + 32);
+		}
+	}
+	browser_screen.offer = _offer_stock;
+	browser_screen.offer_closes_screen = FALSE;
+	browser_screen.connecting = FALSE;
+	platform_log("map download: %s is one of the game's own maps; not downloaded", file);
 }
 
 /* the map offered (asked about, or downloaded without asking, as
@@ -404,12 +486,18 @@ static void offer_map(
 		browser_screen.offer = _offer_asking;
 }
 
-/* the offer ended without the map: the join given up, with why */
+/* the offer ended without the map: the join given up, with why (a game
+left for want of it: the main menu's error, rejoin_given_up) */
 static void offer_given_up(
 	char const *why)
 {
 	char text[96];
 
+	if (browser_screen.rejoin_pending)
+	{
+		rejoin_given_up(NULL);
+		return;
+	}
 	browser_screen.offer = _offer_none;
 	browser_screen.connecting = FALSE;
 	browser_screen.rejoin_pending = FALSE;
@@ -429,6 +517,8 @@ static void rejoin(
 	void)
 {
 	browser_screen.rejoin_pending = FALSE;
+	platform_log("map download: %s.map in place: joining the game again%s", browser_screen.offer_file,
+		browser_screen.rejoin_invite[0] ? " (through its invite)" : " (on the local network)");
 	join_first_player();
 	if (browser_screen.rejoin_invite[0] && !browser_join(browser_screen.rejoin_invite))
 	{
@@ -465,7 +555,12 @@ static void follow_download(
 			browser_screen.connecting_time = system_milliseconds();
 		break;
 	case MAP_DOWNLOAD_FAILED:
-		browser_screen.offer = _offer_failed;
+		/* (a game left for want of it: the main menu's error at once) */
+		if (browser_screen.rejoin_pending)
+			rejoin_given_up(browser_screen.offer_progress.message[0] ? browser_screen.offer_progress.message :
+				"the repositories did not answer");
+		else
+			browser_screen.offer = _offer_failed;
 		break;
 	case MAP_DOWNLOAD_CANCELLED:
 		offer_given_up("Download cancelled.");
@@ -506,6 +601,17 @@ static void offer_button(
 		if (button == _gamepad_analog_button_a || button == _gamepad_analog_button_b)
 			offer_given_up(NULL);
 		break;
+	case _offer_stock:
+		if (button == _gamepad_analog_button_a || button == _gamepad_analog_button_b)
+		{
+			browser_screen.offer = _offer_none;
+			set_status("");
+			/* (a game left for it: back to the main menu) */
+			if (browser_screen.offer_closes_screen)
+				browser_screen.active = FALSE;
+			browser_screen.offer_closes_screen = FALSE;
+		}
+		break;
 	default: break;
 	}
 }
@@ -530,7 +636,17 @@ static void join_selected(
 	map that may be downloaded is offered once the host advertises it:
 	wait_for_host) */
 	if (ce_map_state(game, TRUE) >= _ce_map_missing && !ce_map_downloadable(game))
+	{
+		/* (one of Halo PC's own maps: where to copy it from) */
+		if (ce_map_stock(game))
+		{
+			char file[BROWSER_MAP_LENGTH];
+
+			map_file(game->map, file, sizeof(file));
+			offer_stock(file);
+		}
 		return;
+	}
 	/* a network client searching, as System Link's (the advertisement comes
 	to it: browser_screen_open started it) */
 	if (!global_network_game_client_get())
@@ -587,6 +703,12 @@ static void wait_for_host(
 			char file[BROWSER_MAP_LENGTH];
 			short family = map_family_parse(advertisement.map_name, file, sizeof(file));
 
+			if (family == _map_family_custom_edition && !ui_map_list_family_present(family, file) &&
+				map_archive_stock_name(file))
+			{
+				offer_stock(file);
+				return;
+			}
 			if (family == _map_family_custom_edition && !ui_map_list_family_present(family, file) &&
 				map_download_possible(file))
 			{
@@ -711,7 +833,9 @@ static char const *ce_map_blocker(
 	case _ce_map_missing:
 		/* (a hashed name by the file the player knows: map_archive.h) */
 		map_archive_display_name(file, display, (int)sizeof(display));
-		if (ce_map_downloadable(game))
+		if (ce_map_stock(game))
+			snprintf(text, (size_t)size, "%s.map is one of Halo PC's own maps: install it yourself", display);
+		else if (ce_map_downloadable(game))
 		{
 			snprintf(text, (size_t)size, "Needs %s/%s.map: joining offers to download it", map_family_folder(family),
 				display);
@@ -828,7 +952,18 @@ void browser_screen_map_missing(
 #if defined(HALO_CUSTOM_EDITION) && !defined(HALO_SERVER)
 	char invite[BROWSER_INVITE_LENGTH + 1];
 
-	if (!map_download_possible(file) || browser_screen.offer != _offer_none)
+	if (browser_screen.offer != _offer_none)
+		return;
+	/* (one of Halo PC's own maps: its panel says where to copy it from, in
+	place of the main menu's error, whose dialog is too small for it) */
+	if (map_archive_stock_name(file))
+	{
+		csstrncpy(browser_screen.offer_file, file, sizeof(browser_screen.offer_file) - 1);
+		browser_screen.offer_file[sizeof(browser_screen.offer_file) - 1] = 0;
+		browser_screen.stock_pending = TRUE;
+		return;
+	}
+	if (!map_download_possible(file))
 		return;
 	csstrncpy(browser_screen.offer_file, file, sizeof(browser_screen.offer_file) - 1);
 	browser_screen.offer_file[sizeof(browser_screen.offer_file) - 1] = 0;
@@ -869,6 +1004,18 @@ void browser_screen_map_missing(
 boolean browser_screen_open_map_offer(
 	void)
 {
+	if (browser_screen.stock_pending)
+	{
+		char file[sizeof(browser_screen.offer_file)];
+
+		browser_screen.stock_pending = FALSE;
+		csstrncpy(file, browser_screen.offer_file, sizeof(file) - 1);
+		file[sizeof(file) - 1] = 0;
+		browser_screen_open();
+		offer_stock(file);
+		browser_screen.offer_closes_screen = TRUE;
+		return TRUE;
+	}
 	if (!browser_screen.rejoin_pending)
 		return FALSE;
 	browser_screen_open();
@@ -1582,7 +1729,8 @@ static void draw_map_offer(
 
 	ui_overlay_rect(CONNECT_X, CONNECT_Y, CONNECT_WIDTH, CONNECT_HEIGHT, 8, 0x0A1A36F8);
 	ui_overlay_outline(CONNECT_X, CONNECT_Y, CONNECT_WIDTH, CONNECT_HEIGHT, 8, 1.0f, COLOR_PANEL_EDGE);
-	ui_overlay_text(UI_FONT_BOLD, 20.0f, CONNECT_X + 20, CONNECT_Y + 14, UI_ALIGN_LEFT, COLOR_TITLE, "Missing Map");
+	ui_overlay_text(UI_FONT_BOLD, 20.0f, CONNECT_X + 20, CONNECT_Y + 14, UI_ALIGN_LEFT, COLOR_TITLE,
+		browser_screen.offer == _offer_stock ? MAP_ARCHIVE_STOCK_TITLE : "Missing Map");
 	draw_pc_badge(_map_family_custom_edition, BADGE_SIZE + 1.5f,
 		CONNECT_X + CONNECT_WIDTH - 20 - pc_badge_width(_map_family_custom_edition, BADGE_SIZE + 1.5f), CONNECT_Y + 19,
 		12.0f);
@@ -1664,6 +1812,26 @@ static void draw_map_offer(
 		ui_overlay_text(UI_FONT_REGULAR, 10.0f, center, CONNECT_Y + 156, UI_ALIGN_CENTER, COLOR_TEXT, text);
 		ui_overlay_text(UI_FONT_REGULAR, 9.5f, center, CONNECT_Y + 190, UI_ALIGN_CENTER, COLOR_DIM,
 			"The game is joined once the map is in place.");
+		panel_prompts(NUMBEROF(buttons), buttons, words);
+		break;
+	}
+	case _offer_stock:
+	{
+		static int const buttons[] = { UI_BUTTON_B };
+		static char const *const words[] = { "=CLOSE" };
+		boolean file = map_archive_stock_name(browser_screen.offer_file) == MAP_ARCHIVE_STOCK_FILE;
+
+		/* (map_archive_stock_message's words, a line at a time) */
+		snprintf(text, sizeof(text), "%s.map is one of Halo PC's own %s,", browser_screen.offer_display,
+			file ? "files" : "maps");
+		ui_overlay_text(UI_FONT_BOLD, 15.0f, center, CONNECT_Y + 86, UI_ALIGN_CENTER, 0xFFFFFFFF, text);
+		ui_overlay_text(UI_FONT_BOLD, 15.0f, center, CONNECT_Y + 106, UI_ALIGN_CENTER, 0xFFFFFFFF,
+			"so Chupathingy can't download it.");
+		snprintf(text, sizeof(text), "Copy %s.map from your Halo PC or Custom Edition install",
+			browser_screen.offer_display);
+		ui_overlay_text(UI_FONT_REGULAR, 10.0f, center, CONNECT_Y + 146, UI_ALIGN_CENTER, COLOR_TEXT, text);
+		ui_overlay_text(UI_FONT_REGULAR, 10.0f, center, CONNECT_Y + 162, UI_ALIGN_CENTER, COLOR_TEXT,
+			"into maps_ce, then join again.");
 		panel_prompts(NUMBEROF(buttons), buttons, words);
 		break;
 	}
@@ -1946,7 +2114,8 @@ void browser_screen_render(
 		prompt_width(UI_BUTTON_RIGHT_SHOULDER, "=LINK PROFILE") - 20 - 3;
 	x = 320 - width / 2;
 	/* (A greyed for a game on a Custom Edition map that can't be played here) */
-	if (selected && ce_map_state(selected, FALSE) >= _ce_map_missing && !ce_map_downloadable(selected))
+	if (selected && ce_map_state(selected, FALSE) >= _ce_map_missing && !ce_map_downloadable(selected) &&
+		!ce_map_stock(selected))
 		x = prompt_off(UI_BUTTON_A, "=JOIN", x);
 	else
 		x = prompt(UI_BUTTON_A, "=JOIN", x);

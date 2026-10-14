@@ -165,7 +165,21 @@ held to a downloaded map's tighter rules. `network.map_downloads` in
 `config.toml` (or Network Settings in the PC menus) says `"ask"` (the
 default), `"always"` or `"never"`. Desktop and Android builds download maps;
 the dedicated server doesn't. HaloMD and Halo PC retail maps aren't
-downloaded.
+downloaded, and neither are Halo PC's own maps and files (Blood Gulch, Putput,
+the campaign's levels, `ui`, `bitmaps` and the rest, also under a hashed
+name), though the repositories have copies: they're Microsoft's and
+Gearbox's, so the game asks you to copy them from your own Halo PC or Custom
+Edition install instead ("Install this map yourself").
+
+**When the host changes map.** If a game you're in moves on to a Custom
+Edition map you don't have (a dedicated server's playlist going to its next
+map, say), the game leaves it, offers the map the same way over the main
+menu (or downloads it at once, with `"always"`), and then joins the same host
+again, in its next lobby or the game in progress. The game's protocol gives a
+machine about a minute to load a map before the host drops it, too short for
+most downloads, so the player leaves and comes back rather than holding the
+game up. If the map isn't downloaded (you say no, cancel it, or it fails),
+the main menu says the map is missing, as it does with `"never"`.
 
 **Maps named with a hash.** Hosts on some other builds name a shared Custom
 Edition map `<name>_<8 hex digits>` (a game on `Sneak_af352483`, say), the

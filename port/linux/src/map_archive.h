@@ -92,6 +92,29 @@ const char *map_archive_setting_word(int setting);
 /* a header's checksum (the host's map version) */
 unsigned int map_archive_header_checksum(const unsigned char *header);
 
+/* ---------- the game's own maps
+
+Halo PC's own maps and files (its multiplayer maps, its campaign's levels,
+and its ui, bitmaps, sounds and loc) are Microsoft's and Gearbox's: the
+player copies them from their own Halo PC or Custom Edition install, and
+the downloader never asks a repository for them, though the community
+repositories have copies. */
+
+/* whether name (a map's file name, or a hashed name's base, in any case) is
+one of Halo PC's own: MAP_ARCHIVE_STOCK_MAP for a map, MAP_ARCHIVE_STOCK_FILE
+for one of its data files (ui, bitmaps, sounds, loc), else 0 */
+enum
+{
+	MAP_ARCHIVE_STOCK_MAP = 1,
+	MAP_ARCHIVE_STOCK_FILE = 2,
+};
+int map_archive_stock_name(const char *name);
+/* what a player is told of one (title: "Install this map yourself"): that
+<name>.map is one of Halo PC's own maps (or files) and where to copy it
+from, into text (size bytes); 0 if name is not one of them */
+#define MAP_ARCHIVE_STOCK_TITLE "Install this map yourself"
+int map_archive_stock_message(const char *name, char *text, int size);
+
 /* ---------- hashed names
 
 The names other builds give the Custom Edition maps their hosts share:

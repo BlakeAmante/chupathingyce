@@ -249,6 +249,15 @@ int main(int argc, char **argv)
 			printf("plain\n");
 		return 0;
 	}
+	if (argc == 3 && !strcmp(argv[1], "stock"))
+	{
+		char text[384];
+
+		printf("%d\n", map_archive_stock_name(argv[2]));
+		if (map_archive_stock_message(argv[2], text, (int)sizeof(text)))
+			printf("%s\n", text);
+		return 0;
+	}
 	if (argc == 3 && !strcmp(argv[1], "display"))
 	{
 		char display[64];
