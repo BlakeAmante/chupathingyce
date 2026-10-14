@@ -2026,13 +2026,9 @@ static void set_textbox_to_build_number(
 	   the function is unattested. January corroborates: .bss +0x28, referenced only here. */
 	static wchar_t build_number_string[64];
 
-	if (!build_number_string[0])
-	{
-		ascii_to_wide(
-			"01.01.14.2342",
-			build_number_string,
-			sizeof(build_number_string));
-	}
+	/* port: none: this build's version is drawn at the bottom of the screen
+	instead (main.c's main_version_watermark_render), and the box stays
+	empty */
 
 	if (!widget->parameters.text_box.text)
 	{
