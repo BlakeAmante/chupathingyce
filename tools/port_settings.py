@@ -97,6 +97,11 @@ SCREENS = {
              "Moving the mouse forward looks down.", None),
             ("AIM ASSIST:", "input.mouse_aim_assist", ON_OFF,
              "Slow and drag the view along with a target while\naiming with the mouse, as with a controller.", None),
+            ("FIELD OF VIEW:", "display.field_of_view",
+             [(f"{value}" + (" (XBOX)" if value == 70 else ""), f"{value}")
+              for value in (60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 120)],
+             "How wide the first-person view is, in degrees:\n70 as on the Xbox. Scopes zoom as much as before.",
+             None),
         ],
     },
     "audio_settings": {

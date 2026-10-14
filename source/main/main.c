@@ -1139,20 +1139,57 @@ static void screenshot_record(
 	return;
 }
 
+/* port_config.c's */
+double config_real(const char *name);
+unsigned long config_changes(void);
+
+/* port: display.field_of_view, the first-person view's width in degrees
+(the Xbox's 70, 50 to 120), as the scale of the tangent of the camera's half
+angle: the unit's and each zoom level's view widen or narrow together, so a
+scope magnifies as much as before. Only what is drawn changes; the observer,
+aim and the game's state keep the original angles. */
+static real first_person_field_of_view_scale(
+	void)
+{
+	static unsigned long read_at = (unsigned long)-1;
+	static real scale = 1.0f;
+
+	if (read_at != config_changes())
+	{
+		real degrees = (real)config_real("display.field_of_view");
+
+		read_at = config_changes();
+		if (!valid_real(degrees) || degrees == 70.0f)
+			scale = 1.0f;
+		else
+		{
+			degrees = PIN(degrees, 50.0f, 120.0f);
+			scale = tangent(DEGREES_TO_RADIANS(degrees) * 0.5f) / tangent(DEGREES_TO_RADIANS(70.0f) * 0.5f);
+		}
+	}
+
+	return scale;
+}
+
 void set_window_camera_values(
 	struct render_window *window,
 	struct observer_result const *observer)
 {
 	if (observer)
 	{
+		real field_of_view_tangent = render_camera_get_adjusted_field_of_view_tangent(observer->field_of_view);
+
+		/* port: display.field_of_view, in first person */
+		if (window->local_player_index != NONE &&
+			director_get_perspective(window->local_player_index) == _director_perspective_first_person)
+		{
+			field_of_view_tangent *= first_person_field_of_view_scale();
+		}
 		window->rasterizer_camera.position = observer->position;
 		window->rasterizer_camera.forward = observer->forward;
 		window->rasterizer_camera.up = observer->up;
 		window->rasterizer_camera.vertical_field_of_view =
-			2.0f * arctangent(
-				0.75f * render_camera_get_adjusted_field_of_view_tangent(
-					observer->field_of_view),
-				1.0f);
+			2.0f * arctangent(0.75f * field_of_view_tangent, 1.0f);
 
 		if (window->local_player_index != NONE &&
 			!console_is_active() &&

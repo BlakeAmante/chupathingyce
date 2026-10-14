@@ -293,6 +293,8 @@ A few people look for most:
 | `display.vsync`, `display.max_fps` | Vertical sync, and a frame rate cap (0 for none). |
 | `display.menus` | `"xbox"` (the default) or `"pc"`, the Halo PC style menus with their Server Browser. |
 | `display.high_res_text` | `true` draws the game's text (menus and HUD) with sharp fonts at your resolution; `false` uses the maps' original bitmap fonts. The Server Browser and the moderation overlays use the system's fonts either way. For a blocky look overall, also set `display.resolution_scaling = "original"`. |
+| `display.field_of_view` | How wide the first-person view is, in degrees: 70 (the Xbox's) by default, 50 to 120. |
+| `display.match_timer` | `true` shows a timed multiplayer game's time left at the top of the screen (off by default). |
 | `display.player_names` | Names over players' heads: `"all"`, `"allies"`, `"enemies"` or `"none"`. |
 | `audio.volume`, `audio.music_volume`, `audio.effects_volume` | Volumes, from 0.0 to 1.0. |
 | `input.mouse_sensitivity`, `input.invert_mouse` | Mouse aim. |

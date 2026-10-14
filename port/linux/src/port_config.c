@@ -134,6 +134,13 @@ static const struct config_setting config_settings[] =
 		"In first person, point the view where the player aims now instead of\n"
 		"where the last tick left it: the view turns the frame the mouse moves,\n"
 		"not up to two ticks (66 ms) later." },
+	{ "display.field_of_view", _config_real, "70.0", "HALO_FIELD_OF_VIEW", _environment_value, _platform_all,
+		"How wide the first-person view is, in degrees across a 4:3 picture:\n"
+		"70 as on the Xbox, 50 to 120 (wider screens see more at the sides).\n"
+		"Scopes zoom in as much as before." },
+	{ "display.match_timer", _config_boolean, "false", "HALO_MATCH_TIMER", _environment_value, _platform_all,
+		"In a multiplayer game with a time limit, show the time left at the top\n"
+		"of the screen; false shows it only on the scoreboard, as the Xbox did." },
 	{ "display.high_res_hud", _config_boolean, "true", "HALO_HIGH_RES_HUD", _environment_value, _platform_all,
 		"Draw the HUD (meters, counters, panels, motion sensor, reticles,\n"
 		"waypoints, scopes) from the high-res assets (8x the maps' bitmaps);\n"
