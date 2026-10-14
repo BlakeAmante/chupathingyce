@@ -24,10 +24,11 @@ The tag table cannot grow where it is (the tags' names follow it), so it
 is copied, with ours after it; every existing tag keeps its index. All of it
 is let go in scenario_tags_unload, before the next map's tags load.
 
-A multiplayer map gets them too, for its in-game pause menu's SETTINGS
-(pause_patch): there the map's tags they name that it has not (ui.map's
-pictures, sounds and screens) are none, a missing picture drawn blank, and
-no screen pauses the game (a network game's clock runs on).
+A campaign or multiplayer map gets them too, for its in-game pause menu's
+SETTINGS (pause_patch): there the map's tags they name that it has not
+(ui.map's pictures, sounds and screens) are none, a missing picture drawn
+blank, and on a multiplayer map no screen pauses the game (a network game's
+clock runs on).
 */
 
 #include "cseries.h"
@@ -64,7 +65,8 @@ char const *pc_menus_root_name(void);
 char const *pc_menu_function_name(long function_index);
 char const *pc_menu_game_data_input_name(long function_index);
 boolean pc_menu_tag(long tag_index);
-boolean pc_menu_frame_placement(struct bitmap_data const *bitmap, short *x, short *y, short *width, short *height);
+boolean pc_menu_frame_placement(struct bitmap_data const *bitmap, short *x, short *y, short *width, short *height,
+	short *texel_y);
 
 /* ---------- constants */
 
@@ -72,8 +74,11 @@ boolean pc_menu_frame_placement(struct bitmap_data const *bitmap, short *x, shor
 /* the multiplayer maps' widget collection, whose pause screens pause_patch
 adds to */
 #define MULTIPLAYER_COLLECTION "ui\\shell\\multiplayer"
-/* the tags pause_patch adds: two buttons and their texts */
-#define PAUSE_PATCH_TAGS 4
+/* a campaign map's pause screen, which pause_patch adds to */
+#define SOLO_PAUSE_SCREEN "ui\\shell\\solo_game\\pause_game\\pause_game"
+/* the tags pause_patch adds: two buttons and their texts, and the tops of
+the stock box's pieces (the campaign's has six) */
+#define PAUSE_PATCH_TAGS (4 + 2 * 6)
 /* what a frame of ui.map's is drawn as in a game map, which has not got it */
 #define BLANK_PNG "ce/port/blank__0.png"
 #define UI_WIDGET_DEFINITION_TAG 'DeLa'
@@ -242,12 +247,13 @@ typedef char verify_ui_widget_definition_size[
 	sizeof(struct ui_widget_definition) == 0x3EC ? 1 : -1];
 
 /* a frame of ui.map's that a menu file scales: where in its widget, and at
-what size, it is drawn (pc_menu_frame_placement) */
+what size, it is drawn, from which of its rows (pc_menu_frame_placement) */
 struct menu_frame_placement
 {
 	struct bitmap_data const *bitmap;
 	short x, y;
 	short width, height;
+	short texel_y;
 };
 
 /* a spinner bound to a setting (menu_functions.c) */
@@ -433,9 +439,11 @@ static struct
 	long *text_tags;
 	long *spinner_tags;
 	boolean failed;
-	/* a multiplayer map's build (the pause menu's SETTINGS): what the map
-	has not got is none, not a failure */
+	/* a game map's build (the pause menu's SETTINGS): what the map has not
+	got is none, not a failure */
 	boolean game_map;
+	/* a campaign map's (its pause screen's): the game stays paused */
+	boolean campaign_map;
 } build;
 
 /* ---------- private code */
@@ -844,6 +852,7 @@ static void *bitmap_build(struct halo_menu_bitmap const *source, long tag_index)
 					placements[menu_tags.placement_count].y = (short)PIN(data->y, -2048, 2048);
 					placements[menu_tags.placement_count].width = (short)data->width;
 					placements[menu_tags.placement_count].height = (short)data->height;
+					placements[menu_tags.placement_count].texel_y = 0;
 					menu_tags.placement_count++;
 				}
 			}
@@ -1060,8 +1069,10 @@ static void *widget_build(long widget_index)
 		source->file, source->line);
 	/* (no screen pauses the game: in a network game the clock runs on, and
 	at the main menu the title's background and music play on through
-	Settings and the multiplayer screens, which Halo PC's tags paused) */
-	definition->flags &= ~FLAG(1); /* pause_game */
+	Settings and the multiplayer screens, which Halo PC's tags paused; but
+	in a campaign game the pause menu's SETTINGS keeps it paused) */
+	if (!build.campaign_map)
+		definition->flags &= ~FLAG(1); /* pause_game */
 	definition->milliseconds_to_auto_close = source->auto_close;
 	definition->auto_close_fade_time = source->auto_close_fade;
 	reference_clear(&definition->background_bitmap, BITMAP_GROUP_TAG);
@@ -1406,21 +1417,20 @@ static void menu_tags_release(void)
 
 /* ---------- public code */
 
-/* ---------- the in-game pause menu (a multiplayer map's)
+/* ---------- the in-game pause menus (a campaign map's, a multiplayer map's)
 
-Its list (RESUME GAME, LEAVE GAME; a custom map's own buttons too) gets
-SETTINGS, the menus' settings (as the main menu's SETTINGS opens them), and
-for the host END GAME, which ends the game as its time limit would: its
-players stay, and the host picks the next map after the carnage report.
-They are copies of the map's LEAVE GAME button (its look), put before it.
-The map's pause screens move to fit them: on the Xbox's own (its box of
-pausebox2 pieces), the box is the port's taller one (pause/pausebox_*:
-tools/port_settings.py), centred where the old one was; on a custom map's,
-what is below the list moves down. */
+Their list gets SETTINGS after RESUME GAME, the menus' settings (as the
+main menu's SETTINGS opens them), and a multiplayer map's, for the host,
+END GAME after it, which ends the game as its time limit would: its players
+stay, and the host picks the next map after the carnage report. They are
+copies of RESUME GAME (its look), the rows after them moved down. The map's
+pause screens grow to fit them: on the Xbox's own (its box of pausebox2
+pieces, and the campaign's objectives box beside it), the box is drawn as
+much taller, centred where it was, with what is in it, and what is below
+the list moved down; on a custom map's, what is below the list moves down. */
 
 #define PAUSE_SETTINGS_SCREEN "main_menu/settings_select/player_setup/player_profile_edit/player_profile_edit_screen"
 #define PAUSE_BUTTON_SPACING 35
-#define PAUSE_BOX_FIRST_BUTTONS 3
 
 static long ui_function_named(char const *name)
 {
@@ -1444,6 +1454,20 @@ static boolean tag_name_ends(long tag_index, char const *end)
 	size_t length = name ? strlen(name) : 0, end_length = strlen(end);
 
 	return name && length >= end_length && !strcmp(name + length - end_length, end);
+}
+
+/* the index of the list's button whose tag's name ends so, else NONE */
+static long pause_button_named(struct ui_widget_definition const *list, char const *end)
+{
+	struct ui_widget_child_reference const *children = xbox_pointer(list->child_widgets.address);
+	long child;
+
+	for (child = 0; child < list->child_widgets.count; child++)
+	{
+		if (tag_name_ends(children[child].widget_tag.index, end))
+			return child;
+	}
+	return NONE;
 }
 
 /* the index of the list's button that runs the function (LEAVE GAME's),
@@ -1513,15 +1537,16 @@ static void *pause_button(struct cache_file_tag_instance *instances, struct ui_w
 	return button;
 }
 
-/* the list's buttons: SETTINGS (and the host's END GAME) put before LEAVE
-GAME (quit); returns how many were added */
-static long pause_list_patch(struct cache_file_tag_instance *instances, struct ui_widget_definition *list, long quit,
-	boolean host)
+/* the list's buttons: SETTINGS (and the host's END GAME) put after RESUME
+GAME (resume), the rows after them moved down; returns how far the list
+grew, 0 if it was not */
+static short pause_list_patch(struct cache_file_tag_instance *instances, struct ui_widget_definition *list, long resume,
+	boolean end_game)
 {
 	struct ui_widget_child_reference *children = xbox_pointer(list->child_widgets.address);
-	long count = list->child_widgets.count, added = host ? 2 : 1, child;
+	long count = list->child_widgets.count, added = end_game ? 2 : 1, child;
 	struct ui_widget_child_reference *grown = allocate((count + added) * sizeof(struct ui_widget_child_reference));
-	struct ui_widget_definition const *model = tag_get(UI_WIDGET_DEFINITION_TAG, children[quit].widget_tag.index);
+	struct ui_widget_definition const *model = tag_get(UI_WIDGET_DEFINITION_TAG, children[resume].widget_tag.index);
 	long settings_widget = widget_named(PAUSE_SETTINGS_SCREEN);
 	short spacing = count >= 2 ? (short)(children[count - 1].vertical_offset - children[count - 2].vertical_offset) :
 		PAUSE_BUTTON_SPACING;
@@ -1533,25 +1558,24 @@ static long pause_list_patch(struct cache_file_tag_instance *instances, struct u
 	tags[0] = next_tag();
 	buttons[0] = pause_button(instances, model, "pause/settings_button", "SETTINGS",
 		function_index("profile set edit begin", "pause", 0), build.widget_tags[settings_widget]);
-	tags[1] = host ? next_tag() : NONE;
-	buttons[1] = host ? pause_button(instances, model, "pause/end_game_button", "END GAME",
+	tags[1] = end_game ? next_tag() : NONE;
+	buttons[1] = end_game ? pause_button(instances, model, "pause/end_game_button", "END GAME",
 		function_index("port pause end game", "pause", 0), NONE) : NULL;
-	if (!buttons[0] || (host && !buttons[1]))
+	if (!buttons[0] || (end_game && !buttons[1]))
 		return 0;
 	for (child = 0; child < added; child++)
 	{
 		instance_set(instances, UI_WIDGET_DEFINITION_TAG, tags[child],
 			child ? "pause/end_game_button" : "pause/settings_button", "", buttons[child]);
 	}
-	if (quit)
-		memcpy(grown, children, quit * sizeof(*grown));
+	memcpy(grown, children, (resume + 1) * sizeof(*grown));
 	for (child = 0; child < added; child++)
 	{
-		grown[quit + child] = children[quit];
-		reference_set(&grown[quit + child].widget_tag, UI_WIDGET_DEFINITION_TAG, tags[child]);
-		grown[quit + child].vertical_offset = (short)(children[quit].vertical_offset + child * spacing);
+		grown[resume + 1 + child] = children[resume];
+		reference_set(&grown[resume + 1 + child].widget_tag, UI_WIDGET_DEFINITION_TAG, tags[child]);
+		grown[resume + 1 + child].vertical_offset = (short)(children[resume].vertical_offset + (child + 1) * spacing);
 	}
-	for (child = quit; child < count; child++)
+	for (child = resume + 1; child < count; child++)
 	{
 		grown[child + added] = children[child];
 		grown[child + added].vertical_offset = (short)(children[child].vertical_offset + added * spacing);
@@ -1560,125 +1584,230 @@ static long pause_list_patch(struct cache_file_tag_instance *instances, struct u
 	list->child_widgets.count = count + added;
 	/* (the list draws within its bounds) */
 	list->bounds.y1 = (short)(list->bounds.y1 + added * spacing);
-	return added;
+	return (short)(added * spacing);
 }
 
-/* the Xbox's own box: a widget of the three pausebox2 pieces */
+/* the Xbox's own box: a widget of pausebox2 pieces (and, the campaign's,
+the objectives box's pausebox pieces) */
 static boolean pause_box_stock(struct ui_widget_definition const *box)
 {
 	struct ui_widget_child_reference const *pieces = xbox_pointer(box->child_widgets.address);
 
-	return box->child_widgets.count == 3 && tag_name_ends(pieces[0].widget_tag.index, "\\pausebox2_left") &&
-		tag_name_ends(pieces[1].widget_tag.index, "\\pausebox2_left_center") &&
-		tag_name_ends(pieces[2].widget_tag.index, "\\pausebox2_right");
+	return box->child_widgets.count >= 3 && tag_name_ends(pieces[0].widget_tag.index, "\\pausebox2_left");
 }
 
-/* the stock box's pieces drawn with the port's taller box: its frame for
-the number of buttons */
-static void pause_box_redraw(struct ui_widget_definition const *box, long buttons)
+/* the stock box drawn taller, once in a map (the screens share it): each
+piece drawn to PAUSE_BOX_SPLIT rows past grow (in its plain middle, below
+the objectives' header and above the buttons' key), then a copy of it from
+its row PAUSE_BOX_SPLIT on, so the box is as the Xbox draws it with its
+middle grow longer */
+#define PAUSE_BOX_SPLIT 45
+
+/* a piece's lower part: a copy of it, its bitmap drawn from row split on */
+static long pause_box_lower(struct cache_file_tag_instance *instances, long piece_tag, short split)
 {
-	static char const *const names[] = { "pause/pausebox_left", "pause/pausebox_center", "pause/pausebox_right" };
-	struct ui_widget_child_reference const *pieces = xbox_pointer(box->child_widgets.address);
-	long piece;
+	struct ui_widget_definition *lower = allocate(sizeof(*lower));
+	struct bitmap_group *group = allocate(sizeof(*group));
+	struct bitmap_data *bitmap = allocate(sizeof(*bitmap));
+	struct menu_frame_placement *placements = realloc(menu_tags.placements,
+		(menu_tags.placement_count + 1) * sizeof(*menu_tags.placements));
+	struct bitmap_group const *source;
+	long widget_tag, bitmap_tag;
 
-	for (piece = 0; piece < 3; piece++)
+	if (!lower || !group || !bitmap || !placements)
+		return NONE;
+	menu_tags.placements = placements;
+	memcpy(lower, tag_get(UI_WIDGET_DEFINITION_TAG, piece_tag), sizeof(*lower));
+	if (lower->background_bitmap.index == NONE)
+		return NONE;
+	source = bitmap_group_get(lower->background_bitmap.index);
+	if (source->bitmaps.count < 1)
+		return NONE;
+	memcpy(group, source, sizeof(*group));
+	memcpy(bitmap, xbox_pointer(source->bitmaps.address), sizeof(*bitmap));
+	group->bitmaps.count = 1;
+	group->bitmaps.address = XBOX_ADDRESS(bitmap);
+	placements[menu_tags.placement_count].bitmap = bitmap;
+	placements[menu_tags.placement_count].x = 0;
+	placements[menu_tags.placement_count].y = 0;
+	placements[menu_tags.placement_count].width = bitmap->width;
+	placements[menu_tags.placement_count].height = bitmap->height;
+	placements[menu_tags.placement_count].texel_y = split;
+	menu_tags.placement_count++;
+	bitmap_tag = next_tag();
+	instance_set(instances, BITMAP_GROUP_TAG, bitmap_tag, "pause/box_lower", "", group);
+	reference_set(&lower->background_bitmap, BITMAP_GROUP_TAG, bitmap_tag);
+	lower->bounds.y1 = (short)(lower->bounds.y1 - split);
+	widget_tag = next_tag();
+	instance_set(instances, UI_WIDGET_DEFINITION_TAG, widget_tag, "pause/box_lower", "", lower);
+	return widget_tag;
+}
+
+static void pause_box_grow(struct cache_file_tag_instance *instances, struct ui_widget_definition *box, short grow)
+{
+	struct ui_widget_child_reference *pieces = xbox_pointer(box->child_widgets.address);
+	long count = box->child_widgets.count, piece;
+	struct ui_widget_child_reference *grown = allocate(2 * count * sizeof(struct ui_widget_child_reference));
+	short split = PAUSE_BOX_SPLIT;
+
+	if (!grown || count > 6)
+		return;
+	/* (every piece tall enough first: all of them drawn taller, or none) */
+	for (piece = 0; piece < count; piece++)
 	{
-		struct ui_widget_definition *definition = tag_get(UI_WIDGET_DEFINITION_TAG, pieces[piece].widget_tag.index);
-		long bitmap = find(names[piece], build.menus->bitmap_count, bitmap_name);
-		struct bitmap_group *group;
-		struct bitmap_group_sequence *sequence;
+		struct ui_widget_definition const *definition;
 
-		if (bitmap == NONE)
+		if (pieces[piece].widget_tag.index == NONE)
 			continue;
-		group = bitmap_group_get(build.bitmap_tags[bitmap]);
-		sequence = xbox_pointer(group->sequences.address);
-		/* (one frame: the one for the number of buttons) */
-		sequence->first_bitmap_index = (short)PIN(buttons - PAUSE_BOX_FIRST_BUTTONS, 0, group->bitmaps.count - 1);
-		sequence->bitmap_count = 1;
-		reference_set(&definition->background_bitmap, BITMAP_GROUP_TAG, build.bitmap_tags[bitmap]);
-		definition->bounds.y1 = (short)(definition->bounds.y0 + 256);
+		definition = tag_get(UI_WIDGET_DEFINITION_TAG, pieces[piece].widget_tag.index);
+		if (definition->bounds.y1 - definition->bounds.y0 < split + grow)
+			return;
+	}
+	memcpy(grown, pieces, count * sizeof(*grown));
+	for (piece = 0; piece < count; piece++)
+	{
+		grown[count + piece] = pieces[piece];
+		if (pieces[piece].widget_tag.index == NONE)
+			continue;
+		reference_set(&grown[count + piece].widget_tag, UI_WIDGET_DEFINITION_TAG,
+			pause_box_lower(instances, pieces[piece].widget_tag.index, split));
+		if (grown[count + piece].widget_tag.index == NONE)
+			return;
+		grown[count + piece].vertical_offset = (short)(pieces[piece].vertical_offset + split + grow);
+	}
+	/* (the upper parts cut short only once every lower part is made) */
+	for (piece = 0; piece < count; piece++)
+	{
+		struct ui_widget_definition *upper;
+
+		if (pieces[piece].widget_tag.index == NONE)
+			continue;
+		upper = tag_get(UI_WIDGET_DEFINITION_TAG, pieces[piece].widget_tag.index);
+		upper->bounds.y1 = (short)(upper->bounds.y0 + split + grow);
+	}
+	box->child_widgets.address = XBOX_ADDRESS(grown);
+	box->child_widgets.count = 2 * count;
+	box->bounds.y1 = (short)(box->bounds.y1 + grow);
+}
+
+/* a screen's pause list, found by its RESUME GAME, else the button before
+the one running quit_function (a custom map's), patched
+once (the screens share it), and the screen moved to fit it */
+static void pause_screen_patch(struct cache_file_tag_instance *instances, long screen_tag, long quit_function,
+	boolean end_game, long *patched_list, short *grow, boolean *box_grown)
+{
+	struct ui_widget_definition *definition = tag_get(UI_WIDGET_DEFINITION_TAG, screen_tag);
+	struct ui_widget_child_reference *children = xbox_pointer(definition->child_widgets.address);
+	struct ui_widget_definition const *list;
+	long child, list_child = NONE, box_child = NONE;
+	short list_top, list_bottom;
+
+	for (child = 0; child < definition->child_widgets.count && list_child == NONE; child++)
+	{
+		struct ui_widget_definition *candidate;
+		long resume;
+
+		if (children[child].widget_tag.index == NONE)
+			continue;
+		candidate = tag_get(UI_WIDGET_DEFINITION_TAG, children[child].widget_tag.index);
+		if (candidate->type != _widget_type_column_list)
+			continue;
+		if (children[child].widget_tag.index == *patched_list)
+		{
+			list_child = child;
+			continue;
+		}
+		resume = pause_button_named(candidate, "\\resume_game_button");
+		if (resume == NONE && quit_function != NONE && (resume = pause_quit_button(candidate, quit_function)) != NONE)
+			resume--;
+		if (resume < 0 || resume == NONE || *patched_list != NONE)
+			continue;
+		*grow = pause_list_patch(instances, candidate, resume, end_game);
+		if (!*grow)
+			return;
+		*patched_list = children[child].widget_tag.index;
+		list_child = child;
+	}
+	if (list_child == NONE)
+		return;
+	for (child = 0; child < definition->child_widgets.count; child++)
+	{
+		if (child != list_child && children[child].widget_tag.index != NONE &&
+			pause_box_stock(tag_get(UI_WIDGET_DEFINITION_TAG, children[child].widget_tag.index)))
+		{
+			box_child = child;
+		}
+	}
+	/* the stock box: taller, centred where it was with what is in it, and
+	what is below the list (the buttons' key) moved down; else only what
+	is below the list's top */
+	/* (the list's last button's bottom, before it grew: the list's bounds
+	may reach further) */
+	list = tag_get(UI_WIDGET_DEFINITION_TAG, children[list_child].widget_tag.index);
+	list_top = children[list_child].vertical_offset;
+	list_bottom = list_top;
+	{
+		struct ui_widget_child_reference const *buttons = xbox_pointer(list->child_widgets.address);
+		long button;
+
+		for (button = 0; button < list->child_widgets.count; button++)
+		{
+			if (buttons[button].widget_tag.index != NONE)
+			{
+				list_bottom = (short)MAX(list_bottom, list_top + buttons[button].vertical_offset +
+					((struct ui_widget_definition const *)tag_get(UI_WIDGET_DEFINITION_TAG,
+						buttons[button].widget_tag.index))->bounds.y1 - *grow);
+			}
+		}
+	}
+	for (child = 0; child < definition->child_widgets.count; child++)
+	{
+		if (box_child == NONE)
+		{
+			if (children[child].vertical_offset > list_top)
+				children[child].vertical_offset += *grow;
+		}
+		else if (child != box_child && child != list_child && children[child].vertical_offset >= list_bottom)
+			children[child].vertical_offset += *grow - *grow / 2;
+		else
+			children[child].vertical_offset -= *grow / 2;
+	}
+	if (box_child != NONE && !*box_grown)
+	{
+		pause_box_grow(instances, tag_get(UI_WIDGET_DEFINITION_TAG, children[box_child].widget_tag.index), *grow);
+		*box_grown = TRUE;
 	}
 }
 
 static void pause_patch(struct cache_file_tag_instance *instances)
 {
 	long collection = tag_loaded('Soul', MULTIPLAYER_COLLECTION);
+	long solo_screen = tag_loaded(UI_WIDGET_DEFINITION_TAG, SOLO_PAUSE_SCREEN);
 	long quit_function = ui_function_named("mp game player quit");
 	boolean host = global_network_game_server_get() != NULL;
-	struct tag_block const *screens;
-	long patched_list = NONE, added = 0, buttons = 0, screen;
-	boolean box_redrawn = FALSE;
+	long patched_list = NONE;
+	boolean box_grown = FALSE;
+	short grow = 0;
 
-	if (collection == NONE || quit_function == NONE)
-		return;
-	screens = tag_get('Soul', collection);
-	for (screen = 0; screen < screens->count; screen++)
+	/* the campaign's (a network co-op game's too): no END GAME, which is
+	the multiplayer game engine's */
+	if (solo_screen != NONE)
+		pause_screen_patch(instances, solo_screen, NONE, FALSE, &patched_list, &grow, &box_grown);
+	else if (collection != NONE)
 	{
-		long screen_tag = XBOX_POINTER(struct tag_reference const, screens->address)[screen].index;
-		struct ui_widget_definition *definition;
-		struct ui_widget_child_reference *children;
-		long child, list_child = NONE, box_child = NONE;
-		short grow, list_top;
+		struct tag_block const *screens = tag_get('Soul', collection);
+		long screen;
 
-		if (screen_tag == NONE)
-			continue;
-		definition = tag_get(UI_WIDGET_DEFINITION_TAG, screen_tag);
-		children = xbox_pointer(definition->child_widgets.address);
-		for (child = 0; child < definition->child_widgets.count && list_child == NONE; child++)
+		for (screen = 0; screen < screens->count; screen++)
 		{
-			struct ui_widget_definition *list;
-			long quit;
+			long screen_tag = XBOX_POINTER(struct tag_reference const, screens->address)[screen].index;
 
-			if (children[child].widget_tag.index == NONE)
-				continue;
-			list = tag_get(UI_WIDGET_DEFINITION_TAG, children[child].widget_tag.index);
-			if (list->type != _widget_type_column_list)
-				continue;
-			/* (one list, which the screens share: patched once) */
-			if (children[child].widget_tag.index == patched_list)
-			{
-				list_child = child;
-				continue;
-			}
-			quit = pause_quit_button(list, quit_function);
-			if (quit == NONE || patched_list != NONE)
-				continue;
-			added = pause_list_patch(instances, list, quit, host);
-			if (!added)
-				return;
-			buttons = list->child_widgets.count;
-			patched_list = children[child].widget_tag.index;
-			list_child = child;
-		}
-		if (list_child == NONE)
-			continue;
-		for (child = 0; child < definition->child_widgets.count; child++)
-		{
-			if (child != list_child && children[child].widget_tag.index != NONE &&
-				pause_box_stock(tag_get(UI_WIDGET_DEFINITION_TAG, children[child].widget_tag.index)))
-			{
-				box_child = child;
-			}
-		}
-		/* the stock box: taller, centred where it was, the list with it, and
-		what is below it moved down; else only what is below the list */
-		grow = (short)(added * PAUSE_BUTTON_SPACING);
-		list_top = children[list_child].vertical_offset;
-		for (child = 0; child < definition->child_widgets.count; child++)
-		{
-			if (box_child != NONE && (child == box_child || child == list_child))
-				children[child].vertical_offset -= grow / 2;
-			else if (children[child].vertical_offset > list_top)
-				children[child].vertical_offset += box_child != NONE ? grow - grow / 2 : grow;
-		}
-		if (box_child != NONE && !box_redrawn)
-		{
-			pause_box_redraw(tag_get(UI_WIDGET_DEFINITION_TAG, children[box_child].widget_tag.index), buttons);
-			box_redrawn = TRUE;
+			if (screen_tag != NONE)
+				pause_screen_patch(instances, screen_tag, quit_function, host, &patched_list, &grow, &box_grown);
 		}
 	}
 	if (patched_list != NONE)
-		platform_log("menus: the pause menu has SETTINGS%s", host ? " and END GAME" : "");
+		platform_log("menus: the pause menu has SETTINGS%s", host && solo_screen == NONE ? " and END GAME" : "");
 }
 
 /* whether display.menus asks for the PC version's menus: "pc" in any case
@@ -1715,7 +1844,8 @@ void menu_tags_loaded(
 	boolean game_map = strcmp(map_name, "ui") != 0;
 
 	/* (ui.map, and a multiplayer map: its pause menu's SETTINGS) */
-	if ((game_map && tag_loaded('Soul', MULTIPLAYER_COLLECTION) == NONE) || !menus_pc_chosen())
+	if ((game_map && tag_loaded('Soul', MULTIPLAYER_COLLECTION) == NONE &&
+		tag_loaded(UI_WIDGET_DEFINITION_TAG, SOLO_PAUSE_SCREEN) == NONE) || !menus_pc_chosen())
 	{
 		return;
 	}
@@ -1725,6 +1855,7 @@ void menu_tags_loaded(
 	memset(&build, 0, sizeof(build));
 	build.menus = menus;
 	build.game_map = game_map;
+	build.campaign_map = game_map && tag_loaded(UI_WIDGET_DEFINITION_TAG, SOLO_PAUSE_SCREEN) != NONE;
 	widget_count = menus->widget_count;
 	build.widget_tags = malloc((widget_count + 1) * sizeof(long));
 	build.text_tags = malloc((widget_count + 1) * sizeof(long));
@@ -1901,7 +2032,8 @@ boolean pc_menu_frame_placement(
 	short *x,
 	short *y,
 	short *width,
-	short *height)
+	short *height,
+	short *texel_y)
 {
 	long index;
 
@@ -1913,6 +2045,7 @@ boolean pc_menu_frame_placement(
 			*y = menu_tags.placements[index].y;
 			*width = menu_tags.placements[index].width;
 			*height = menu_tags.placements[index].height;
+			*texel_y = menu_tags.placements[index].texel_y;
 			return TRUE;
 		}
 	}
