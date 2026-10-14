@@ -189,6 +189,23 @@ static const struct config_setting config_settings[] =
 		_environment_value, _platform_all,
 		"The scoreboard panel's colour: \"red, green, blue, alpha\", each 0 to 255\n"
 		"(alpha 0 is see-through, 255 solid)." },
+	{ "display.server_messages", _config_boolean, "true", "HALO_SERVER_MESSAGES", _environment_value, _platform_all,
+		"Draw the banner for a warning or notice a Delta server sends; false hides\n"
+		"it. Either way the message is written to debug.txt." },
+	{ "display.server_message_text_color", _config_string, "\"\"", "HALO_SERVER_MESSAGE_TEXT_COLOR",
+		_environment_value, _platform_all,
+		"The banner's text colour, \"#RRGGBB\" or \"#RRGGBBAA\". Empty (or a value\n"
+		"that does not parse): the default, light for a notice and amber for a\n"
+		"warning. It applies to both kinds." },
+	{ "display.server_message_border_color", _config_string, "\"\"", "HALO_SERVER_MESSAGE_BORDER_COLOR",
+		_environment_value, _platform_all,
+		"The banner's outline colour, \"#RRGGBB\" or \"#RRGGBBAA\". Empty (or a\n"
+		"value that does not parse): the default, blue for a notice and amber for\n"
+		"a warning. It applies to both kinds." },
+	{ "display.server_message_background_color", _config_string, "\"\"", "HALO_SERVER_MESSAGE_BACKGROUND_COLOR",
+		_environment_value, _platform_all,
+		"The banner's background colour, \"#RRGGBB\" or \"#RRGGBBAA\". Empty (or a\n"
+		"value that does not parse): the default, dark blue." },
 	{ "display.per_pixel_lighting", _config_boolean, "false", "HALO_PER_PIXEL_LIGHTING", _environment_value,
 		_platform_all,
 		"Light the models (characters, weapons, vehicles, scenery) for each\n"
