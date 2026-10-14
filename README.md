@@ -130,7 +130,10 @@ Where the game's `maps` folder is:
 | Windows | next to `halo.exe` |
 | Android | `/sdcard/Android/data/dev.horrible.chupathingyce/files` |
 
-Copy the `.map` files from your own Halo PC install. Include `bitmaps.map`,
+Copy the `.map` files from your own Halo PC install. On Android, Import
+maps (hold the app's icon, or the touch controls' Options in the game)
+picks `.map` files or `.zip` archives with Android's own file picker and
+puts each in its folder. Include `bitmaps.map`,
 `sounds.map` and `loc.map` from Custom Edition in `maps_ce`: every Halo PC
 map reads them. Halo PC's own `ui.map` there adds its map names and
 pictures. The maps appear in the multiplayer map list after the Xbox maps,
