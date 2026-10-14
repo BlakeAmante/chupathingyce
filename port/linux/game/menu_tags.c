@@ -71,6 +71,8 @@ boolean pc_menu_frame_placement(struct bitmap_data const *bitmap, short *x, shor
 /* ---------- constants */
 
 #define PC_MENU_TAG_PREFIX "pc\\"
+/* the Chupathingy menus' main menu (port/assets/menus/chupathingy) */
+#define CHUPATHINGY_ROOT "chupathingy/main_menu"
 /* the multiplayer maps' widget collection, whose pause screens pause_patch
 adds to */
 #define MULTIPLAYER_COLLECTION "ui\\shell\\multiplayer"
@@ -416,6 +418,9 @@ static struct
 	struct pc_menu_setting *settings;
 	long setting_count;
 	boolean loaded;
+	/* (display.menus "chupathingy": its main menu, the Xbox's screens after a
+	network game) */
+	boolean chupathingy;
 	char root[300];
 #ifdef HALO_64BIT
 	/* the name of an empty reference, inside the Xbox address space as the
@@ -1810,10 +1815,19 @@ static void pause_patch(struct cache_file_tag_instance *instances)
 		platform_log("menus: the pause menu has SETTINGS%s", host && solo_screen == NONE ? " and END GAME" : "");
 }
 
-/* whether display.menus asks for the PC version's menus: "pc" in any case
-(a value neither "pc", "xbox" nor "chupathingy", the Xbox's drawn in our
-style by menu_style.c, is said once in the log, and is the Xbox's) */
-static boolean menus_pc_chosen(void)
+/* display.menus: the Xbox's menus, the PC version's, or Chupathingy's (the
+Xbox's, with the PC version's screens that the Xbox has not, in its look:
+port/assets/menus/chupathingy) */
+enum
+{
+	_menus_xbox,
+	_menus_pc,
+	_menus_chupathingy,
+};
+
+/* which display.menus asks for, in any case (a value that is none of them
+is said once in the log, and is the Xbox's) */
+static short menus_chosen(void)
 {
 	static boolean said;
 	char const *value = config_string("display.menus");
@@ -1826,13 +1840,22 @@ static boolean menus_pc_chosen(void)
 	if (value[index])
 		lower[0] = 0;
 	if (!strcmp(lower, "pc"))
-		return TRUE;
-	if (strcmp(lower, "xbox") && strcmp(lower, "chupathingy") && !said)
+		return _menus_pc;
+	if (!strcmp(lower, "chupathingy"))
+		return _menus_chupathingy;
+	if (strcmp(lower, "xbox") && !said)
 	{
 		platform_log("menus: display.menus \"%s\" is not \"xbox\", \"pc\" or \"chupathingy\": the Xbox's", value);
 		said = TRUE;
 	}
-	return FALSE;
+	return _menus_xbox;
+}
+
+/* whether the Chupathingy menus are up */
+boolean pc_menus_chupathingy(
+	void)
+{
+	return menu_tags.loaded && menu_tags.chupathingy;
 }
 
 void menu_tags_loaded(
@@ -1846,7 +1869,7 @@ void menu_tags_loaded(
 
 	/* (ui.map, and a multiplayer map: its pause menu's SETTINGS) */
 	if ((game_map && tag_loaded('Soul', MULTIPLAYER_COLLECTION) == NONE &&
-		tag_loaded(UI_WIDGET_DEFINITION_TAG, SOLO_PAUSE_SCREEN) == NONE) || !menus_pc_chosen())
+		tag_loaded(UI_WIDGET_DEFINITION_TAG, SOLO_PAUSE_SCREEN) == NONE) || menus_chosen() == _menus_xbox)
 	{
 		return;
 	}
@@ -1950,9 +1973,10 @@ void menu_tags_loaded(
 		/* (those it made) */
 		cache_files_set_tag_instances(instances, build.first_index + build.next);
 	}
-	else if (widget_named(menus->root) != NONE)
+	else if (widget_named(menus_chosen() == _menus_chupathingy ? CHUPATHINGY_ROOT : menus->root) != NONE)
 	{
-		snprintf(menu_tags.root, sizeof(menu_tags.root), "%s%s", PC_MENU_TAG_PREFIX, menus->root);
+		snprintf(menu_tags.root, sizeof(menu_tags.root), "%s%s", PC_MENU_TAG_PREFIX,
+			menus_chosen() == _menus_chupathingy ? CHUPATHINGY_ROOT : menus->root);
 		for (index = 0; menu_tags.root[index]; index++)
 		{
 			if (menu_tags.root[index] == '/')
@@ -1964,6 +1988,7 @@ void menu_tags_loaded(
 		platform_log("menus: there is no widget named %s, the main menu", menus->root);
 	}
 	menu_tags.loaded = TRUE;
+	menu_tags.chupathingy = menus_chosen() == _menus_chupathingy;
 	platform_log("menus: %ld widgets, %ld string lists and %ld bitmaps added to the map's %ld tags",
 		widget_count, own_lists + menus->string_list_count, menus->bitmap_count, build.first_index);
 	goto done;
@@ -2071,7 +2096,7 @@ short pc_menu_string_index(
 
 /* the screen the engine opens by name after a network game (the Xbox's),
 or ours where the PC version's menus are up: the host's map select, the
-lobby */
+lobby (the Chupathingy menus keep the Xbox's) */
 char const *pc_menus_screen(
 	char const *name)
 {
@@ -2088,7 +2113,7 @@ char const *pc_menus_screen(
 	};
 	short index;
 
-	if (!menu_tags.loaded)
+	if (!menu_tags.loaded || menu_tags.chupathingy)
 		return name;
 	for (index = 0; index < NUMBEROF(screens); index++)
 	{

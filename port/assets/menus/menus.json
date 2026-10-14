@@ -51,6 +51,8 @@
   "ce/main_menu.xml",
   "ce/shell.xml",
   "ce/strings.xml",
+  "chupathingy/main_menu.xml",
+  "chupathingy/settings.xml",
   "ce/port/blank__0.png",
   "ce/port/main_menu/multiplayer_type_select/coop/header_player_2.png",
   "ce/port/main_menu/multiplayer_type_select/join_game/header_direct_link.png",

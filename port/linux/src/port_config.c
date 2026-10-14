@@ -163,8 +163,8 @@ static const struct config_setting config_settings[] =
 		"PC version's screens and Server Browser, rebuilt from port/assets/menus\n"
 		"(a menus folder here for your own) with this port's fonts and redrawn\n"
 		"pictures, not Halo PC's files, or \"chupathingy\" for the Xbox's with\n"
-		"some screens drawn larger, as Online Games is (a preview: the main menu\n"
-		"and the map and gametype pickers). Read when the game starts: restart it\n"
+		"the PC version's PROFILES, SETTINGS and QUIT in the Xbox's look (a\n"
+		"preview). Read when the game starts: restart it\n"
 		"after a change. Not all of the PC screens are wired yet." },
 	{ "display.player_names", _config_string, "\"all\"", "HALO_PLAYER_NAMES", _environment_value, _platform_all,
 		"In multiplayer, whose names are drawn above their heads: \"all\",\n"
