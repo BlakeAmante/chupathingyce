@@ -40,6 +40,8 @@ cap_height units tall, its glyphs rasterized with oversample times the
 display's pixels (for text drawn scaled up); -1 if none, or
 display.high_res_text is off */
 long text_hires_font(char const *tag_name, float cap_height, float oversample);
+/* whether display.high_res_text is on, as it is now */
+int text_hires_enabled(void);
 /* whether the font has a glyph for the character (it draws a string only
 if it has all of its characters) */
 int text_hires_covers(long font, unsigned long code);
