@@ -23,6 +23,7 @@ before it is played.
 
 #include "map_archive.h"
 
+#include "monocypher.h"
 #include "zlib_prefixed.h"
 
 #include <stdarg.h>
@@ -486,4 +487,94 @@ int map_archive_setting(const char *text)
 const char *map_archive_setting_word(int setting)
 {
 	return setting == MAP_DOWNLOADS_ALWAYS ? "always" : setting == MAP_DOWNLOADS_NEVER ? "never" : "ask";
+}
+
+/* ---------- hashed names (the naming other builds use for shared maps) */
+
+int map_archive_hashed_name(const char *name, char *base, int base_size, unsigned int *prefix)
+{
+	size_t length, index;
+	unsigned int value = 0;
+
+	if (!name)
+		return 0;
+	length = strlen(name);
+	if (length < MAP_ARCHIVE_HASHED_NAME_DIGITS + 2 || name[length - MAP_ARCHIVE_HASHED_NAME_DIGITS - 1] != '_')
+		return 0;
+	for (index = length - MAP_ARCHIVE_HASHED_NAME_DIGITS; index < length; index++)
+	{
+		int character = lower((unsigned char)name[index]);
+
+		if (character >= '0' && character <= '9')
+			value = (value << 4) | (unsigned int)(character - '0');
+		else if (character >= 'a' && character <= 'f')
+			value = (value << 4) | (unsigned int)(character - 'a' + 10);
+		else
+			return 0;
+	}
+	if (base && base_size > 0)
+		snprintf(base, (size_t)base_size, "%.*s", (int)(length - MAP_ARCHIVE_HASHED_NAME_DIGITS - 1), name);
+	if (prefix)
+		*prefix = value;
+	return 1;
+}
+
+void map_archive_display_name(const char *name, char *display, int size)
+{
+	size_t index;
+
+	if (size <= 0)
+		return;
+	if (!map_archive_hashed_name(name, display, size, NULL))
+	{
+		snprintf(display, (size_t)size, "%s", name ? name : "");
+		return;
+	}
+	for (index = 0; display[index]; index++)
+		display[index] = (char)lower((unsigned char)display[index]);
+}
+
+int map_archive_map_hash(map_archive_read_proc read, map_archive_stop_proc stop, void *context, unsigned int size,
+	unsigned char *hash)
+{
+	enum
+	{
+		PIECE_SIZE = 0x40000,
+	};
+	static const char tag[] = "OpenCE map 1";
+	unsigned char size_bytes[4];
+	unsigned char piece_hash[MAP_ARCHIVE_HASH_SIZE];
+	crypto_blake2b_ctx whole;
+	unsigned char *piece = (unsigned char *)malloc(PIECE_SIZE);
+	unsigned int offset;
+	int ok = piece != NULL;
+
+	size_bytes[0] = (unsigned char)size;
+	size_bytes[1] = (unsigned char)(size >> 8);
+	size_bytes[2] = (unsigned char)(size >> 16);
+	size_bytes[3] = (unsigned char)(size >> 24);
+	crypto_blake2b_init(&whole, MAP_ARCHIVE_HASH_SIZE);
+	crypto_blake2b_update(&whole, (const unsigned char *)tag, sizeof(tag) - 1);
+	crypto_blake2b_update(&whole, size_bytes, sizeof(size_bytes));
+	for (offset = 0; ok && offset < size; offset += PIECE_SIZE)
+	{
+		unsigned int count = size - offset < PIECE_SIZE ? size - offset : PIECE_SIZE;
+
+		ok = (!stop || !stop(context)) && read(context, offset, piece, count);
+		if (ok)
+		{
+			crypto_blake2b(piece_hash, sizeof(piece_hash), piece, count);
+			crypto_blake2b_update(&whole, piece_hash, sizeof(piece_hash));
+		}
+	}
+	crypto_blake2b_final(&whole, hash);
+	free(piece);
+	return ok;
+}
+
+unsigned int map_archive_hash_prefix(const unsigned char *hash)
+{
+	/* (the digits in the order they are written: the bytes big-endian) */
+	return (unsigned int)hash[0] << 24 | (unsigned int)hash[1] << 16 | (unsigned int)hash[2] << 8 |
+		(unsigned int)hash[3];
 }

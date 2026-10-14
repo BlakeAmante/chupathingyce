@@ -184,6 +184,8 @@ static struct
 	known), "Don't ask again" ticked, and the download's progress */
 	short offer;
 	char offer_file[32];
+	/* (the name the player knows it by: a hashed name's base, map_archive.h) */
+	char offer_display[32];
 	unsigned long offer_version;
 	boolean offer_dont_ask;
 	struct map_download_progress offer_progress;
@@ -391,6 +393,8 @@ static void offer_map(
 {
 	csstrncpy(browser_screen.offer_file, file, sizeof(browser_screen.offer_file) - 1);
 	browser_screen.offer_file[sizeof(browser_screen.offer_file) - 1] = 0;
+	map_archive_display_name(browser_screen.offer_file, browser_screen.offer_display,
+		(int)sizeof(browser_screen.offer_display));
 	browser_screen.offer_version = version;
 	browser_screen.offer_dont_ask = FALSE;
 	map_download_reset();
@@ -414,7 +418,7 @@ static void offer_given_up(
 		set_status(why);
 	else
 	{
-		snprintf(text, sizeof(text), "Needs maps_ce/%s.map to join", browser_screen.offer_file);
+		snprintf(text, sizeof(text), "Needs maps_ce/%s.map to join", browser_screen.offer_display);
 		set_status(text);
 	}
 }
@@ -453,7 +457,7 @@ static void follow_download(
 		map_download_reset();
 		/* (the map's folder asked again: it is there now) */
 		browser_screen.ce_map_time = system_milliseconds() - CE_MAP_CHECK_INTERVAL - 1;
-		snprintf(text, sizeof(text), "Downloaded %s.map", browser_screen.offer_file);
+		snprintf(text, sizeof(text), "Downloaded %s.map", browser_screen.offer_display);
 		set_status(text);
 		if (browser_screen.rejoin_pending)
 			rejoin();
@@ -699,16 +703,21 @@ static char const *ce_map_blocker(
 	char *text,
 	long size)
 {
-	char file[BROWSER_MAP_LENGTH];
+	char file[BROWSER_MAP_LENGTH], display[BROWSER_MAP_LENGTH];
 	short family = map_file(game->map, file, sizeof(file));
 
 	switch (ce_map_state(game, FALSE))
 	{
 	case _ce_map_missing:
+		/* (a hashed name by the file the player knows: map_archive.h) */
+		map_archive_display_name(file, display, (int)sizeof(display));
 		if (ce_map_downloadable(game))
-			snprintf(text, (size_t)size, "Needs %s/%s.map: joining offers to download it", map_family_folder(family), file);
+		{
+			snprintf(text, (size_t)size, "Needs %s/%s.map: joining offers to download it", map_family_folder(family),
+				display);
+		}
 		else
-			snprintf(text, (size_t)size, "Needs %s/%s.map to join", map_family_folder(family), file);
+			snprintf(text, (size_t)size, "Needs %s/%s.map to join", map_family_folder(family), display);
 		return text;
 	case _ce_map_unsupported:
 		return family == _map_family_halomd ? "HaloMD maps need ChupathingyCE with Halo PC map support." :
@@ -823,6 +832,8 @@ void browser_screen_map_missing(
 		return;
 	csstrncpy(browser_screen.offer_file, file, sizeof(browser_screen.offer_file) - 1);
 	browser_screen.offer_file[sizeof(browser_screen.offer_file) - 1] = 0;
+	map_archive_display_name(browser_screen.offer_file, browser_screen.offer_display,
+		(int)sizeof(browser_screen.offer_display));
 	browser_screen.offer_version = version;
 	network_game_client_joined_host_identifier(browser_screen.rejoin_host, sizeof(browser_screen.rejoin_host));
 	browser_screen.rejoin_invite[0] = 0;
@@ -1588,12 +1599,12 @@ static void draw_map_offer(
 		float x;
 
 		snprintf(text, sizeof(text), "%s needs %s.map, which you don't have.", browser_screen.connecting_name,
-			browser_screen.offer_file);
+			browser_screen.offer_display);
 		/* (the game being joined, or "the game": a sentence's start) */
 		if (text[0] >= 'a' && text[0] <= 'z')
 			text[0] = (char)(text[0] - 32);
 		ui_overlay_text(UI_FONT_REGULAR, 10.0f, center, CONNECT_Y + 74, UI_ALIGN_CENTER, COLOR_DIM, text);
-		snprintf(text, sizeof(text), "Download %s.map from the", browser_screen.offer_file);
+		snprintf(text, sizeof(text), "Download %s.map from the", browser_screen.offer_display);
 		ui_overlay_text(UI_FONT_BOLD, 15.0f, center, CONNECT_Y + 100, UI_ALIGN_CENTER, 0xFFFFFFFF, text);
 		ui_overlay_text(UI_FONT_BOLD, 15.0f, center, CONNECT_Y + 120, UI_ALIGN_CENTER, 0xFFFFFFFF,
 			"community map repository?");
@@ -1620,7 +1631,7 @@ static void draw_map_offer(
 		float bar_x = CONNECT_X + 40, bar_width = CONNECT_WIDTH - 80;
 		float done = 0.0f;
 
-		snprintf(text, sizeof(text), "Downloading %s.map", browser_screen.offer_file);
+		snprintf(text, sizeof(text), "Downloading %s.map", browser_screen.offer_display);
 		ui_overlay_text(UI_FONT_BOLD, 15.0f, center, CONNECT_Y + 92, UI_ALIGN_CENTER, 0xFFFFFFFF, text);
 		switch (progress->phase)
 		{
@@ -1661,14 +1672,14 @@ static void draw_map_offer(
 		static int const buttons[] = { UI_BUTTON_B };
 		static char const *const words[] = { "=CLOSE" };
 
-		snprintf(text, sizeof(text), "Could not download %s.map", browser_screen.offer_file);
+		snprintf(text, sizeof(text), "Could not download %s.map", browser_screen.offer_display);
 		ui_overlay_text(UI_FONT_BOLD, 15.0f, center, CONNECT_Y + 100, UI_ALIGN_CENTER, COLOR_CLOSED, text);
 		/* (why, as a sentence) */
 		snprintf(text, sizeof(text), "%s.", progress->message[0] ? progress->message : "the repositories did not answer");
 		if (text[0] >= 'a' && text[0] <= 'z')
 			text[0] = (char)(text[0] - 32);
 		ui_overlay_text(UI_FONT_REGULAR, 10.0f, center, CONNECT_Y + 132, UI_ALIGN_CENTER, COLOR_TEXT, text);
-		snprintf(text, sizeof(text), "If you have it, copy %s.map into maps_ce.", browser_screen.offer_file);
+		snprintf(text, sizeof(text), "If you have it, copy %s.map into maps_ce.", browser_screen.offer_display);
 		ui_overlay_text(UI_FONT_REGULAR, 9.5f, center, CONNECT_Y + 166, UI_ALIGN_CENTER, COLOR_DIM, text);
 		panel_prompts(NUMBEROF(buttons), buttons, words);
 		break;

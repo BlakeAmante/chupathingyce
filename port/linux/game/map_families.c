@@ -11,6 +11,8 @@ play it); the files are looked for only on the builds that play such maps
 #include "cseries.h"
 #include "cseries/cseries_windows.h"
 #include "halo_map_families.h"
+#include "../src/map_archive.h"
+#include "../src/map_file_hash.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -247,6 +249,7 @@ static struct map_family_place const resource_places[] =
 /* ---------- prototypes */
 
 char const *cache_files_map_directory(void);
+void platform_log(char const *format, ...);
 
 /* ---------- private code */
 
@@ -309,6 +312,49 @@ static boolean cache_file_is(
 	return result;
 }
 
+/* a hashed name's map (<base>_<8 hex digits>, the naming other builds use
+for the maps their hosts share: port/linux/src/map_archive.h) found by its
+base name: the first <base>.map in the places whose whole-file hash begins
+with the name's digits. The game plays it under the hashed name, which the
+host's game names it by */
+static boolean hashed_name_find(
+	struct map_family_place const *places,
+	long count,
+	char const *file,
+	char *path,
+	long size)
+{
+	static char logged[MAP_FAMILY_FILE_LENGTH + 256];
+	char base[MAP_FAMILY_FILE_LENGTH];
+	char line[sizeof(logged)];
+	unsigned int prefix, found;
+	long index;
+
+	if (!map_archive_hashed_name(file, base, sizeof(base), &prefix))
+		return FALSE;
+	for (index = 0; index < count; index++)
+	{
+		char folder[256];
+
+		place_folder(&places[index], folder, sizeof(folder));
+		snprintf(path, (size_t)size, "%s%s%s.map", folder, base, places[index].suffix);
+		if (!cache_file_is(path, CUSTOM_EDITION_CACHE_VERSION, FALSE) || !map_file_hash_prefix(path, &found) ||
+			found != prefix)
+		{
+			continue;
+		}
+		/* (said once, not at every look for it) */
+		snprintf(line, sizeof(line), "%s %s", file, path);
+		if (strcmp(line, logged))
+		{
+			snprintf(logged, sizeof(logged), "%s", line);
+			platform_log("map: %s is %s (hash matches)", file, strrchr(path, '\\') ? strrchr(path, '\\') + 1 : path);
+		}
+		return TRUE;
+	}
+	return FALSE;
+}
+
 /* ---------- public code */
 
 long map_family_cache_version(
@@ -366,6 +412,10 @@ boolean map_family_find(
 		if (cache_file_is(path, family_cache_version(family), FALSE))
 			return TRUE;
 	}
+	/* (a Custom Edition map by a hashed name another build's host gave it:
+	its base name's file, in the same places, if its hash is the name's) */
+	if (family == _map_family_custom_edition && hashed_name_find(places, count, file, path, size))
+		return TRUE;
 	path[0] = 0;
 	return FALSE;
 }

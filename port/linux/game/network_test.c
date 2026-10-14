@@ -20,6 +20,10 @@ Automated system link sessions for testing the netcode without the menus
   Online Games screen does when a game needs it (map_download.c; the host's
   checksum, in hex, when given, is the version it must be), logs the result
   ("network test: map download ..."), and quits;
+- "find:<name>" looks for the Custom Edition map <name> as a game on it
+  does (map_family_find: a hashed name's map by its base name too), logs
+  the file found ("network test: find ...") once the main menu is up, and
+  quits;
 - "offer:<name>[:<checksum>]" shows the Online Games screen's offer of that
   map over the main menu, as a join left for want of it does
   (browser_screen_map_missing), for its panel to be seen and driven.
@@ -64,6 +68,7 @@ Called from the main loop every frame (main.c).
 #include "scenario/scenario.h"
 #include "tag_files/tag_files.h"
 #include "camera/observer.h"
+#include "cache/cache_files.h"
 #include "halo_map_families.h"
 #include "../src/map_download.h"
 
@@ -97,6 +102,7 @@ enum
 	_network_test_join,
 	_network_test_download,
 	_network_test_offer,
+	_network_test_find,
 };
 
 static struct
@@ -180,6 +186,11 @@ static void network_test_read_settings(
 	else if (!strcmp(setting, "join"))
 	{
 		network_test.mode = _network_test_join;
+	}
+	else if (!strncmp(setting, "find:", 5) && setting[5])
+	{
+		network_test.mode = _network_test_find;
+		snprintf(network_test.map_name, sizeof(network_test.map_name), "%s", setting + 5);
 	}
 	else if ((!strncmp(setting, "download:", 9) && setting[9]) || (!strncmp(setting, "offer:", 6) && setting[6]))
 	{
@@ -803,6 +814,20 @@ void network_test_update(
 	if (network_test.mode == _network_test_download)
 	{
 		network_test_download(main_menu_loaded);
+		return;
+	}
+	if (network_test.mode == _network_test_find)
+	{
+		if (main_menu_loaded)
+		{
+			char path[256], map_name[80];
+
+			snprintf(map_name, sizeof(map_name), "%s@ce", network_test.map_name);
+			platform_log("network test: find %s: %s (version %08lx)", network_test.map_name,
+				map_family_find(_map_family_custom_edition, network_test.map_name, path, sizeof(path)) ? path : "no",
+				cache_files_map_version(map_name));
+			exit(0);
+		}
 		return;
 	}
 	if (network_test.mode == _network_test_offer)

@@ -7,8 +7,13 @@ Edition header a downloaded map must have. Built with the build machine's
 C compiler and the port's zlib, under AddressSanitizer and
 UndefinedBehaviorSanitizer where it has them.
 
-The last test downloads a real map from the community map repository
-(maps.halonet.net) and checks it as the game does; it is skipped when the
+Also the hashed names other builds give the maps their hosts share
+(<base>_<8 hex digits>, the digits the start of the map's whole-file hash):
+the names read, and the hash against a reference written here in Python.
+
+The last tests download real maps from the community map repository
+(maps.halonet.net) and check them as the game does (sneak's whole-file hash
+is the one a host named Sneak_af352483 by); they are skipped when the
 repository can't be reached, or when HALO_MAP_DOWNLOAD_ONLINE=0."""
 import io
 import os
@@ -16,6 +21,7 @@ import shutil
 import struct
 import subprocess
 import urllib.request
+import hashlib
 import zipfile
 import zlib
 from pathlib import Path
@@ -26,6 +32,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "port" / "linux" / "src"
 ZLIB = ROOT / "port" / "third_party" / "zlib"
 ZLIB_SOURCES = ["adler32.c", "crc32.c", "inffast.c", "inflate.c", "inftrees.c", "zutil.c"]
+MONOCYPHER = ROOT / "port" / "third_party" / "monocypher"
 TEST = ROOT / "port" / "linux" / "tests" / "map_archive_test.c"
 SANITIZERS = ["-fsanitize=address,undefined", "-fno-sanitize-recover=all"]
 LIMIT = 200 * 1024 * 1024
@@ -34,6 +41,11 @@ LIMIT = 200 * 1024 * 1024
 # checksum (what a host advertises as its version)
 ONLINE_MAP = "putput"
 ONLINE_CHECKSUM = "af2f0b84"
+# a map a host shared by a hashed name (Sneak_af352483): the repository's
+# file, its header's checksum and its whole-file hash's first digits
+HASHED_MAP = "sneak"
+HASHED_CHECKSUM = "4f8d6f69"
+HASHED_PREFIX = "af352483"
 ONLINE_URL = "https://maps.halonet.net/halonet/locator.php?format=zip&map={}&type=halom"
 
 
@@ -54,21 +66,22 @@ def harness(tmp_path_factory):
     binary = directory / "map_archive_test"
     objects = []
     # (zlib as the port builds it: prefixed, its own warnings its own)
-    for name in ZLIB_SOURCES:
-        obj = directory / (name + ".o")
+    # (and Monocypher's BLAKE2b, for the hashed names)
+    sanitize = SANITIZERS
+    for source in [ZLIB / name for name in ZLIB_SOURCES] + [MONOCYPHER / "monocypher.c"]:
+        obj = directory / (source.name + ".o")
         result = subprocess.run([cc, "-c", "-O1", "-g", "-w", "-DZ_PREFIX", "-Dz_errmsg=z_port_errmsg",
-                                 str(ZLIB / name), "-o", str(obj), *SANITIZERS], capture_output=True, text=True)
-        if result.returncode != 0:
-            result = subprocess.run([cc, "-c", "-O1", "-g", "-w", "-DZ_PREFIX", "-Dz_errmsg=z_port_errmsg",
-                                     str(ZLIB / name), "-o", str(obj)], capture_output=True, text=True)
+                                 str(source), "-o", str(obj), *sanitize], capture_output=True, text=True)
+        if result.returncode != 0 and sanitize:
             sanitize = []
-        else:
-            sanitize = SANITIZERS
+            result = subprocess.run([cc, "-c", "-O1", "-g", "-w", "-DZ_PREFIX", "-Dz_errmsg=z_port_errmsg",
+                                     str(source), "-o", str(obj)], capture_output=True, text=True)
         assert result.returncode == 0, result.stderr
         objects.append(obj)
     result = subprocess.run(
         [cc, "-std=c99", "-Wall", "-Wextra", "-Werror", "-O1", "-g", *sanitize, "-DZ_PREFIX",
-         "-Dz_errmsg=z_port_errmsg", f"-I{SOURCE}", f"-I{ZLIB}", str(TEST), str(SOURCE / "map_archive.c"),
+         "-Dz_errmsg=z_port_errmsg", f"-I{SOURCE}", f"-I{ZLIB}", f"-I{MONOCYPHER}", str(TEST),
+         str(SOURCE / "map_archive.c"),
          *map(str, objects), "-o", str(binary)], capture_output=True, text=True)
     assert result.returncode == 0, result.stdout + result.stderr
     return binary
@@ -350,6 +363,60 @@ def test_header_too_small(harness, tmp_path):
     assert header(harness, tmp_path, make_map()[:0x400]).startswith("refused:")
 
 
+# ---------- hashed names
+
+
+def reference_hash(data):
+    """the whole-file hash other builds name shared maps by, written out
+    plainly: BLAKE2b-256 of "OpenCE map 1", the size (4 bytes, little-endian)
+    and each 0x40000-byte piece's BLAKE2b-256"""
+    whole = hashlib.blake2b(digest_size=32)
+    whole.update(b"OpenCE map 1" + struct.pack("<I", len(data)))
+    for offset in range(0, len(data), 0x40000):
+        whole.update(hashlib.blake2b(data[offset:offset + 0x40000], digest_size=32).digest())
+    return whole.hexdigest()
+
+
+@pytest.mark.parametrize("name,base,digits", [
+    ("Sneak_af352483", "Sneak", "af352483"),
+    ("sneak_AF352483", "sneak", "af352483"),
+    ("a_00000000", "a", "00000000"),
+    ("bigass_v2_ffffffff", "bigass_v2", "ffffffff"),
+    ("x_12345678_9abcdef0", "x_12345678", "9abcdef0"),
+])
+def test_hashed_names(harness, name, base, digits):
+    assert run(harness, "hashed", name) == f"hashed {base} {digits}"
+
+
+@pytest.mark.parametrize("name", [
+    "sneak", "Sneakaf352483", "_af352483", "af352483", "Sneak_af35248", "Sneak_af3524830", "Sneak_af35248g",
+    "Sneak-af352483", "Sneak_ af35248", "Sneak_0xaf3524", "", "Sneak_",
+])
+def test_plain_names(harness, name):
+    assert run(harness, "hashed", name) == "plain"
+
+
+@pytest.mark.parametrize("name,display", [("Sneak_af352483", "sneak"), ("Bigass_v2_DEADBEEF", "bigass_v2"),
+                                          ("Sneak", "Sneak"), ("putput", "putput")])
+def test_display_names(harness, name, display):
+    assert run(harness, "display", name) == display
+
+
+@pytest.mark.parametrize("size", [0, 1, 0x800, 0x3FFFF, 0x40000, 0x40001, 3 * 0x40000 + 5])
+def test_whole_file_hash(harness, tmp_path, size):
+    data = bytes((index * 31 + (index >> 9)) & 0xFF for index in range(size))
+    path = write(tmp_path, data, "hashed.map")
+    expected = reference_hash(data)
+    assert run(harness, "hash", path) == f"{expected} {expected[:8]}"
+
+
+def test_whole_file_hash_sees_every_byte(harness, tmp_path):
+    data = bytearray(make_map(size=0x90000))
+    first = run(harness, "hash", write(tmp_path, data, "a.map"))
+    data[0x8FFFF] ^= 1
+    assert run(harness, "hash", write(tmp_path, data, "b.map")) != first
+
+
 # ---------- the real repository
 
 
@@ -369,3 +436,28 @@ def test_real_repository_map(harness, tmp_path):
     assert output.startswith("ok "), output
     assert run(harness, "header", out, ONLINE_MAP, ONLINE_CHECKSUM) == "ok"
     assert "another version" in run(harness, "header", out, ONLINE_MAP, "00000001")
+
+
+def download(name, tmp_path):
+    if os.environ.get("HALO_MAP_DOWNLOAD_ONLINE") == "0":
+        pytest.skip("HALO_MAP_DOWNLOAD_ONLINE=0")
+    request = urllib.request.Request(ONLINE_URL.format(name), headers={"User-Agent": "ChupathingyCE tests"})
+    try:
+        with urllib.request.urlopen(request, timeout=120) as response:
+            data = response.read(LIMIT + 1)
+    except OSError as failure:
+        pytest.skip(f"the repository can't be reached: {failure}")
+    assert len(data) <= LIMIT
+    return write(tmp_path, data, f"{name}.zip")
+
+
+def test_real_hashed_map(harness, tmp_path):
+    """the repository's sneak.map is the map a host named Sneak_af352483"""
+    archive = download(HASHED_MAP, tmp_path)
+    out = tmp_path / f"{HASHED_MAP}.map"
+    assert run(harness, "extract", archive, HASHED_MAP, out).startswith("ok ")
+    assert run(harness, "header", out, HASHED_MAP, HASHED_CHECKSUM) == "ok"
+    digest, prefix = run(harness, "hash", out).split()
+    assert prefix == HASHED_PREFIX
+    assert digest == reference_hash(out.read_bytes())
+    assert run(harness, "hashed", "Sneak_" + HASHED_PREFIX) == f"hashed Sneak {HASHED_PREFIX}"

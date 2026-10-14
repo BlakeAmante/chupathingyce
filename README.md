@@ -167,6 +167,14 @@ default), `"always"` or `"never"`. Desktop and Android builds download maps;
 the dedicated server doesn't. HaloMD and Halo PC retail maps aren't
 downloaded.
 
+**Maps named with a hash.** Hosts on some other builds name a shared Custom
+Edition map `<name>_<8 hex digits>` (a game on `Sneak_af352483`, say), the
+digits the start of a hash of the whole map file. ChupathingyCE plays such a
+game from your `<name>.map` (`sneak.map`) when its hash matches, and the
+downloader fetches `<name>.map` for it, checking the hash too. If your
+`<name>.map` is another version, the download is kept beside it as
+`<name>_<digits>.map`.
+
 **Older folders.** Earlier ChupathingyCE versions kept Custom Edition maps
 in `maps/ce/` and HaloMD maps in `md_maps/`, and other builds keep their Custom
 Edition maps in `custom_maps/`. The game still plays the maps in all three.

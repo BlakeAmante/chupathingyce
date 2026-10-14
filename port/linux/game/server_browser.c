@@ -115,14 +115,17 @@ boolean server_browser_map_downloadable(char const *map)
 
 boolean server_browser_map_blocked(char const *map, wchar_t *message, short length)
 {
-	char file[MAP_FILE_LENGTH], text[MAP_FILE_LENGTH + 64];
+	char file[MAP_FILE_LENGTH], display[MAP_FILE_LENGTH], text[MAP_FILE_LENGTH + 64];
 	short family = map_family_parse(map, file, sizeof(file));
 
 	switch (ce_map_state(map))
 	{
 	case _ce_map_missing:
+		/* (a hashed name by the file the player knows: map_archive.h) */
+		map_archive_display_name(file, display, (int)sizeof(display));
 		snprintf(text, sizeof(text), server_browser_map_downloadable(map) ?
-			"Needs %s/%s.map: joining offers to download it" : "Needs %s/%s.map to join", map_family_folder(family), file);
+			"Needs %s/%s.map: joining offers to download it" : "Needs %s/%s.map to join", map_family_folder(family),
+			display);
 		break;
 	case _ce_map_unsupported:
 		snprintf(text, sizeof(text), "%s maps need ChupathingyCE with Halo PC map support.",

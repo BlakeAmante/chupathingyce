@@ -9,6 +9,9 @@ repository's, where it can reach it):
   map_archive_test setting <text>                 ask | always | never
   map_archive_test extract <zip> <name> [<out>]   ok <size> <crc32> | refused: <why>
   map_archive_test header <map> <name> <version>  ok | refused: <why>
+  map_archive_test hashed <text>                  hashed <base> <digits> | plain
+  map_archive_test display <text>                 the name a player knows the map by
+  map_archive_test hash <map>                     its whole-file hash, in hex
   map_archive_test selftest                       ok, or what failed
 
 No file is written but <out>; nothing in an archive names a path.
@@ -233,6 +236,49 @@ int main(int argc, char **argv)
 		else
 			printf("refused: %s\n", error);
 		free(map);
+		return 0;
+	}
+	if (argc == 3 && !strcmp(argv[1], "hashed"))
+	{
+		char base[64];
+		unsigned int prefix = 0;
+
+		if (map_archive_hashed_name(argv[2], base, (int)sizeof(base), &prefix))
+			printf("hashed %s %08x\n", base, prefix);
+		else
+			printf("plain\n");
+		return 0;
+	}
+	if (argc == 3 && !strcmp(argv[1], "display"))
+	{
+		char display[64];
+
+		map_archive_display_name(argv[2], display, (int)sizeof(display));
+		printf("%s\n", display);
+		return 0;
+	}
+	if (argc == 3 && !strcmp(argv[1], "hash"))
+	{
+		struct memory memory;
+		unsigned char hash[MAP_ARCHIVE_HASH_SIZE];
+		int index;
+
+		memset(&memory, 0, sizeof(memory));
+		memory.archive = read_file(argv[2], &memory.archive_size);
+		if (!memory.archive)
+		{
+			printf("cannot read %s\n", argv[2]);
+			return 2;
+		}
+		if (!map_archive_map_hash(memory_read, NULL, &memory, memory.archive_size, hash))
+		{
+			printf("refused: not read whole\n");
+			return 1;
+		}
+		for (index = 0; index < MAP_ARCHIVE_HASH_SIZE; index++)
+			printf("%02x", hash[index]);
+		printf(" %08x\n", map_archive_hash_prefix(hash));
+		free(memory.archive);
 		return 0;
 	}
 	fprintf(stderr, "usage: see map_archive_test.c\n");

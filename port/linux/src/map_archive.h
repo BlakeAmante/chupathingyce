@@ -3,10 +3,10 @@ MAP_ARCHIVE.H
 
 What a Custom Edition map downloaded from the community map repositories
 is checked and unpacked by (map_archive.c, for map_download.c): the name it
-is asked for by, the zip archive it comes in, its cache file's header, and
-network.map_downloads's words.
-No file, network or game dependency (zlib alone): the tests build it by
-itself (tools/test_map_download.py).
+is asked for by, the zip archive it comes in, its cache file's header, the
+hashed names other builds give shared maps, and network.map_downloads's
+words. No file, network or game dependency (zlib, and Monocypher's
+BLAKE2b): the tests build it by itself (tools/test_map_download.py).
 
 Plain types only: the game's units (64-bit builds rewrite their long) and
 the tests both call it.
@@ -24,6 +24,10 @@ enum
 	/* a map's file name, at most (its header's name field, less its
 	terminator) */
 	MAP_ARCHIVE_MAXIMUM_NAME_LENGTH = 31,
+	/* a map's whole-file hash (map_archive_map_hash), in bytes */
+	MAP_ARCHIVE_HASH_SIZE = 32,
+	/* the hex digits of it a hashed name ends in */
+	MAP_ARCHIVE_HASHED_NAME_DIGITS = 8,
 };
 
 /* network.map_downloads */
@@ -87,5 +91,37 @@ const char *map_archive_setting_word(int setting);
 
 /* a header's checksum (the host's map version) */
 unsigned int map_archive_header_checksum(const unsigned char *header);
+
+/* ---------- hashed names
+
+The names other builds give the Custom Edition maps their hosts share:
+<base>_<8 hex digits>, the digits the first of the map file's whole-file
+hash (map_archive_map_hash), so that two versions of a map have two names.
+The file is the community repositories' <base>.map, its contents unchanged:
+the game finds a hashed name's map by its base name when the hash matches
+(map_families.c), and the downloader asks the repositories for the base. */
+
+/* whether name is a hashed name: a base of at least one character, '_', and
+MAP_ARCHIVE_HASHED_NAME_DIGITS hex digits (either case) ending it. 1 with
+the base in base (base_size bytes, NULL for none) and the digits' value in
+*prefix (NULL for none), else 0 */
+int map_archive_hashed_name(const char *name, char *base, int base_size, unsigned int *prefix);
+
+/* the name a player knows a map by: a hashed name's base, in lowercase (the
+repositories' file), else the name itself */
+void map_archive_display_name(const char *name, char *display, int size);
+
+/* a map file's whole-file hash, as other builds name shared maps by it:
+BLAKE2b-256 of "OpenCE map 1", the file's size (4 bytes, little-endian) and
+the BLAKE2b-256 of each 0x40000-byte piece of the file in turn (the last
+piece shorter). The file's size bytes are read through read; stop (NULL
+for never) may end it early. 1 with the hash in hash
+(MAP_ARCHIVE_HASH_SIZE bytes), else 0 */
+int map_archive_map_hash(map_archive_read_proc read, map_archive_stop_proc stop, void *context, unsigned int size,
+	unsigned char *hash);
+
+/* a hash's first MAP_ARCHIVE_HASHED_NAME_DIGITS hex digits, as a number
+(what a hashed name ends in) */
+unsigned int map_archive_hash_prefix(const unsigned char *hash);
 
 #endif

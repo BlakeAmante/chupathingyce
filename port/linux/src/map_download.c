@@ -13,7 +13,12 @@ MAP_ARCHIVE_MAXIMUM_SIZE), the next repository asked when one fails; the
 map alone is unpacked from it (map_archive.c), into a file of its own; its
 header is checked (a Custom Edition multiplayer map named for the map asked
 for, and the host's version of it, when the host says which); and only then
-is it renamed <name>.map, never over a file that is there. The archive and
+is it renamed <name>.map, never over a file that is there. A hashed name
+(<base>_<8 hex digits>, the naming other builds use for the maps their
+hosts share: map_archive.h) is asked for by its base, and its map must also
+have the whole-file hash the name ends in; it is put in <base>.map, or in a
+file of the hashed name when another version of <base>.map is there (the
+game finds either: map_families.c). The archive and
 any partial file are deleted, whatever happens. The map is then marked as
 downloaded (map_families.c, for good: maps_ce/downloaded_maps.txt), so its
 scripts are held to a downloaded map's rules, and the game's own checks read all of it before it is played
@@ -27,6 +32,7 @@ player's), the sizes, which checks passed or failed, and the result.
 #include "port_config.h"
 #include "map_archive.h"
 #include "map_download.h"
+#include "map_file_hash.h"
 #include "halo_map_families.h"
 #ifdef HALO_GAME_BROWSER
 #include "browser_http.h"
@@ -65,8 +71,10 @@ static struct
 	/* set by the game's thread, read by the download's */
 	volatile int cancel;
 	int running;
-	/* the map installed is marked as downloaded (map_download_get) */
+	/* the map installed is marked as downloaded (map_download_get), and
+	the file it was put in (a hashed name's: its base's, or its own) */
 	int remembered;
+	char installed[32];
 } map_download = { PTHREAD_MUTEX_INITIALIZER };
 
 /* ---------- private code */
@@ -89,11 +97,15 @@ static void finish(int state, const char *message)
 	pthread_mutex_unlock(&map_download.lock);
 }
 
-static void paths(const char *name, char *archive, char *partial, char *final)
+static void paths(const char *name, char *archive, char *partial)
 {
 	snprintf(archive, MAP_DOWNLOAD_PATH_SIZE, "d:\\maps_ce\\%s.zip.download", name);
 	snprintf(partial, MAP_DOWNLOAD_PATH_SIZE, "d:\\maps_ce\\%s.map.download", name);
-	snprintf(final, MAP_DOWNLOAD_PATH_SIZE, "d:\\maps_ce\\%s.map", name);
+}
+
+static void final_path(const char *file, char *path)
+{
+	snprintf(path, MAP_DOWNLOAD_PATH_SIZE, "d:\\maps_ce\\%s.map", file);
 }
 
 #ifdef HALO_GAME_BROWSER
@@ -218,10 +230,12 @@ static int receive(const char *url, const char *path, int *status, char *error, 
 	return ok;
 }
 
-/* the map unpacked from the archive at archive_path into partial_path, and
-its header checked: 1, or 0 with why in error */
-static int unpack_and_check(const char *name, const char *archive_path, const char *partial_path, char *error,
-	int error_size)
+/* the map file (its name in the archive, and inside it) unpacked from the
+archive at archive_path into partial_path, and its header checked; for a
+hashed name (hashed), its whole-file hash too, which must begin with
+prefix: 1, or 0 with why in error */
+static int unpack_and_check(const char *file, int hashed, unsigned int prefix, const char *archive_path,
+	const char *partial_path, char *error, int error_size)
 {
 	unsigned char header[MAP_ARCHIVE_HEADER_SIZE];
 	struct map_archive_io io;
@@ -254,26 +268,46 @@ static int unpack_and_check(const char *name, const char *archive_path, const ch
 	if (high || io.archive_size == INVALID_FILE_SIZE)
 		io.archive_size = 0xffffffffu;
 	set_phase(MAP_DOWNLOAD_UNPACKING, 0, 0);
-	ok = map_archive_extract(&io, name, &map_size, error, error_size);
+	ok = map_archive_extract(&io, file, &map_size, error, error_size);
 	CloseHandle(files.archive);
 	if (ok)
 	{
-		platform_log("map download: unpacked %s.map, %u bytes (size and CRC-32 checked)", name, map_size);
+		platform_log("map download: unpacked %s.map, %u bytes (size and CRC-32 checked)", file, map_size);
 		set_phase(MAP_DOWNLOAD_CHECKING, 0, 0);
 		ok = SetFilePointer(files.map, 0, NULL, FILE_BEGIN) != INVALID_SET_FILE_POINTER &&
 			ReadFile(files.map, header, sizeof(header), &read, NULL) && read == sizeof(header);
 		if (!ok)
 			snprintf(error, (size_t)error_size, "the map could not be read back");
 		else
-			ok = map_archive_check_header(header, map_size, name, map_download.version, error, error_size);
+			ok = map_archive_check_header(header, map_size, file, map_download.version, error, error_size);
 		if (ok)
 		{
-			platform_log("map download: %s.map is a Custom Edition multiplayer map named %s, checksum %08x%s", name,
-				name, map_archive_header_checksum(header), map_download.version ? " (the host's)" :
+			platform_log("map download: %s.map is a Custom Edition multiplayer map named %s, checksum %08x%s", file,
+				file, map_archive_header_checksum(header), map_download.version ? " (the host's)" :
 				" (the host's not known)");
 		}
 	}
 	CloseHandle(files.map);
+	/* (a hashed name's map is the host's file to the byte) */
+	if (ok && hashed)
+	{
+		unsigned int found = 0;
+
+		set_phase(MAP_DOWNLOAD_CHECKING, 0, 0);
+		if (!map_file_hash_prefix(partial_path, &found))
+		{
+			snprintf(error, (size_t)error_size, "the map could not be read back");
+			ok = 0;
+		}
+		else if (found != prefix)
+		{
+			snprintf(error, (size_t)error_size, "its hash begins %08x, the host's %08x: another version of the map",
+				found, prefix);
+			ok = 0;
+		}
+		else
+			platform_log("map download: %s.map's hash begins %08x, the host's", file, found);
+	}
 	return ok;
 }
 
@@ -281,11 +315,14 @@ static void *download_thread(void *argument)
 {
 	char name[sizeof(map_download.progress.name)];
 	char asked[sizeof(name)];
-	char archive_path[MAP_DOWNLOAD_PATH_SIZE], partial_path[MAP_DOWNLOAD_PATH_SIZE], final_path[MAP_DOWNLOAD_PATH_SIZE];
+	char archive_path[MAP_DOWNLOAD_PATH_SIZE], partial_path[MAP_DOWNLOAD_PATH_SIZE], path[MAP_DOWNLOAD_PATH_SIZE];
 	char error[160] = "";
+	const char *installed = NULL;
+	unsigned int prefix = 0;
 	size_t index;
 	int received = 0;
 	int status = 0;
+	int hashed;
 	/* (whether every repository said it has no such map) */
 	int missing = 1;
 
@@ -293,10 +330,16 @@ static void *download_thread(void *argument)
 	pthread_mutex_lock(&map_download.lock);
 	snprintf(name, sizeof(name), "%s", map_download.progress.name);
 	pthread_mutex_unlock(&map_download.lock);
-	/* (asked for in lowercase, as the repositories name their maps) */
-	for (index = 0; index <= strlen(name); index++)
-		asked[index] = (char)(name[index] >= 'A' && name[index] <= 'Z' ? name[index] + ('a' - 'A') : name[index]);
-	paths(name, archive_path, partial_path, final_path);
+	/* (asked for in lowercase, as the repositories name their maps; a hashed
+	name by its base, the repositories' file: map_archive.h) */
+	hashed = map_archive_hashed_name(name, asked, sizeof(asked), &prefix);
+	if (!hashed)
+		snprintf(asked, sizeof(asked), "%s", name);
+	for (index = 0; asked[index]; index++)
+		asked[index] = (char)(asked[index] >= 'A' && asked[index] <= 'Z' ? asked[index] + ('a' - 'A') : asked[index]);
+	if (hashed)
+		platform_log("map download: %s is a hashed name: %s.map, its hash beginning %08x", name, asked, prefix);
+	paths(name, archive_path, partial_path);
 	CreateDirectoryA("d:\\maps_ce", NULL);
 	DeleteFileA(archive_path);
 	DeleteFileA(partial_path);
@@ -318,19 +361,41 @@ static void *download_thread(void *argument)
 		}
 	}
 	if (!received && missing && !map_download.cancel)
-		snprintf(error, sizeof(error), "the community map repositories don't have %s.map", name);
-	if (received && !unpack_and_check(name, archive_path, partial_path, error, sizeof(error)))
+		snprintf(error, sizeof(error), "the community map repositories don't have %s.map", asked);
+	if (received && !unpack_and_check(hashed ? asked : name, hashed, prefix, archive_path, partial_path, error,
+		sizeof(error)))
 	{
 		platform_log("map download: %s.map refused: %s", name, error);
 		received = 0;
 	}
 	DeleteFileA(archive_path);
-	/* (in place, never over a file that is there: MoveFileA refuses one) */
-	if (received && !MoveFileA(partial_path, final_path))
+	/* (in place, never over a file that is there: MoveFileA refuses one. A
+	hashed name's map is put in its base's file, as the repositories name
+	it; if another version of it is there, in a file of the hashed name, so
+	both are kept: the game looks for the hashed name's own file first) */
+	if (received)
 	{
-		snprintf(error, sizeof(error), "maps_ce/%s.map could not be put in place (is it there already?)", name);
-		platform_log("map download: %s", error);
-		received = 0;
+		installed = hashed ? asked : name;
+		final_path(installed, path);
+		if (!MoveFileA(partial_path, path))
+		{
+			installed = NULL;
+			if (hashed)
+			{
+				platform_log("map download: maps_ce/%s.map is there already, another version: putting this one in "
+					"%s.map", asked, name);
+				installed = name;
+				final_path(installed, path);
+				if (!MoveFileA(partial_path, path))
+					installed = NULL;
+			}
+		}
+		if (!installed)
+		{
+			snprintf(error, sizeof(error), "maps_ce/%s.map could not be put in place (is it there already?)", name);
+			platform_log("map download: %s", error);
+			received = 0;
+		}
 	}
 	if (!received)
 	{
@@ -347,7 +412,13 @@ static void *download_thread(void *argument)
 		}
 		return NULL;
 	}
-	platform_log("map download: %s.map installed in maps_ce", name);
+	pthread_mutex_lock(&map_download.lock);
+	snprintf(map_download.installed, sizeof(map_download.installed), "%s", installed);
+	pthread_mutex_unlock(&map_download.lock);
+	if (hashed)
+		platform_log("map download: %s installed in maps_ce as %s.map", name, installed);
+	else
+		platform_log("map download: %s.map installed in maps_ce", name);
 	finish(MAP_DOWNLOAD_DONE, NULL);
 	return NULL;
 }
@@ -396,6 +467,7 @@ int map_download_start(const char *name, unsigned int version)
 	map_download.cancel = 0;
 	map_download.running = 1;
 	map_download.remembered = 0;
+	map_download.installed[0] = 0;
 	pthread_mutex_unlock(&map_download.lock);
 	platform_log("map download: %s.map from the community map repositories (host's checksum %08x)", name, version);
 	if (pthread_create(&thread, NULL, download_thread, NULL) != 0)
@@ -431,6 +503,13 @@ void map_download_get(struct map_download_progress *progress)
 		map_download.remembered = 1;
 		snprintf(map_name, sizeof(map_name), "%s@ce", progress->name);
 		map_downloaded_remember(map_name);
+		/* (and the file it is in, when that is named otherwise: a hashed
+		name's base, which is played by that name too) */
+		pthread_mutex_lock(&map_download.lock);
+		snprintf(map_name, sizeof(map_name), "%s@ce", map_download.installed);
+		pthread_mutex_unlock(&map_download.lock);
+		if (strcmp(map_name, "@ce"))
+			map_downloaded_remember(map_name);
 	}
 }
 
