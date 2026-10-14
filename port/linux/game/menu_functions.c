@@ -90,6 +90,8 @@ their handlers open opens.
 /* (its games on Halo PC maps: server_browser.c) */
 #include "halo_map_families.h"
 #include "halo_server_browser.h"
+/* (the multiplayer maps past the Xbox's: ui_map_list.c) */
+#include "halo_ui_map_list.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -999,8 +1001,42 @@ static short map_kind_rows_update(struct widget_instance *list, short *first, sh
 	return row == NONE || row < 1 || row > shown ? NONE : (short)(*first + row - 1);
 }
 
+/* a multiplayer map's string (_ui_map_list_string_*) and picture: the
+Xbox's thirteen their own, the Custom Edition maps after them the menus' map
+list's (ui_map_list.c), which ui_widget.c draws in their place */
+static short multiplayer_map_string(short map, short kind)
+{
+#ifdef HALO_CUSTOM_EDITION
+	return ui_map_list_string_index(map, kind);
+#else
+	return map;
+#endif
+}
+
+static short multiplayer_map_picture(short map)
+{
+#ifdef HALO_CUSTOM_EDITION
+	return ui_map_list_picture_index(map);
+#else
+	return map;
+#endif
+}
+
 static void multiplayer_map_text(short map, wchar_t *text)
 {
+#ifdef HALO_CUSTOM_EDITION
+	wchar_t const *own = ui_map_list_text(ui_map_list_string_index(map, _ui_map_list_string_lobby_name));
+
+	if (own)
+	{
+		long length;
+
+		for (length = 0; own[length] && length < ROW_TEXT_LENGTH - 1; length++)
+			text[length] = own[length];
+		text[length] = 0;
+		return;
+	}
+#endif
 	string_get("pc\\main_menu\\mp_map_list", map, text);
 }
 
@@ -1026,11 +1062,11 @@ static void map_description_show(struct widget_instance *description, short leve
 	if (map == NONE)
 		return;
 	if ((widget = named(description, "mp_map_right_name", 0)) != NULL)
-		widget->parameters.text_box.string_list_index = map;
+		widget->parameters.text_box.string_list_index = multiplayer_map_string(map, _ui_map_list_string_lobby_name);
 	if ((widget = named(description, "mp_map_right_pic", 0)) != NULL)
-		widget->animation.current_frame_index = map;
+		widget->animation.current_frame_index = multiplayer_map_picture(map);
 	if ((widget = named(description, "mp_map_right_data", 0)) != NULL)
-		widget->parameters.text_box.string_list_index = map;
+		widget->parameters.text_box.string_list_index = multiplayer_map_string(map, _ui_map_list_string_description);
 }
 
 /* New Game's list: SINGLEPLAYER's levels, the profile's reached, or
@@ -3179,7 +3215,7 @@ static void map_display_name(char const *map_name, wchar_t *text)
 	{
 		if (!_stricmp(scenario_name(names[index]), scenario_name(map_name)))
 		{
-			string_get("pc\\main_menu\\mp_map_list", index, text);
+			multiplayer_map_text(index, text);
 			return;
 		}
 	}
@@ -4737,9 +4773,10 @@ static void lobby_map_show(struct widget_instance *description, char const *map_
 	visible_set(named(description, "replay_level_right_pic", 0), level != NONE);
 	visible_set(named(description, "replay_level_right_name", 0), level != NONE);
 	if ((widget = named(description, "lobby_map_pic", 0)) != NULL)
-		widget->animation.current_frame_index = map;
+		widget->animation.current_frame_index = map < count ? multiplayer_map_picture(map) : map;
 	if ((widget = named(description, "lobby_map_name", 0)) != NULL)
-		widget->parameters.text_box.string_list_index = map;
+		widget->parameters.text_box.string_list_index = map < count ?
+			multiplayer_map_string(map, _ui_map_list_string_lobby_name) : map;
 	if (level == NONE)
 		return;
 	if ((widget = named(description, "replay_level_right_pic", 0)) != NULL)
