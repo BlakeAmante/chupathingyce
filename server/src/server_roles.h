@@ -120,7 +120,7 @@ int server_roles_list_text(int json, char *text, int text_size);
 
 /* where a key's role (server_roles_key_role's) comes from, for the
 player it concerns: "this server's moderators file", "your panel account
-alice", "your site profile alice" (and "(cached: ...)" while the site's
+alice", "your site profile alice" (and "(cached)" while the site's
 list is the cache's); empty if it has none */
 void server_roles_key_source(const unsigned char *key, char *text, int text_size);
 

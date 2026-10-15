@@ -724,7 +724,7 @@ void server_roles_key_source(const unsigned char *key, char *text, int text_size
 		{
 			best = roles.site[index].role;
 			snprintf(text, (size_t)text_size, "your site profile %s%s", roles.site[index].name,
-				roles.site_state == SERVER_SITE_ROLES_CACHED ? " (cached: the site is not answering)" : "");
+				roles.site_state == SERVER_SITE_ROLES_CACHED ? " (cached)" : "");
 		}
 	}
 	pthread_mutex_unlock(&roles_mutex);
