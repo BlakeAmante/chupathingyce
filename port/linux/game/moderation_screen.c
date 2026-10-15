@@ -128,6 +128,7 @@ static struct
 	unsigned long result_seen;
 	unsigned long result_time;
 	char status[128];
+	boolean signing_in;
 } moderation_screen;
 
 /* ---------- private code */
@@ -254,7 +255,8 @@ static void press(
 	{
 		if (button == _gamepad_analog_button_a && settled)
 		{
-			set_status(delta_peer_game_moderation_sign_in() ? "Signing in..." :
+			moderation_screen.signing_in = delta_peer_game_moderation_sign_in();
+			set_status(moderation_screen.signing_in ? "Signing in..." :
 				"Could not sign in (no player key, or this is not the server you joined).");
 		}
 		return;
@@ -326,6 +328,12 @@ void moderation_screen_update(
 			platform_log("server %s: %s",
 				moderation_screen.moderation.notice_kind == _delta_moderation_notice_warning ? "warning" : "notice",
 				moderation_screen.moderation.notice);
+	}
+	/* (signed in: the host said the key's role, so "Signing in..." is done) */
+	if (moderation_screen.moderation.has_state && moderation_screen.signing_in)
+	{
+		moderation_screen.signing_in = FALSE;
+		moderation_screen.status[0] = 0;
 	}
 	if (moderation_screen.moderation.result_count != moderation_screen.result_seen)
 	{
