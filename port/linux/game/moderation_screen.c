@@ -73,7 +73,8 @@ enum
 	COLOR_WARNING = 0xF2C14EFF,
 };
 
-/* the actions, as the screen offers them */
+/* the actions, as the screen offers them: the server's control panel offers
+the same, by the same names and to the same roles (server/webui/app.js) */
 struct moderation_choice
 {
 	char const *name;
@@ -91,8 +92,9 @@ static struct moderation_choice const moderation_choices[] =
 	{ "Ban 1 hour", _delta_moderation_action_ban, 60, DELTA_MODERATION_BAN_TIMED, TRUE },
 	{ "Ban 1 day", _delta_moderation_action_ban, 24 * 60, DELTA_MODERATION_BAN_TIMED, TRUE },
 	{ "Ban 7 days", _delta_moderation_action_ban, 7 * 24 * 60, DELTA_MODERATION_BAN_TIMED, TRUE },
-	{ "Ban for ever", _delta_moderation_action_ban, 0, DELTA_MODERATION_BAN, TRUE },
-	{ "End the game", _delta_moderation_action_end_game, 0, DELTA_MODERATION_MAP, FALSE },
+	{ "Ban 30 days", _delta_moderation_action_ban, 30 * 24 * 60, DELTA_MODERATION_BAN_TIMED, TRUE },
+	{ "Ban forever", _delta_moderation_action_ban, 0, DELTA_MODERATION_BAN, TRUE },
+	{ "End game", _delta_moderation_action_end_game, 0, DELTA_MODERATION_MAP, FALSE },
 	{ "Next map", _delta_moderation_action_next_map, 0, DELTA_MODERATION_MAP, FALSE },
 };
 
