@@ -35,7 +35,7 @@ def test_save_folder(tmp_path):
     scratch.mkdir()
     libraries = ["-lpthread"] + (["-ldl"] if sys.platform.startswith("linux") else [])
     build = subprocess.run(
-        [cc, "-std=gnu11", "-Wall", "-Wextra", "-Werror", "-O1", "-D_FILE_OFFSET_BITS=64",
+        [cc, "-std=gnu11", "-Wall", "-Wextra", "-Werror", "-O1", "-D_GNU_SOURCE", "-D_FILE_OFFSET_BITS=64",
          str(ROOT / "port" / "linux" / "tests" / "save_folder_test.c"),
          str(ROOT / "port" / "linux" / "src" / "save_folder.c"),
          str(ROOT / "port" / "linux" / "src" / "posix_files.c"),
