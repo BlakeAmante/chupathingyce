@@ -864,18 +864,21 @@
       const row = element('tr');
       const actions = element('td', null, 'actions');
       let detail = '-';
+      let keyed = false;
       let role = entry.role;
       if (entry.source === 'file') {
         detail = entry.key.slice(0, 16) + '...';
+        keyed = true;
         actions.append(button('Remove', 'small', () => peopleLine('sv_mod_remove ' + entry.key)));
       } else if (entry.source === 'account') {
         detail = entry.key ? entry.key.slice(0, 16) + '...' : 'not bound to a game (the panel only)';
+        keyed = !!entry.key;
       } else if (entry.source === 'site') {
         detail = entry.keys + (entry.keys === 1 ? ' game' : ' games') + ' on the profile' + (entry.state === 'cached' ? ' (cached)' : '');
         if (entry.site_role !== entry.role) role += ' (the site says ' + entry.site_role + ')';
       }
       row.append(element('td', entry.name || '-'), element('td', role), element('td', FROM[entry.source] || entry.source),
-        element('td', detail, entry.source === 'site' ? '' : 'mono'), actions);
+        element('td', detail, keyed ? 'mono' : ''), actions);
       holders.append(row);
     });
     if (!(list.holders || []).length) {
