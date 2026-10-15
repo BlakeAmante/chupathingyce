@@ -87,7 +87,7 @@ static void test_menus(void)
 	CHECK(!has("\"details\""));
 	CHECK(!has("\"party\""));
 	CHECK(!has("timestamps"));
-	CHECK(has("\"large_image\":\"https://stats.chupathingy.org/art/logo.png\""));
+	CHECK(has("\"large_image\":\"https://stats.chupathingy.org/art/icon.png\""));
 	CHECK(has("{\"label\":\"Get Chupathingy\",\"url\":\"https://chupathingy.org\"}"));
 	CHECK(has("{\"label\":\"Join our Discord\",\"url\":\"https://discord.gg/chupathingy\"}"));
 	CHECK(!has("secrets"));
@@ -184,23 +184,23 @@ static void test_maps(void)
 	snprintf(game.map_name, sizeof(game.map_name), "Tensity");
 	CHECK(build(&game, DISCORD_PRESENCE_FULL, 1, 1, NULL) > 0);
 	CHECK(has("\"details\":\"King of the Hill on Tensity\""));
-	CHECK(has("\"large_image\":\"https://stats.chupathingy.org/art/logo.png\""));
+	CHECK(has("\"large_image\":\"https://stats.chupathingy.org/art/icon.png\""));
 
 	/* a custom map named as a stock one keeps its own name, and the logo */
 	snprintf(game.map, sizeof(game.map), "bloodgulch@md");
 	snprintf(game.map_name, sizeof(game.map_name), "Blood Gulch Remix");
 	CHECK(build(&game, DISCORD_PRESENCE_FULL, 1, 1, NULL) > 0);
 	CHECK(has("on Blood Gulch Remix\""));
-	CHECK(has("art/logo.png"));
+	CHECK(has("art/icon.png"));
 
-	/* Grifball, named, with the logo for an icon */
+	/* Grifball, named, with Oddball's skull for an icon (as in its menus) */
 	game.mode = DISCORD_MODE_GRIFBALL;
 	game.teams = 1;
 	game.map_name[0] = 0;
 	snprintf(game.map, sizeof(game.map), "carousel");
 	CHECK(build(&game, DISCORD_PRESENCE_FULL, 1, 1, NULL) > 0);
 	CHECK(has("\"details\":\"Grifball on Derelict\""));
-	CHECK(has("\"small_image\":\"https://stats.chupathingy.org/art/logo.png\""));
+	CHECK(has("\"small_image\":\"https://stats.chupathingy.org/art/types/oddball.png\""));
 
 	/* a long, multibyte name: cut at a whole character */
 	{

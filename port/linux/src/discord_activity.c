@@ -31,7 +31,7 @@ project's buttons; "off" clears the activity.
 #include <string.h>
 
 #define ART_URL "https://stats.chupathingy.org/art/"
-#define LOGO_URL ART_URL "logo.png"
+#define LOGO_URL ART_URL "icon.png"
 #define SITE_URL "https://chupathingy.org"
 #define DISCORD_URL "https://discord.gg/chupathingy"
 
@@ -92,7 +92,7 @@ static const struct
 };
 
 /* the game types: their names, and the site's icons (art/types; NULL: the
-logo) */
+icon). Bomb and Grifball show Oddball's skull, as their menus do */
 static const struct
 {
 	const char *name;
@@ -105,8 +105,8 @@ static const struct
 	{ "Oddball", "oddball" },
 	{ "King of the Hill", "king" },
 	{ "Race", "race" },
-	{ "Bomb", NULL },
-	{ "Grifball", NULL },
+	{ "Bomb", "oddball" },
+	{ "Grifball", "oddball" },
 };
 
 static const char *const difficulties[] = { "Easy", "Normal", "Heroic", "Legendary" };
