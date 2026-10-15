@@ -345,7 +345,7 @@ static const struct config_setting config_settings[] =
 		"single quotes: 'C:\\Games\\Halo'." },
 	{ "paths.saves", _config_string, "\"\"", "HALO_SAVE_ROOT", _environment_value, _platform_desktop,
 		"Where saved games and profiles go; empty for the usual place\n"
-		"(~/.local/share/halo-linux, or %APPDATA%\\halo on Windows)." },
+		"(~/.local/share/chupathingyce, or %APPDATA%\\ChupathingyCE on Windows)." },
 
 	{ "network.address", _config_string, "\"\"", "HALO_NET_ADDRESS", _environment_value, _platform_all,
 		"This machine's IPv4 address for system link, for a machine on several\n"
@@ -505,10 +505,25 @@ static const struct config_setting config_settings[] =
 		"(a full path is best: a relative one is from the working folder); empty\n"
 		"for none." },
 #endif
-	{ "discord.application_id", _config_string, "\"1553978809840050229\"", "HALO_DISCORD_APPLICATION",
+	/* (the project's Discord application, "Chupathingy") */
+	{ "discord.application_id", _config_string, "\"1560397272166957136\"", "HALO_DISCORD_APPLICATION",
 		_environment_value, _platform_desktop,
-		"The Discord application internet play invites go through while the\n"
-		"Discord desktop client runs; empty for none." },
+		"The Discord application the game shows as while the Discord desktop\n"
+		"client runs (its name is what Discord says is being played); empty\n"
+		"for none." },
+	{ "discord.presence", _config_string, "\"full\"", "HALO_DISCORD_PRESENCE", _environment_value,
+		_platform_desktop,
+		"What Discord shows of the game: \"full\" (the game type, map, score,\n"
+		"players and time, the map's picture, and a public game's Join game\n"
+		"button), \"minimal\" (only \"Playing Chupathingy\") or \"off\"." },
+	{ "discord.show_server_name", _config_boolean, "true", "HALO_DISCORD_SHOW_SERVER_NAME", _environment_value,
+		_platform_desktop,
+		"Discord shows the name of the network game being played." },
+	{ "discord.show_join", _config_boolean, "true", "HALO_DISCORD_SHOW_JOIN", _environment_value,
+		_platform_desktop,
+		"While this machine hosts a public game (in the server browser, with no\n"
+		"password), Discord shows a Join game button: its page on the project's\n"
+		"site, which opens its invite. False: no button." },
 
 	{ "update.auto", _config_boolean, "true", "HALO_UPDATE_AUTO", _environment_value, _platform_all,
 		"Look for a new version when the game starts, and offer to update to it;\n"
@@ -628,6 +643,9 @@ static const struct config_setting config_settings[] =
 		"Save every this many frames to screenshot_directory; 0 none." },
 	{ "debug.texture_dump_directory", _config_string, "\"\"", "HALO_TEXTURE_DUMP", _environment_value, _platform_all,
 		"A folder to write every texture to as it is uploaded; empty none." },
+	{ "debug.discord_log", _config_boolean, "false", "HALO_DISCORD_LOG", _environment_set_is_true,
+		_platform_desktop,
+		"Log each activity sent to Discord (an invite in it left out)." },
 	{ "debug.texture_log", _config_boolean, "false", "HALO_TEXTURE_LOG", _environment_set_is_true, _platform_all,
 		"Log texture uploads." },
 	{ "debug.texture_no_cache", _config_boolean, "false", "HALO_TEXTURE_NO_CACHE", _environment_set_is_true, _platform_all,
@@ -1236,6 +1254,9 @@ static const struct
 {
 	/* upstream's, which ChupathingyCE kept until v0.5.2b */
 	{ "display.menus", "\"pc\"" },
+	/* OpenCE's Discord application, which ChupathingyCE kept until v0.7.5c
+	(Discord showed "OpenCE" as being played) */
+	{ "discord.application_id", "\"1553978809840050229\"" },
 };
 
 #define NUMBER_OF_CONFIG_OLD_DEFAULTS (sizeof(config_old_defaults) / sizeof(config_old_defaults[0]))
@@ -1456,6 +1477,7 @@ static const struct
 	{ "game.move_old_map_folders", { "ask", "yes", "no", NULL }, "\"ask\"" },
 	{ "network.protocol", { "auto", "opence", "delta", NULL }, NULL },
 	{ "network.map_downloads", { "ask", "always", "never", NULL }, "\"ask\"" },
+	{ "discord.presence", { "full", "minimal", "off", NULL }, "\"full\"" },
 	{ "network.platform_limits", { "on", "off", NULL }, "\"on\"" },
 	{ "network.coop_friendly_fire", { "off", "on", "shields_only", "explosives_only", NULL }, NULL },
 	{ "network.coop_enemies_mode", { "none", "per_player", "multiplier", NULL }, "\"none\"" },
