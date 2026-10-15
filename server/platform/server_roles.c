@@ -526,9 +526,14 @@ void server_roles_set_site_handles(int count, const char *const *handles, const 
 
 void server_roles_set_site_state(int state, long long heard, int cap, int expire_hours)
 {
+	if (state < SERVER_SITE_ROLES_NONE || state > SERVER_SITE_ROLES_EXPIRED)
+		state = SERVER_SITE_ROLES_NONE;
 	pthread_mutex_lock(&roles_mutex);
-	roles.site_state = state >= SERVER_SITE_ROLES_NONE && state <= SERVER_SITE_ROLES_EXPIRED ? state :
-		SERVER_SITE_ROLES_NONE;
+	/* (cached to live, or back: the signed-in players are told the role's
+	source again) */
+	if (state != roles.site_state && roles.site_count)
+		roles.changed = 1;
+	roles.site_state = state;
 	roles.site_heard = heard;
 	roles.site_cap = cap;
 	roles.site_expire_hours = expire_hours;
