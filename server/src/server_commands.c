@@ -166,7 +166,21 @@ static void note_target(char const *target, char const *reason);
 static void log_output(char const *output);
 static char const *actor_display(void);
 #ifdef HALO_SERVER
-static boolean command_mod_list(struct command_line const *line, boolean json, struct command_output *output);
+/* everyone with a role here: the moderators file's, the control panel's
+accounts and the site's (server_roles_list_text) */
+static boolean command_mod_list(
+	struct command_line const *line,
+	boolean json,
+	struct command_output *output)
+{
+	static char text[OUTPUT_SIZE];
+
+	(void)line;
+	server_roles_list_text(json ? 1 : 0, text, sizeof(text));
+	command_output_printf(output, "%s", text);
+	return TRUE;
+}
+
 static boolean command_mod_add(struct command_line const *line, boolean json, struct command_output *output);
 static boolean command_mod_remove(struct command_line const *line, boolean json, struct command_output *output);
 static boolean command_link(struct command_line const *line, boolean json, struct command_output *output);
@@ -251,8 +265,9 @@ static struct server_command const server_commands[] =
 		server_admin_set },
 #ifdef HALO_SERVER
 	/* (Delta Control's roles: server/docs/moderation.md) */
-	{ "sv_mod_list", "sv_mod_list", "The moderators: the moderators file's, the control panel's accounts bound to "
-		"a game, and the site's.", 1, 1, FALSE, command_mod_list },
+	{ "sv_mod_list", "sv_mod_list", "Everyone with a role here and where it comes from: the moderators file, "
+		"the control panel's accounts (bound to a game or not) and the site's profiles (capped by "
+		"HALO_DEDICATED_LINK_ROLE; cached while the site cannot be reached).", 1, 1, FALSE, command_mod_list },
 	{ "sv_mod_add", "sv_mod_add <player|key> <role> [name]", "Gives a player (once their game has proved its "
 		"moderator key: sv_players) or a moderator key a role: moderator, admin or owner (moderators.txt).", 3, 4,
 		FALSE, command_mod_add },
