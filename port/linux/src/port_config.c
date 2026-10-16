@@ -259,6 +259,31 @@ static const struct config_setting config_settings[] =
 		"same as input.mouse_sensitivity." },
 
 	/* the keyboard and mouse's own controls (port/linux/src/xinput_sdl.c) */
+	{ "chat.enabled", _config_boolean, "true", "HALO_CHAT", _environment_value, _platform_all,
+		"Text chat with other Chupathingy players (on a Chupathingy host; T says\n"
+		"a line to everyone, Y to your team). false: no chat at all, neither\n"
+		"said nor shown; a server's own lines still show." },
+	{ "chat.show", _config_string, "\"all\"", "HALO_CHAT_SHOW", _environment_value, _platform_all,
+		"Which players' lines show: \"all\", \"team\" (your team's alone) or\n"
+		"\"off\" (none; you can still talk)." },
+	{ "chat.filter", _config_string, "\"mask\"", "HALO_CHAT_FILTER", _environment_value, _platform_all,
+		"Blocked words in lines you are shown: \"mask\" stars them out, \"hide\"\n"
+		"leaves such a line out, \"show\" shows it as sent. The words are the\n"
+		"blocked names list's and your own (chat.filter_file). Nobody is told,\n"
+		"and nobody is kicked." },
+	{ "chat.filter_file", _config_string, "\"chat_filter.txt\"", "HALO_CHAT_FILTER_FILE", _environment_value,
+		_platform_all,
+		"Your own blocked words, one a line (a file in the save folder): a word\n"
+		"alone is blocked anywhere in a word; \"whole <word>\" only as a whole\n"
+		"word. Lines starting with # are comments." },
+	{ "chat.streamer_mode", _config_boolean, "false", "HALO_CHAT_STREAMER_MODE", _environment_value, _platform_all,
+		"For streaming: other players' names in chat show as their team (or\n"
+		"\"Player\"), and blocked words are starred out at least." },
+	{ "chat.quick_messages", _config_string,
+		"\"Nice shot|Need backup|On my way|Thanks|Good game|Sorry\"", "HALO_CHAT_QUICK_MESSAGES",
+		_environment_value, _platform_all,
+		"A controller's quick lines, separated by |: D-pad up picks the next,\n"
+		"D-pad down says it (to your team in a team game). Empty: none." },
 	{ "controls.move_forward", _config_string, "\"W\"", "HALO_KEY_MOVE_FORWARD", _environment_value, _platform_all,
 		"The keyboard and mouse's controls, which Settings > Controls Setup\n"
 		"changes: up to two keys or buttons each, separated by a comma. Keys by\n"
@@ -303,6 +328,12 @@ static const struct config_setting config_settings[] =
 		"Showing the scores (the controller's Back)." },
 	{ "controls.pause", _config_string, "\"Escape\"", "HALO_KEY_PAUSE", _environment_value, _platform_all,
 		"The pause menu (the controller's Start)." },
+	{ "controls.chat_all", _config_string, "\"T\"", "HALO_KEY_CHAT_ALL", _environment_value, _platform_all,
+		"Saying a line to everyone (text chat; Enter sends, Escape cancels)." },
+	{ "controls.chat_team", _config_string, "\"Y\"", "HALO_KEY_CHAT_TEAM", _environment_value, _platform_all,
+		"Saying a line to your team." },
+	{ "controls.chat_log", _config_string, "\"H\"", "HALO_KEY_CHAT_LOG", _environment_value, _platform_all,
+		"The chat's recent lines and its players, where M mutes one for you." },
 
 	{ "game.console_log", _config_string, "\"important\"", "HALO_CONSOLE_LOG", _environment_value, _platform_all,
 		"What the game's console shows on screen of what it logs: \"important\"\n"
@@ -386,6 +417,13 @@ static const struct config_setting config_settings[] =
 		"falls back on its own, and nobody waits for it); \"opence\" turns\n"
 		"Delta off (OpenCE's protocol alone, as an OpenCE build). \"delta\"\n"
 		"plays as auto for now: Delta-only games come later." },
+	{ "network.chat", _config_string, "\"on\"", "HALO_NET_CHAT", _environment_value, _platform_all,
+		"Text chat in the games this machine hosts: \"on\", \"team\" (team lines\n"
+		"alone) or \"off\". Lines only pass between Chupathingy machines; nothing\n"
+		"is written down." },
+	{ "network.chat_filter", _config_boolean, "true", "HALO_NET_CHAT_FILTER", _environment_value, _platform_all,
+		"In the games this machine hosts, lines with blocked words are not passed\n"
+		"on (their sender is told). Nobody is kicked." },
 	{ "network.share_profile", _config_boolean, "false", "HALO_NET_SHARE_PROFILE", _environment_value,
 		_platform_all,
 		"Show the other ChupathingyCE players of a game this copy's player ID\n"
@@ -607,6 +645,10 @@ static const struct config_setting config_settings[] =
 	{ "debug.update_answer", _config_string, "\"\"", "HALO_UPDATE_ANSWER", _environment_value, _platform_desktop,
 		"The answer to the new version question, for automated tests: \"yes\",\n"
 		"\"no\" or \"never\" (do not ask again, confirmed); empty asks." },
+	{ "debug.chat_test", _config_string, "\"\"", "HALO_CHAT_TEST", _environment_value, _platform_all,
+		"For testing text chat (port/linux/game/chat.c): steps of\n"
+		"\"<seconds>:<all|team|server|mute|unmute|localmute|log|close|type>[:<text>]\"\n"
+		"separated by ;, from when this copy joins a game. Empty: none." },
 	{ "debug.exit_after", _config_real, "0.0", "HALO_EXIT_AFTER", _environment_value, _platform_all,
 		"Quit this many seconds after the window opens; 0 never." },
 	{ "debug.hidden_window", _config_boolean, "false", "HALO_HIDDEN_WINDOW", _environment_set_is_true, _platform_desktop,
