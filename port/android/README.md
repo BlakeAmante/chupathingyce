@@ -86,7 +86,8 @@ A crash report gives addresses in `libmain.so`. To get the names, enter
 
 The game needs the `maps/` folder from an Xbox disc image (`.xiso` or
 `.iso`) of any version of the game. The app extracts `maps/` from the disc
-image. The app keeps the data in
+image, and the Bink movies (`bink/`) that the folder lacks. The movies are
+not played on this build yet. The app keeps the data in
 `/sdcard/Android/data/dev.horrible.chupathingyce/files`.
 
 To install the data with the app:
@@ -414,7 +415,9 @@ The guest is the game, the platform layer and a small runtime:
    AArch64 target of clang. The options `-U__APPLE__` and
    `-fno-define-target-os-macros` hide the Darwin environment.
 2. `tools/android_asm_convert.py` changes the Mach-O assembly to ELF
-   assembly.
+   assembly. It renames symbols, but keeps string literals (`.ascii`,
+   `.asciz`) byte for byte: they hold tables as well as text
+   (`tools/test_android_asm_convert.py`).
 3. The AArch64 assembler makes the objects.
 4. `ld.lld` links the objects with `guest/guest.ld` to a static image,
    `build/android/halo_guest.elf`, at a fixed address above the Xbox memory
@@ -584,7 +587,8 @@ assembly of the port is necessary:
 
 ## Limits
 
-- Bink video is not available. The game skips the movies.
+- Bink video is not available on this build. The game skips the movies.
+  The app still copies the disc's `bink/` movies with `maps/`.
 - The Xbox memory is the 128 MB of a development kit, not the 512 MB of the
   computer builds. Thus the texture cache is 44 MB, not 128 MB
   (`port/linux/include/halo_port_capacity.h`). This is sufficient for the
