@@ -1542,6 +1542,17 @@ static void gl_initialize(void)
 			(host_gl_has_extension("GL_EXT_texture_compression_dxt1") &&
 			host_gl_has_extension("GL_ANGLE_texture_compression_dxt3") &&
 			host_gl_has_extension("GL_ANGLE_texture_compression_dxt5"));
+		{
+			/* Adreno's driver takes DXT textures but drew the maps' speckled
+			(dark dots a block apart, on the ground and the walls), where
+			the game's own unpacking (xbox_textures.c, as on Mali) does not */
+			const char *decode = config_string("display.texture_decode");
+			const char *renderer = (const char *)glGetString(GL_RENDERER);
+
+			if (!strcmp(decode, "cpu") ||
+				(strcmp(decode, "gpu") && renderer && strstr(renderer, "Adreno")))
+				xgpu_capabilities.s3tc = FALSE;
+		}
 		platform_log("OpenGL ES %d.%d: copy image %d, border clamp %d, anisotropy %d, S3TC %d, sample counting %d, "
 			"base vertex %d (%s)",
 			(int)major, (int)minor, xgpu_capabilities.copy_image, xgpu_capabilities.border_clamp,
