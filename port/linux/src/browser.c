@@ -1293,11 +1293,11 @@ static void parse_host(char **fields, struct browser_game *game)
 maximum_players open version age score_limit teams roster */
 static int parse_game(char *line, struct browser_game *game)
 {
-	char *fields[17];
+	char *fields[18];
 	int count = 0;
 	char *cursor = line;
 
-	while (count < 17)
+	while (count < 18)
 	{
 		fields[count++] = cursor;
 		cursor = strchr(cursor, '\t');
@@ -1334,6 +1334,23 @@ static int parse_game(char *line, struct browser_game *game)
 		fields[16][strcspn(fields[16], "\r\n")] = 0;
 		parse_host(fields + 13, game);
 	}
+	/* (then the gametype: a co-op game's names its difficulty) */
+	if (count >= 18)
+	{
+		static char const *const difficulties[] = { "easy", "normal", "heroic", "legend" };
+		char const *gametype = fields[17];
+		int index;
+
+		fields[17][strcspn(fields[17], "\r\n")] = 0;
+		if (!SDL_strncasecmp(gametype, "co-op ", 6))
+		{
+			for (index = 0; index < 4; index++)
+			{
+				if (!SDL_strncasecmp(gametype + 6, difficulties[index], strlen(difficulties[index])))
+					game->difficulty = (unsigned char)(index + 1);
+			}
+		}
+	}
 	return 1;
 }
 
@@ -1368,7 +1385,7 @@ static void update_list(void)
 		return;
 	}
 	/* (with the host's fields: a list from before them sends what it has) */
-	server_url("/v1/games.txt?fields=17", url, sizeof(url));
+	server_url("/v1/games.txt?fields=18", url, sizeof(url));
 	status = posix_browser_request(url, NULL, NULL, response, sizeof(response), error, sizeof(error));
 	if (!p2p_hosting_invite(own, sizeof(own)))
 		own[0] = 0;

@@ -81,6 +81,9 @@ struct browser_game
 	unsigned char host_platform;
 	unsigned char hosting;
 	unsigned char protocol;
+	/* a co-op game's difficulty, 1 Easy to 4 Legendary, from its gametype
+	("Co-op Legend"); 0 when the list does not say */
+	unsigned char difficulty;
 	unsigned char machines[BROWSER_MACHINE_KINDS];
 	/* (browser_get_games's, from what this machine knows itself) the round
 	trip to its host in milliseconds while the tunnel reaches it (p2p.c's
