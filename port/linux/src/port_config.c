@@ -172,14 +172,15 @@ static const struct config_setting config_settings[] =
 		_platform_all,
 		"The size the objects' shadows are drawn at, in pixels each way: 128 as\n"
 		"on the Xbox, or 256, 512 or 1024 for smoother edges, as soft." },
-	{ "display.menus", _config_string, "\"xbox\"", "HALO_MENUS", _environment_value, _platform_all,
-		"The menus: \"xbox\" for the Xbox's (with Online Games), \"gearbox\" for\n"
-		"Gearbox's Halo PC screens and Server Browser (\"pc\" still works), or\n"
-		"\"chupathingy\" for the Xbox's with Halo PC's PROFILES, SETTINGS and QUIT\n"
-		"in the Xbox's look. The last two are rebuilt from port/assets/menus (a\n"
-		"menus folder here for your own) with this port's fonts and redrawn\n"
-		"pictures, not Halo PC's files. Read when the game starts: restart it\n"
-		"after a change." },
+	{ "display.menus", _config_string, "\"chupathingy\"", "HALO_MENUS", _environment_value, _platform_all,
+		"The menus: \"chupathingy\" (the default) for the Xbox's look with Halo\n"
+		"PC's screens added where they help (PROFILES, SETTINGS, QUIT, the\n"
+		"settings pages, Online Games), \"xbox\" for the Xbox's as close to the\n"
+		"console as can be (with Online Games), or \"gearbox\" for Gearbox's Halo\n"
+		"PC screens and Server Browser (\"pc\" still works). Halo PC's screens\n"
+		"are rebuilt from port/assets/menus (a menus folder here for your own)\n"
+		"with this port's fonts and redrawn pictures, not Halo PC's files. Read\n"
+		"when the game starts: restart it after a change." },
 	{ "display.player_names", _config_string, "\"all\"", "HALO_PLAYER_NAMES", _environment_value, _platform_all,
 		"In multiplayer, whose names are drawn above their heads: \"all\",\n"
 		"\"allies\", \"enemies\" or \"none\". An enemy's shows only within the\n"
@@ -1390,6 +1391,9 @@ static const struct
 {
 	/* upstream's, which ChupathingyCE kept until v0.5.2b */
 	{ "display.menus", "\"pc\"", 0 },
+	/* the Xbox's menus, the default until v0.8.0 (a file that names them
+	keeps them) */
+	{ "display.menus", "\"xbox\"", 0 },
 	/* OpenCE's Discord application, which ChupathingyCE kept until v0.7.5c
 	(Discord showed "OpenCE" as being played) */
 	{ "discord.application_id", "\"1553978809840050229\"", 1 },

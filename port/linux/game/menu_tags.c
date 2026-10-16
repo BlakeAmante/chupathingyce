@@ -1463,7 +1463,11 @@ much taller, centred where it was, with what is in it, and what is below
 the list moved down; on a custom map's, what is below the list moves down. */
 
 #define PAUSE_SETTINGS_SCREEN "main_menu/settings_select/player_setup/player_profile_edit/player_profile_edit_screen"
+/* (the Chupathingy menus': their own, in the Xbox's look) */
+#define PAUSE_SETTINGS_SCREEN_CHUPATHINGY "chupathingy/settings/profile_edit_screen"
 #define PAUSE_BUTTON_SPACING 35
+
+static short menus_chosen(void);
 
 static long ui_function_named(char const *name)
 {
@@ -1580,7 +1584,8 @@ static short pause_list_patch(struct cache_file_tag_instance *instances, struct 
 	long count = list->child_widgets.count, added = (settings != FALSE) + (end_game != FALSE), child;
 	struct ui_widget_child_reference *grown = allocate((count + added) * sizeof(struct ui_widget_child_reference));
 	struct ui_widget_definition const *model = tag_get(UI_WIDGET_DEFINITION_TAG, children[resume].widget_tag.index);
-	long settings_widget = settings ? widget_named(PAUSE_SETTINGS_SCREEN) : NONE;
+	long settings_widget = !settings ? NONE :
+		widget_named(menus_chosen() == _menus_chupathingy ? PAUSE_SETTINGS_SCREEN_CHUPATHINGY : PAUSE_SETTINGS_SCREEN);
 	short spacing = count >= 2 ? (short)(children[count - 1].vertical_offset - children[count - 2].vertical_offset) :
 		PAUSE_BUTTON_SPACING;
 	void *buttons[2];

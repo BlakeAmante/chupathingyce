@@ -377,8 +377,8 @@ def settings_files() -> dict:
 # no button bar, the Xbox's prompts instead (B cancels, A accepts, Y shows the
 # defaults; Controls Setup's A changes a key, so X accepts there)
 CHUPATHINGY = "chupathingy/settings"
-CHUPATHINGY_PAGES = ["controls_setup", "gamepad_setup", "mouse_settings", "audio_settings", "video_settings",
-                     "network_setup"]
+# (every page SCREENS has, so that a page added there is here too)
+CHUPATHINGY_PAGES = ["controls_setup", *SCREENS]
 XBOX_MAIN_MENU = "ui\\shell\\main_menu"
 
 

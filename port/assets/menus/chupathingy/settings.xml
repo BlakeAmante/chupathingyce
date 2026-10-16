@@ -101,15 +101,15 @@ open the pages of settings_pages.xml. -->
 	<widget name="chupathingy/settings/description_text" type="text" controller="1" left="294" top="290" width="296" height="110" string_list="chupathingy/settings/descriptions" font="ui\large_ui" color="#FF2896FF">
 	</widget>
 	<strings name="chupathingy/settings/descriptions">
-		<string text="Rename this profile using\nthe virtual keyboard.\n\nCurrent Profile:"/>
+		<string text="Rename this profile.\n\n\nCurrent Profile:"/>
 		<string text="Choose the keys and mouse\nbuttons for each action.\n\nCurrent Profile:"/>
-		<string text="Set the controllers' look\nsensitivity and layouts.\n\nCurrent Profile:"/>
-		<string text="Adjust the mouse's\nsensitivity and aiming.\n\nCurrent Profile:"/>
-		<string text="Adjust the volume of the\nmusic and the effects.\n\nCurrent Profile:"/>
+		<string text="Set this profile's controller\nsensitivity and layouts.\n\nCurrent Profile:"/>
+		<string text="Adjust the mouse's sensitivity\nand aiming.\n\nCurrent Profile:"/>
+		<string text="Adjust the volumes and choose\nwhere the sound plays.\n\nCurrent Profile:"/>
 		<string text="Choose a window or the full\nscreen, the frame rate and more.\n\nCurrent Profile:"/>
-		<string text="Internet play, updates and\nthe multiplayer HUD.\n\nCurrent Profile:"/>
-		<string text="Change this profile's\nmultiplayer color.\n\nCurrent Profile:"/>
-		<string text="Halo: Combat Evolved, the\nXbox game, on this computer.\n\nCurrent Profile:"/>
+		<string text="Internet play, updates and the\nmultiplayer HUD.\n\nCurrent Profile:"/>
+		<string text="Change the current profile's\nfree-for-all multiplayer color.\n\nCurrent Profile:"/>
+		<string text="Halo: Combat Evolved, the Xbox\ngame, on this computer.\n\nCurrent Profile:"/>
 		<string text="Save the changes made\nto this profile.\n\nCurrent Profile:"/>
 	</strings>
 </menus>
