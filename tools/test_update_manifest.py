@@ -15,6 +15,7 @@ import re
 import shutil
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -188,6 +189,33 @@ def test_list_shapes(checker, tmp_path, text, answer):
     path = tmp_path / "updates.json"
     path.write_text(text)
     assert find(checker, path).split(" ")[0].rstrip(":") == answer
+
+
+def test_list_main(keys, checker, tmp_path):
+    """a file's "main" (the executable started after the update): written for
+    a zip with the game's later name, read when it is a name, left out
+    otherwise; a list without one reads as before"""
+    directory = tmp_path / "release"
+    directory.mkdir()
+    for name, members in (("chupathingyce-linux64-release.zip", ["chupathingy", "halo", "libSDL3.so.0"]),
+                          ("chupathingyce-windows64-release.zip", ["halo.exe", "SDL3.dll"])):
+        with zipfile.ZipFile(directory / name, "w") as archive:
+            for member in members:
+                archive.writestr(member, member)
+    listed, signature = write_list(keys, directory)
+    assert check(checker, "document", listed, signature) == "signed"
+    assert find(checker, listed).endswith(" chupathingy")
+    assert len(find(checker, listed, "windows64").split(" ")) == 5
+    path = tmp_path / "updates.json"
+    path.write_text(document(entry={"main": "chupathingy.exe"}))
+    assert find(checker, path).split(" ")[5] == "chupathingy.exe"
+    for main in ("../halo", "a/b"):
+        path.write_text(document(entry={"main": main}))
+        answer = find(checker, path)
+        assert answer.startswith("found ") and len(answer.split(" ")) == 5, main
+    for main in (7, ["x"]):
+        path.write_text(document(entry={"main": main}))
+        assert find(checker, path).startswith("refused"), main
 
 
 def test_sha256(checker, tmp_path):

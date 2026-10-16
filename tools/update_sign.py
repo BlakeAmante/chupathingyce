@@ -17,7 +17,9 @@ The .sig holds the signature as 128 hex digits and a line feed.
 From 0.8.0 the game reads the release's list of its update files first
 (updates.json, port/linux/src/update_manifest.h): for each platform and
 configuration, the file, the release (tag) it is on, its size and its
-SHA-256. updates.json.sig signs the list's exact bytes (128 hex digits and a
+SHA-256, and, for a zip that has the game's executable by its later name
+(chupathingy, chupathingy.exe), that name as the file's "main", which the
+updater starts once the zip is installed. updates.json.sig signs the list's exact bytes (128 hex digits and a
 line feed, as above), so it covers every file the list names; the zips keep
 their own .sig for the builds from before the list. The release workflow
 writes the list (ChupathingyCE/command, tools/signing.py); this writes the
@@ -45,6 +47,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import zipfile
 from pathlib import Path
 
 KEY_HEADER = Path(__file__).resolve().parent.parent / "port/linux/src/update_key.h"
@@ -53,6 +56,10 @@ WORD = re.compile(r"^[A-Za-z0-9._+-]{1,127}$")
 UPDATE_FILE = re.compile(r"^chupathingyce-([a-z0-9]+)-(release|debug)\.(zip|AppImage)$")
 KINDS = {"zip": "zip", "AppImage": "appimage"}
 MANIFEST_FORMAT = "chupathingyce-updates 1"
+# the game's executable by its later names: a zip with one starts it after
+# an update (the list's "main"); halo and halo.exe need none, as the updater
+# starts the file it was started from
+MAIN_NAMES = ("chupathingy.exe", "chupathingy")
 # (an Ed25519 public key's DER: this prefix, then its 32 bytes)
 ED25519_SPKI_PREFIX = bytes.fromhex("302a300506032b6570032100")
 
@@ -84,6 +91,15 @@ def sign_bytes(key: Path, data: bytes) -> bytes:
     return raw
 
 
+def main_name(path: Path):
+    """the zip's executable to start after an update, or None"""
+    if path.suffix != ".zip" or not zipfile.is_zipfile(path):
+        return None
+    with zipfile.ZipFile(path) as archive:
+        names = set(archive.namelist())
+    return next((name for name in MAIN_NAMES if name in names), None)
+
+
 def manifest_text(version: str, tag: str, debug_tag: str, commit: str, files) -> bytes:
     """updates.json for the files (the ones named as update files; others,
     the servers' zips, are left out)"""
@@ -98,6 +114,9 @@ def manifest_text(version: str, tag: str, debug_tag: str, commit: str, files) ->
         entries.append({"platform": match.group(1), "configuration": match.group(2),
                         "kind": KINDS[match.group(3)], "tag": debug_tag if match.group(2) == "debug" else tag,
                         "name": path.name, "size": len(data), "sha256": hashlib.sha256(data).hexdigest()})
+        main = main_name(path)
+        if main:
+            entries[-1]["main"] = main
     if not entries:
         raise SystemExit("no update files to list")
     document = {"format": MANIFEST_FORMAT, "version": version, "commit": commit, "files": entries}
