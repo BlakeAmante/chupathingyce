@@ -38,6 +38,10 @@ clock runs on).
 #include "rasterizer/xbox/rasterizer_xbox_hardware_bitmaps.h"
 
 #include "halo_menus.h"
+#include "halo_keyboard.h"
+#ifdef HALO_GAME_BROWSER
+#include "../src/ui_overlay.h"
+#endif
 
 #include <stdlib.h>
 #include <string.h>
@@ -47,6 +51,7 @@ void platform_log(char const *format, ...);
 char const *config_string(char const *name);
 int platform_display_resolutions(long *widths, long *heights, int maximum);
 int platform_window_sizes(long *widths, long *heights, int maximum);
+int platform_audio_device_names(char const **names, int maximum);
 
 /* the game's network server (this machine hosts: network_game_globals.c) */
 void *global_network_game_server_get(void);
@@ -754,13 +759,34 @@ static long split(char const *text, char const **pieces)
 /* a spinner's strings, or its values, split: its own, but Video Setup's
 sizes are the display's (sdl_platform.c), shown "1920 x 1080" and set
 "1920x1080": its resolutions after Resolution's own (NATIVE), and the
-window sizes that fit it in place of Window Size's own */
+window sizes that fit it in place of Window Size's own; Audio Setup's
+Output Device has the system's outputs after its own (DEFAULT), by name
+(dsound_sdl.c) */
 static long spinner_split(struct halo_menu_widget const *widget, boolean values, char const **pieces)
 {
 	long count = split(values ? widget->values : widget->strings, pieces);
 	long widths[MAXIMUM_STRINGS], heights[MAXIMUM_STRINGS];
 	long added, index;
 
+	if (widget->setting && !strcmp(widget->setting, "audio.device"))
+	{
+		char const *names[MAXIMUM_STRINGS];
+
+		added = platform_audio_device_names(names, (int)(MAXIMUM_STRINGS - count));
+		for (index = 0; index < added; index++)
+		{
+			char *piece = allocate((long)strlen(names[index]) + 4);
+
+			if (!piece)
+				break;
+			strcpy(piece, names[index]);
+			/* (shown cut to the spinner's width: 24 letters) */
+			if (!values && strlen(piece) > 24)
+				strcpy(piece + 21, "...");
+			pieces[count++] = piece;
+		}
+		return count;
+	}
 	if (widget->setting && !strcmp(widget->setting, "display.resolution"))
 		added = platform_display_resolutions(widths, heights, (int)(MAXIMUM_STRINGS - count));
 	else if (widget->setting && !strcmp(widget->setting, "display.window_size"))
@@ -2116,4 +2142,72 @@ struct pc_menu_setting *pc_menu_setting_get(
 			return &menu_tags.settings[index];
 	}
 	return NULL;
+}
+
+/* ---------- the menus' button pictures as the keyboard's keys
+
+ui.map's pictures of the controller's buttons in the menus' prompts ("A =
+SELECT", "B = BACK": ui\shell\bitmaps\a_butn and the rest, and their
+smaller _sm), drawn as the keyboard's key caps while the keyboard or mouse
+was used last (halo_keyboard_prompts), as Online Games draws its prompts
+(ui_overlay.c: the keys xinput_sdl.c presses those buttons with), ending
+where the picture ends, so that the words after it stay clear. */
+
+boolean pc_menu_button_key_cap(
+	long bitmap_tag_index,
+	short x0,
+	short y0,
+	short x1,
+	short y1,
+	float alpha)
+{
+#ifdef HALO_GAME_BROWSER
+	static struct
+	{
+		char const *name;
+		int button;
+	} const buttons[] =
+	{
+		{ "a_butn", UI_BUTTON_A },
+		{ "b_butn", UI_BUTTON_B },
+		{ "x_butn", UI_BUTTON_X },
+		{ "y_butn", UI_BUTTON_Y },
+		{ "black_butn", UI_BUTTON_RIGHT_SHOULDER },
+		{ "start_butn", UI_BUTTON_START },
+		{ "back_butn", UI_BUTTON_BACK },
+	};
+	char const *name;
+	char const *last;
+	long index;
+
+	if (bitmap_tag_index == NONE || !halo_keyboard_prompts())
+		return FALSE;
+	name = tag_get_name(bitmap_tag_index);
+	if (!name || strncmp(name, "ui\\shell\\bitmaps\\", 17))
+		return FALSE;
+	last = name + 17;
+	for (index = 0; index < (long)(sizeof(buttons) / sizeof(buttons[0])); index++)
+	{
+		size_t length = strlen(buttons[index].name);
+
+		if (!strncmp(last, buttons[index].name, length) && (!last[length] || !strcmp(last + length, "_sm")))
+		{
+			float size = (float)(y1 - y0) * 0.62f;
+			float width = ui_overlay_button_width(buttons[index].button, size);
+			unsigned int shade = (unsigned int)(alpha < 0.f ? 0.f : alpha > 1.f ? 255.f : alpha * 255.f);
+
+			ui_overlay_button(buttons[index].button, size, (float)x1 - width,
+				(float)y0 + ((float)(y1 - y0) - size) * 0.5f, 0xFFFFFF00 | shade);
+			return TRUE;
+		}
+	}
+#else
+	(void)bitmap_tag_index;
+	(void)x0;
+	(void)y0;
+	(void)x1;
+	(void)y1;
+	(void)alpha;
+#endif
+	return FALSE;
 }
