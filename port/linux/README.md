@@ -375,6 +375,12 @@ map's box keeps its size, and what is below its list moves down. The few
 pictures of the settings that come from the main menu's map are not drawn
 there.
 
+With the Xbox's menus, the host of a multiplayer game (one hosted from this
+computer, not a dedicated server) gets END GAME in the pause menu too, after
+RESUME GAME: RESUME GAME, END GAME, LEAVE GAME. It ends the game as with the
+PC menus, and the Xbox's postgame screens then pick the next game. Other
+players' pause menus are as the Xbox's.
+
 The menus are XML files in `port/assets/menus` (`tools/ce_menus.py` writes
 them from the PC version's tags), which the game contains. To change them,
 put files in a `menus` folder next to `config.toml`: a file with the same
