@@ -735,6 +735,27 @@ int platform_app_folder(char *path, unsigned long size)
 	snprintf(path, (size_t)size, "%s/Library/Application Support/ChupathingyCE", home);
 	SDL_CreateDirectory(path);
 	return 1;
+#elif defined(__linux__) && !defined(HALO_ANDROID)
+	/* an AppImage (which sets APPIMAGE) runs from its own file, mounted
+	read-only: its data and settings go in the save root's usual place
+	(save_folder.c), or a test's HALO_SAVE_ROOT */
+	const char *appimage = getenv("APPIMAGE");
+	const char *save_root = getenv("HALO_SAVE_ROOT");
+	const char *data_home = getenv("XDG_DATA_HOME");
+	const char *home = getenv("HOME");
+
+	if (!appimage || !*appimage)
+		return 0;
+	if (save_root && *save_root)
+		snprintf(path, (size_t)size, "%s", save_root);
+	else if (data_home && *data_home)
+		snprintf(path, (size_t)size, "%s/chupathingyce", data_home);
+	else if (home && *home)
+		snprintf(path, (size_t)size, "%s/.local/share/chupathingyce", home);
+	else
+		return 0;
+	SDL_CreateDirectory(path);
+	return 1;
 #else
 	(void)path;
 	(void)size;
@@ -744,8 +765,10 @@ int platform_app_folder(char *path, unsigned long size)
 
 static void config_path(char *path, size_t size)
 {
-#ifdef __APPLE__
+#ifndef HALO_ANDROID
 	char folder[1024];
+#endif
+#ifdef __APPLE__
 	const char *save_root = getenv("HALO_SAVE_ROOT");
 
 	/* (a copy given a save root of its own, a test's, keeps its settings
@@ -755,7 +778,10 @@ static void config_path(char *path, size_t size)
 		snprintf(path, size, "%s/config.toml", save_root);
 		return;
 	}
-	/* (the application's folder: not the application, which is signed) */
+#endif
+#ifndef HALO_ANDROID
+	/* (the application's folder: not the application, which is signed, or
+	the AppImage, which cannot be written) */
 	if (platform_app_folder(folder, sizeof(folder)))
 	{
 		snprintf(path, size, "%s/config.toml", folder);
