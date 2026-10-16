@@ -41,8 +41,9 @@ The maps folder is "maps", or on a European disc with one per language
 ("maps_en", "maps_fr", ...) the one for the system's language, else
 English's, else the first. Every file in it, and in any folders inside it,
 is written to <destination>/maps.partial, which becomes <destination>/maps
-once all of them are there, so an interrupted copy never leaves
-maps/ui.map behind and the next start asks again.
+(in place of an empty maps folder) once all of them are there, so an
+interrupted copy never leaves maps/ui.map behind and the next start asks
+again.
 */
 
 /* (the desktop ports only: the Android app imports the game data itself) */
@@ -442,6 +443,23 @@ static int copy_file(struct xiso_image *image, const struct xiso_entry *file, co
 	return 1;
 }
 
+int xiso_is_image(const char *image_path)
+{
+	struct xiso_image image;
+	unsigned int root_sector, root_size;
+	char error[64];
+	int result;
+
+	image.error = error;
+	image.error_size = sizeof(error);
+	image.descriptor = open(image_path, O_RDONLY | O_LARGEFILE | O_CLOEXEC);
+	if (image.descriptor < 0)
+		return 0;
+	result = find_volume(&image, &root_sector, &root_size);
+	close(image.descriptor);
+	return result;
+}
+
 int xiso_extract_maps(const char *image_path, const char *destination, xiso_progress_proc progress, void *context,
 	char *error, int error_size)
 {
@@ -522,9 +540,11 @@ int xiso_extract_maps(const char *image_path, const char *destination, xiso_prog
 		if (!copy_file(&image, entry, path, buffer, &done, total, progress, context))
 			goto done;
 	}
-	if (rename(partial, final) != 0)
+	/* (over an empty maps folder, as the first start's "make the folders"
+	leaves: sdl_platform.c) */
+	if (rename(partial, final) != 0 && (rmdir(final) != 0 || rename(partial, final) != 0))
 	{
-		fail(&image, "Could not create %s.", final);
+		fail(&image, "Could not create %s (move the maps folder there aside).", final);
 		goto done;
 	}
 	result = 1;
