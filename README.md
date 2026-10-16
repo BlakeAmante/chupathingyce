@@ -465,7 +465,7 @@ builds are made only with free tools and libraries.
   repository, and its mirrors). ChupathingyCE's downloader is its own code;
   Chimera showed where the repositories are and how they answer.
 - Libraries: SDL3, stb, Mbed TLS, miniupnpc, KCP, tomlc17, musl's maths,
-  extract-xiso, Expat, Monocypher, zlib, SMAA, and Project Nayuki's QR Code
+  Expat, Monocypher, zlib, SMAA, and Project Nayuki's QR Code
   generator. Their licenses are
   beside them in `port/third_party`.
 
