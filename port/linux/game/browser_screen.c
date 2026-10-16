@@ -72,6 +72,7 @@ the right button is B.
 #include "networking/network_game_globals.h"
 #include "networking/network_client_manager.h"
 #include "../src/browser.h"
+#include "../src/browser_ping.h"
 #include "../src/map_art.h"
 #include "../src/map_download.h"
 #include "../src/ui_overlay.h"
@@ -796,7 +797,8 @@ static long compare_games(
 	}
 	case SORT_TYPE: order = (long)a->engine * 2 + a->teams - ((long)b->engine * 2 + b->teams); break;
 	case SORT_PING:
-		order = a->ping == b->ping ? 0 : a->ping < 0 ? 1 : b->ping < 0 ? -1 : (long)a->ping - (long)b->ping;
+		/* (measured, then estimated, then none) */
+		order = browser_ping_order(a->ping, a->ping_estimated, b->ping, b->ping_estimated);
 		break;
 	default: order = (long)b->players - (long)a->players; break;
 	}
@@ -2184,11 +2186,12 @@ static void draw_row(
 	snprintf(text, sizeof(text), "%d/%d", game->players, game->maximum_players);
 	ui_overlay_text_glow(UI_FONT_MENU, ROW_SIZE, COLUMN_PLAYERS, text_y, UI_ALIGN_RIGHT,
 		game->open || picked ? color : COLOR_CLOSED, glow, text);
-	/* (the round trip, while the tunnel reaches the host: browser.c; nothing
-	for a host not reached, whose round trip nothing measures before joining) */
+	/* (the round trip: the tunnel's while it reaches the host, or a ping
+	before joining, browser.c; "~" before an estimate, from the host's region;
+	nothing where neither is known) */
 	if (game->ping >= 0)
 	{
-		snprintf(text, sizeof(text), "%d", game->ping);
+		snprintf(text, sizeof(text), game->ping_estimated ? "~%d" : "%d", game->ping);
 		ui_overlay_text_glow(UI_FONT_MENU, ROW_SIZE, COLUMN_PING, text_y, UI_ALIGN_RIGHT, color, glow, text);
 	}
 }

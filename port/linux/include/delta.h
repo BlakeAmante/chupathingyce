@@ -82,6 +82,10 @@ enum delta_capability
 	from their player key, and kicks and bans from the game
 	(docs/delta.md, Moderation) */
 	_delta_capability_moderation = 10,
+	/* a host answers Online Games' pings before joining (p2p_probe.c):
+	announced on Delta List only, never offered in a HELLO or WELCOME
+	(docs/delta.md, Pings before joining) */
+	_delta_capability_ping = 11,
 
 	NUMBER_OF_DELTA_CAPABILITIES
 };
