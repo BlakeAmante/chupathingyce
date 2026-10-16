@@ -164,6 +164,17 @@ Where the game's `maps` folder is:
 | Windows | next to `halo.exe` |
 | Android | `/sdcard/Android/data/dev.horrible.chupathingyce/files` |
 
+Beside the maps folders, the game keeps folders of its own:
+
+| Folder | What is in it |
+| --- | --- |
+| `logs` (beside `maps`) | The game's logs: `debug.txt`, crash reports waiting to be sent, and on Windows `halo.log`. Attach these to a bug report. |
+| `data` (beside `maps`) | Things you add that are not maps. |
+| `cache` (in the save folder) | What the game can make again; safe to delete. |
+
+Until 0.8.0, `debug.txt` was beside `maps` (and on Windows `halo.log` beside
+`halo.exe`). The game leaves an old one where it is.
+
 Copy the `.map` files from your own Halo PC install. On Android, Import
 maps (hold the app's icon, or the touch controls' Options in the game)
 picks `.map` files or `.zip` archives with Android's own file picker and
@@ -306,7 +317,7 @@ starts, with every setting listed, commented out at its default, and a line
 or two saying what each one does. To change one, remove the `#` in front of it
 and edit the value; the game reads the file when it starts, so restart it
 after a change. A line that starts with `#` does nothing. If a change seems
-to do nothing, look in `debug.txt` for lines starting `config.toml` or
+to do nothing, look in `logs/debug.txt` for lines starting `config.toml` or
 `settings:`: they name a misspelled setting, one in the wrong `[section]`, a
 line still commented out, a line the game skipped because of a mistake (a
 value missing its quotes, `menus = pc` for `menus = "pc"`, or `False` for
@@ -344,6 +355,7 @@ A few people look for most:
 | `network.host_public` | Whether games you host are listed for everyone (true) or only joinable by invite (false). |
 | `update.auto` | Whether the game updates itself. |
 | `paths.data`, `paths.saves` | Where the maps and the saves are, if not the usual place. |
+| `paths.logs`, `paths.cache` | Where the logs and the cache go, if not the usual place (below). |
 
 Settings you leave at their default follow each new version's default, so
 leaving the file alone is always safe. Every setting can also be given as an
