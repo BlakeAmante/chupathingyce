@@ -569,6 +569,7 @@ symbols in this file:
 #include "networking/network_server_manager.h"
 #include "networking/network_game_manager.h"
 #include "network_coop.h" /* port: port/linux/game/network_coop.c */
+#include "follow_camera.h" /* port: port/linux/game/follow_camera.c */
 /* (network_server_manager_internal.h's: the host's game record) */
 struct network_game *network_game_server_get_game(struct network_game_server *server);
 #include "objects.h"
@@ -4547,6 +4548,10 @@ void game_engine_player_killed(
 	else
 		valid_players = FALSE;
 	player_kill = !friendly_fire && valid_players && !same_player;
+
+	/* port: who killed whom, for the follow camera (port/linux/game/
+	follow_camera.c), which follows the killer in a game without teams */
+	follow_camera_player_killed(killing_player_index, dead_player_index);
 
 	dead_player->respawn_timer =
 		dead_player->respawn_penalty + global_variant.universal_variant.respawn_time;

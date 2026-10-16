@@ -173,6 +173,19 @@ static const struct config_setting config_settings[] =
 	{ "display.player_name_scale", _config_real, "1.0", "HALO_PLAYER_NAME_SCALE", _environment_value, _platform_all,
 		"How large the players' names are drawn: 1.0 three quarters of the size of\n"
 		"the HUD's text, 0.25 to 4." },
+	{ "display.follow_camera", _config_string, "\"long_waits\"", "HALO_FOLLOW_CAMERA", _environment_value,
+		_platform_all,
+		"In multiplayer, when a dead player's camera follows a living player\n"
+		"from behind (a teammate, or in a game without teams the killer or the\n"
+		"leader; LB and RB, or Q and E, switch who) once the death camera is\n"
+		"done: \"long_waits\" only while the wait to respawn is long (see\n"
+		"display.follow_camera_after, out of lives, or a game type's next\n"
+		"round), \"always\", or \"off\" for the original death camera only." },
+	{ "display.follow_camera_after", _config_real, "5.0", "HALO_FOLLOW_CAMERA_AFTER", _environment_value,
+		_platform_all,
+		"For display.follow_camera's \"long_waits\": how many seconds of the\n"
+		"wait to respawn must be left once the death camera is done (3\n"
+		"seconds after the death) for the camera to follow someone." },
 	{ "display.scoreboard_team_layout", _config_string, "\"teams\"", "HALO_SCOREBOARD_TEAM_LAYOUT", _environment_value,
 		_platform_all,
 		"How the scoreboard lists a team game's players: \"teams\" in a column for\n"
@@ -1627,6 +1640,7 @@ static const struct
 	{ "display.menus", { "xbox", "gearbox", "pc", NULL }, NULL },
 	{ "display.player_names", { "all", "allies", "allys", "enemies", "none", NULL }, "\"all\"" },
 	{ "display.scoreboard_team_layout", { "teams", "score", NULL }, "\"teams\"" },
+	{ "display.follow_camera", { "long_waits", "always", "off", NULL }, "\"long_waits\"" },
 	{ "audio.resampling", { "sinc", "linear", NULL }, "\"sinc\"" },
 	{ "input.touch_controls", { "on", "auto", "off", NULL }, "\"on\"" },
 	{ "game.console_log", { "important", "all", "none", NULL }, "\"important\"" },
