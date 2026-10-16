@@ -312,8 +312,8 @@ other functions behind the screens are not wired to this game yet
 servers, key bindings) are empty, and the settings they change do not
 change. The screens open, close and move between each other as the PC
 version's. ChupathingyCE starts on the Xbox's menus (`display.menus = "xbox"`),
-which start every kind of game and have Online Games; `display.menus = "pc"`
-gives these.
+which start every kind of game and have Online Games; `display.menus =
+"gearbox"` (or the older `"pc"`) gives these, Gearbox's Halo PC menus.
 
 Multiplayer > CO-OP CAMPAIGN is the Xbox's cooperative play, which the PC
 version does not have: two players on this computer play the campaign in
@@ -362,7 +362,7 @@ The settings are in `config.toml` next to the executable
 with a comment for each setting and its default value, commented out:
 
 ```toml
-# The menus: "xbox" for the Xbox's (with Online Games), "pc" for the
+# The menus: "xbox" for the Xbox's (with Online Games), "gearbox" for
 # ...
 # menus = "xbox"
 ```
@@ -419,7 +419,7 @@ the setting for one start of the game. It has priority over the file.
 | `display.high_res_hud` | `true` | `HALO_HIGH_RES_HUD` | `true`: the HUD (meters, counters, panels and their outlines, the motion sensor, reticles, waypoints, scopes) is drawn from the high-res assets in `port/assets/hud`, 8x the size of the maps' bitmaps. The bitmaps with English text keep the maps' own. `false`: the maps' own bitmaps. |
 | `display.high_res_text` | `true` | `HALO_HIGH_RES_TEXT` | `true`: the menus' and HUD's text is drawn with the fonts in `port/assets/fonts` (Overpass, in place of the maps' Interstate) at the resolution the game draws at, laid out as before, and the menus' titles are drawn from the high-res pictures in `port/assets/titles`. `false`: the maps' bitmap fonts and titles. It covers the game's own text only: the Server Browser and the moderation overlays use the system's fonts in any case. For the blocky look of the Xbox, also set `display.resolution_scaling = "original"`. |
 | `display.shadow_resolution` | `128` | `HALO_SHADOW_RESOLUTION` | The size of the maps that the shadows of the objects are drawn in, in pixels each way: `128`, `256`, `512` or `1024` (other values go down to one of these). The game draws the shadow of each object into a map of 128x128 pixels, blurs it and projects it onto the ground. On a large screen, the edges of these shadows show steps that move when the object moves. A larger map makes the edges smooth; the blur is made wider to match, so the shadows are as soft as on the Xbox. Each doubling adds two passes of the blur. `128`: as on the Xbox. |
-| `display.menus` | `"xbox"` | `HALO_MENUS` | `"xbox"`: the Xbox's menus, with Online Games (ChupathingyCE's default). `"pc"`: the PC version's menus, from the files in `port/assets/menus` and a `menus` folder next to `config.toml`. Refer to "Menus". |
+| `display.menus` | `"xbox"` | `HALO_MENUS` | `"xbox"`: the Xbox's menus, with Online Games (the default). `"gearbox"` (or the older `"pc"`): Gearbox's Halo PC menus, from the files in `port/assets/menus` and a `menus` folder next to `config.toml`. Refer to "Menus". |
 | `display.version_watermark` | `false` | `HALO_VERSION_WATERMARK` | `true`: the build's version ("0.7.5a (5c1a363)"), which the main menu shows small and faint in the bottom right corner, is shown there while playing too: handy for screenshots and bug reports. |
 | `display.player_names` | `"all"` | `HALO_PLAYER_NAMES` | In multiplayer, whose names are drawn above their heads: `"all"`, `"allies"`, `"enemies"` or `"none"`. An ally's name is drawn above the triangle the game shows over teammates. An enemy's name shows only within the motion sensor's reach, while the enemy is in sight and not camouflaged, so it never shows where an enemy hides. The gametype's motion tracker setting also applies: no names if it shows no players, only allies' if it shows only friends. |
 | `display.player_name_scale` | `1.0` | `HALO_PLAYER_NAME_SCALE` | How large the players' names are drawn: `1.0` is three quarters of the size of the HUD's text, from `0.25` to `4`. With high-res text, larger names are rasterized at their size, so they stay sharp. |
@@ -906,7 +906,22 @@ activity sent (without the invite).
 
 Builds with the game list (`configure.py --game-browser`) have Online Games
 in the Multiplayer menu: the games on `network.browser_url`
-(halo.milenko.org). Each copy of the game has a player key in the save root
+(halo.milenko.org). The screen looks like the Xbox's menus, drawn by the
+game itself in the menus' fonts (`port/assets/fonts`). Each game's map has a
+tag for its family: XBX (the Xbox's maps), HCE (Custom Edition), HMD
+(HaloMD) and GBX (Halo PC retail). A lock marks a game with a password, as
+its public listing says. The ping column shows the round trip to a host
+that this machine is connected to (a game that you join), else nothing:
+nothing measures a host before you join it. Sorted by ping, such games come
+last. The details show the map's picture from the menus, or from Halo PC's
+`ui.map`. Without either, a stock map's picture comes from the site
+(stats.chupathingy.org/art/maps), downloaded in the background only while
+`network.online` is on and kept in the save root's `map_art` folder. Any
+other map gets a card with its name in its family's color. RB (Link Profile)
+shows only while this copy is not linked to a profile: linked on this copy
+(kept in the save root's `game_list_profile.txt`), or a profile the site
+has for this copy's player ID. Once linked, Start's prompt names the
+profile. Each copy of the game has a player key in the save root
 (`game_list_player.key`). The key confirms the player's lines in finished
 games. The game sends the key only to an HTTPS server, or to a server on
 this computer (`http://127.0.0.1`, `http://localhost`) for tests.
