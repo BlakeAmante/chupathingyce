@@ -1773,7 +1773,7 @@ static void config_check_words(void)
 		for (word = 0; word < NUMBER_OF_CONFIG_OLD_WORDS; word++)
 		{
 			if (!strcmp(config_old_words[word].name, config_words[word_index].name) &&
-				!SDL_strcasecmp(value->string, config_old_words[word].old_word))
+				!SDL_strncasecmp(value->string, config_old_words[word].old_word, strlen(config_old_words[word].old_word) + 1))
 			{
 				free(value->string);
 				value->string = strdup(config_old_words[word].word);

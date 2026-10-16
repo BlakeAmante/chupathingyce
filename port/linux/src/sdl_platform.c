@@ -1521,9 +1521,10 @@ static int platform_clipboard_join_setting(void)
 {
 	const char *setting = config_string("network.join_from_clipboard");
 
-	if (!SDL_strcasecmp(setting, "always") || !SDL_strcasecmp(setting, "true"))
+	/* (in lowercase, true and false read as these: config_check_words) */
+	if (!strcmp(setting, "always"))
 		return _clipboard_join_always;
-	if (!SDL_strcasecmp(setting, "never") || !SDL_strcasecmp(setting, "false"))
+	if (!strcmp(setting, "never"))
 		return _clipboard_join_never;
 	return _clipboard_join_ask;
 }
