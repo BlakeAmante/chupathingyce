@@ -269,7 +269,7 @@ context has the extension, never required (gl_functions.c). On ES 3.0 and
 
 #define GL_DECLARE_FUNCTION(name) extern __typeof__(&name) halo_##name;
 GL_FUNCTIONS(GL_DECLARE_FUNCTION)
-#ifdef HALO_GLES
+#ifdef HALO_ANDROID
 GL_OPTIONAL_FUNCTIONS(GL_DECLARE_FUNCTION)
 #endif
 #undef GL_DECLARE_FUNCTION
