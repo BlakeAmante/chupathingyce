@@ -30,14 +30,14 @@ SCREENS = {
     "video_settings": {
         "screen": "video_settings_screen",
         "header": ("header_profile_video_settings", f"{PE}/video_settings/header_profile_video_settings"),
-        # (closer than the other screens' rows, and the help lower, for all
-        # twelve places to fit above it)
-        "spacing": 24,
-        "help_top": 364,
+        # (closer than the other screens' rows, for all ten places to fit
+        # above the help)
+        "spacing": 27,
         # (rows in the place of the row before them: Window Size in
         # Resolution's, port/linux/game/menu_functions.c showing the one the
-        # display mode chosen uses; Android's anti-aliasing in the desktop's)
-        "same_place": ["display.window_size", "anti_aliasing_android"],
+        # display mode chosen uses; Android's Smooth Motion in Frame Rate's,
+        # and its anti-aliasing in the desktop's)
+        "same_place": ["display.window_size", "display.interpolation", "anti_aliasing_android"],
         "rows": [
             ("DISPLAY MODE:", "display.mode",
              [("FULLSCREEN", "fullscreen"), ("BORDERLESS", "borderless"), ("WINDOWED", "windowed")],
@@ -55,14 +55,17 @@ SCREENS = {
              "Native draws at the resolution; Original draws\nthe Xbox's 640x480 and scales it up.", "desktop"),
             ("V-SYNC:", "display.vsync", ON_OFF,
              "Wait for the display between frames, so that the\npicture never tears.", None),
-            ("FRAME RATE LIMIT:", "display.max_fps",
-             [("AUTO", "0"), ("30", "30"), ("60", "60"), ("120", "120"), ("144", "144"), ("165", "165"),
-              ("240", "240"), ("NONE", "-1")],
-             "With V-Sync off, the most frames a second. Auto:\ntwice the display's refresh rate.", "desktop"),
+            # (port/linux/game/menu_functions.c: 30 also turns display.interpolation
+            # off, the others on; Android, with no frame rate cap, has Smooth
+            # Motion in its place. Instant Aim, display.direct_camera, is in
+            # config.toml alone)
+            ("FRAME RATE:", "display.max_fps",
+             [("30 (XBOX)", "30"), ("AUTO", "0"), ("60", "60"), ("120", "120"), ("144", "144"),
+              ("165", "165"), ("240", "240"), ("NONE", "-1")],
+             "30 draws the game's own frames; the others blend\nbetween them. Auto: twice the display's rate.",
+             "desktop"),
             ("SMOOTH MOTION:", "display.interpolation", ON_OFF,
-             "Draw a frame for every display refresh, blending\nbetween the game's 30 ticks a second.", None),
-            ("INSTANT AIM:", "display.direct_camera", ON_OFF,
-             "In first person, turn the view the moment the\nmouse moves, not up to two ticks later.", "desktop"),
+             "Draw a frame for every display refresh, blending\nbetween the game's 30 ticks a second.", "android"),
             ("HIGH-RES HUD:", "display.high_res_hud", ON_OFF,
              "Draw the HUD from the high-res redraws; off\ndraws the game's own pictures.", None),
             ("HIGH-RES TEXT:", "display.high_res_text", ON_OFF,
