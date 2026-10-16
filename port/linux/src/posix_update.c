@@ -589,8 +589,14 @@ int update_download(const char *url, const char *path, unsigned long long maximu
 
 int update_executable_path(char *path, int size)
 {
-	ssize_t length = readlink("/proc/self/exe", path, (size_t)size - 1);
+	const char *appimage = getenv("APPIMAGE");
+	ssize_t length;
 
+	/* (none for an AppImage, mounted read-only, whose files cannot be
+	replaced: it is not offered updates yet) */
+	if (appimage && *appimage)
+		return 0;
+	length = readlink("/proc/self/exe", path, (size_t)size - 1);
 	if (length <= 0)
 		return 0;
 	path[length] = 0;

@@ -256,6 +256,29 @@ static short map_family(
 	return map_family_parse(path, NULL, 0);
 }
 
+/* the campaign's levels in the menus' words, for the co-op games the list
+shows (a level's scenario is its file's name) */
+static char const *const campaign_names[][2] =
+{
+	{ "a10", "The Pillar of Autumn" }, { "a30", "Halo" }, { "a50", "The Truth and Reconciliation" },
+	{ "b30", "The Silent Cartographer" }, { "b40", "Assault on the Control Room" }, { "c10", "343 Guilty Spark" },
+	{ "c20", "The Library" }, { "c40", "Two Betrayals" }, { "d20", "Keyes" }, { "d40", "The Maw" },
+};
+
+/* a campaign level's name from its file's, or NULL for a map that is not one */
+static char const *campaign_name(
+	char const *file)
+{
+	long index;
+
+	for (index = 0; index < NUMBEROF(campaign_names); index++)
+	{
+		if (!csstrcmp(file, campaign_names[index][0]))
+			return campaign_names[index][1];
+	}
+	return NULL;
+}
+
 /* a game's map as players name it: an Xbox map's name in the menus, or a
 Custom Edition map's as the menus' map list names it */
 static char const *map_display_name(
@@ -287,6 +310,8 @@ static char const *map_display_name(
 		if (!csstrcmp(file, map_names[index][0]))
 			return map_names[index][1];
 	}
+	if (campaign_name(file))
+		return campaign_name(file);
 	/* (the path's last part, as it was) */
 	snprintf(text, (size_t)size, "%s", file);
 	return text;
@@ -1349,7 +1374,20 @@ static char const *type_name(
 	char *text,
 	long size)
 {
-	char const *engine = game->engine >= 0 && game->engine < NUMBEROF(engine_names) && engine_names[game->engine][0] ?
+	char const *engine;
+	static char const *const difficulties[] = { "Easy", "Normal", "Heroic", "Legendary" };
+	char file[BROWSER_MAP_LENGTH];
+
+	/* (a campaign level is co-op, whatever variant its host had chosen last) */
+	if (map_file(game->map, file, sizeof(file)) == _map_family_xbox && campaign_name(file))
+	{
+		if (game->difficulty >= 1 && game->difficulty <= NUMBEROF(difficulties))
+			snprintf(text, (size_t)size, "Co-op (%s)", difficulties[game->difficulty - 1]);
+		else
+			snprintf(text, (size_t)size, "Co-op");
+		return text;
+	}
+	engine = game->engine >= 0 && game->engine < NUMBEROF(engine_names) && engine_names[game->engine][0] ?
 		engine_names[game->engine] : "Game";
 
 	/* (Capture the Flag is played in teams alone) */
