@@ -170,7 +170,8 @@ get it. This occurs at the first start:
 
 - "Xbox disc image" (the default) opens a file picker. Select an Xbox disc
   image (`.xiso` or `.iso`). The game copies `maps/` next to the executable
-  and shows the progress.
+  and shows the progress. It also copies the disc's Bink movies (`bink/`,
+  the `.bik` files), only the ones `bink/` lacks.
 - "Halo PC or Custom Edition" opens the same picker for optional extras: a
   Halo PC CD image (`.iso`) fills `maps_pc/` (pc_disc.c), and Custom
   Edition's installer (`halocesetup_en_1.00.exe`) fills `maps_ce/`
@@ -185,7 +186,10 @@ Either picker finds out what a file is from its contents, not its name.
 
 The game writes the copy to `maps.partial`. When the copy is complete, the
 game changes the name to `maps`. If the copy stops before it is complete,
-the game asks for the disc image again at the next start.
+the game asks for the disc image again at the next start. The movies follow
+the maps, each written as `<name>.partial` first. A movie that is already in
+`bink/` is never replaced, and a movie that can't be copied does not stop the
+extraction.
 
 ## Files and folders
 
@@ -1085,7 +1089,7 @@ crafted file) is refused, and the level starts over.
 | Memory | The port reserves the Xbox memory at `0x80000000`. Thus the game gets the fixed addresses that it expects. |
 | Saved games | The Xbox `UDATA` layout, with SHA-1 signatures. |
 | Networking | Winsock on BSD sockets. System link on a local network and on the internet. |
-| Bink video | Not available. The game skips the movies. |
+| Bink video | Not available on this build. The game skips the movies, although the disc extraction copies them to `bink/` (`d:\bink\*.bik`) for a build that plays them (macOS does). |
 
 ## How the port operates
 
