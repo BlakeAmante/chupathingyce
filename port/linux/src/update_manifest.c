@@ -34,6 +34,7 @@ struct manifest_file
 	char kind[MANIFEST_WORD_SIZE];
 	char tag[MANIFEST_WORD_SIZE];
 	char name[MANIFEST_WORD_SIZE];
+	char main_name[MANIFEST_WORD_SIZE];
 	char sha256[UPDATE_SHA256_TEXT_SIZE];
 	unsigned long long size;
 	int has_size;
@@ -323,6 +324,8 @@ static int manifest_file(struct manifest_json *json, struct manifest_file *file)
 			ok = manifest_word_value(json, file->tag, sizeof(file->tag));
 		else if (manifest_is(key, length, "name"))
 			ok = manifest_word_value(json, file->name, sizeof(file->name));
+		else if (manifest_is(key, length, "main"))
+			ok = manifest_word_value(json, file->main_name, sizeof(file->main_name));
 		else if (manifest_is(key, length, "size"))
 			ok = manifest_size(json, file);
 		else if (manifest_is(key, length, "sha256"))
@@ -339,7 +342,8 @@ static int manifest_file(struct manifest_json *json, struct manifest_file *file)
 
 int update_manifest_find(const char *text, size_t length, const char *version, const char *platform,
 	const char *configuration, const char *kind, char *tag, size_t tag_size, char *name, size_t name_size,
-	unsigned long long *size, char *sha256, size_t sha256_size, char *error, size_t error_size)
+	unsigned long long *size, char *sha256, size_t sha256_size, char *main_name, size_t main_size, char *error,
+	size_t error_size)
 {
 	struct manifest_json json;
 	struct manifest_file file, found;
@@ -451,7 +455,8 @@ int update_manifest_find(const char *text, size_t length, const char *version, c
 		snprintf(error, error_size, "the list's %s file for %s %s is not one", kind, platform, configuration);
 		return _update_manifest_refused;
 	}
-	if (strlen(found.tag) >= tag_size || strlen(found.name) >= name_size || sha256_size < UPDATE_SHA256_TEXT_SIZE)
+	if (strlen(found.tag) >= tag_size || strlen(found.name) >= name_size || sha256_size < UPDATE_SHA256_TEXT_SIZE ||
+		strlen(found.main_name) >= main_size)
 	{
 		snprintf(error, error_size, "the list's names are too long");
 		return _update_manifest_refused;
@@ -459,6 +464,7 @@ int update_manifest_find(const char *text, size_t length, const char *version, c
 	snprintf(tag, tag_size, "%s", found.tag);
 	snprintf(name, name_size, "%s", found.name);
 	snprintf(sha256, sha256_size, "%s", found.sha256);
+	snprintf(main_name, main_size, "%s", found.main_name);
 	*size = found.size;
 	return _update_manifest_found;
 

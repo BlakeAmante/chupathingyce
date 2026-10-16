@@ -15,10 +15,15 @@ key; update_signature.h), so its one signature covers every file it names:
 	  "files": [
 	    {"platform": "linux64", "configuration": "release", "kind": "zip",
 	     "tag": "v0.8.0", "name": "chupathingyce-linux64-release.zip",
-	     "size": 32373110, "sha256": "<64 lowercase hex digits>"},
+	     "size": 32373110, "sha256": "<64 lowercase hex digits>",
+	     "main": "chupathingy"},
 	    ...
 	  ]
 	}
+
+"main", which a list may leave out, is the zip's file to start once it is
+installed (the game's executable, by the name the release gives it); without
+one, the updater starts the file it was started from, as before.
 
 "tag" is the release the file is on (the debug builds are on a pre-release
 of their own, v<version>-debug). "kind" is what the file is: "zip" (the
@@ -54,10 +59,12 @@ enum
 /* in the list (text, length bytes; its signature checked first) of the
 release of version, the file of kind for platform and configuration: its
 release's tag, its name, size and SHA-256 (lowercase hex) into tag, name,
-size and sha256; one of the above, and why in error when it is not found */
+size and sha256, and its "main" into main_name (empty without one); one of
+the above, and why in error when it is not found */
 int update_manifest_find(const char *text, size_t length, const char *version, const char *platform,
 	const char *configuration, const char *kind, char *tag, size_t tag_size, char *name, size_t name_size,
-	unsigned long long *size, char *sha256, size_t sha256_size, char *error, size_t error_size);
+	unsigned long long *size, char *sha256, size_t sha256_size, char *main_name, size_t main_size, char *error,
+	size_t error_size);
 
 /* the SHA-256 of size bytes of data, as 64 lowercase hex digits, into hex */
 void update_sha256(const unsigned char *data, size_t size, char hex[UPDATE_SHA256_TEXT_SIZE]);

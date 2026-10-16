@@ -7,7 +7,7 @@ tools/test_update_manifest.py with a test key (HALO_UPDATE_TEST_KEY). It
 does what it is told and prints the answer:
 
 	find LIST VERSION PLATFORM CONFIGURATION KIND
-	              "found TAG NAME SIZE SHA256", "missing: WHY" or "refused: WHY"
+	              "found TAG NAME SIZE SHA256 [MAIN]", "missing: WHY" or "refused: WHY"
 	document FILE SIGNATURE
 	              "signed" or "not signed: WHY" (the file's exact bytes)
 	zip FILE ASSET VERSION SIGNATURE
@@ -52,15 +52,15 @@ int main(int argc, char **argv)
 
 	if (argc == 7 && !strcmp(argv[1], "find"))
 	{
-		char tag[160], name[160], sha256[UPDATE_SHA256_TEXT_SIZE];
+		char tag[160], name[160], main_name[160], sha256[UPDATE_SHA256_TEXT_SIZE];
 		unsigned long long file_size = 0;
 		int result;
 
 		data = read_file(argv[2], &size);
 		result = update_manifest_find((const char *)data, size, argv[3], argv[4], argv[5], argv[6], tag, sizeof(tag),
-			name, sizeof(name), &file_size, sha256, sizeof(sha256), error, sizeof(error));
+			name, sizeof(name), &file_size, sha256, sizeof(sha256), main_name, sizeof(main_name), error, sizeof(error));
 		if (result == _update_manifest_found)
-			printf("found %s %s %llu %s\n", tag, name, file_size, sha256);
+			printf("found %s %s %llu %s%s%s\n", tag, name, file_size, sha256, main_name[0] ? " " : "", main_name);
 		else
 			printf("%s: %s\n", result == _update_manifest_missing ? "missing" : "refused", error);
 		return 0;
