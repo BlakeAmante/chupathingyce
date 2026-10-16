@@ -363,18 +363,24 @@ static int player_key(unsigned char *key)
 	{
 		unsigned char read_key[PLAYER_KEY_SIZE];
 
+		/* (said once a run; a key that could not be read is tried again the
+		next time one is wanted, not given up on until the game restarts) */
+		static int logged;
+
 		player_key_path(path, sizeof(path));
 		loaded = posix_browser_private_key(path, read_key, PLAYER_KEY_SIZE) ? 1 : -1;
-		if (loaded < 0)
+		if (loaded < 0 && !logged)
+		{
+			logged = 1;
 			platform_log("Game list: no player key (%s): finished games are not confirmed", path);
+		}
 		pthread_mutex_lock(&browser_lock);
 		/* (unless a restored key took its place meanwhile) */
 		if (player_key_loaded)
 			loaded = player_key_loaded;
-		else
+		else if (loaded > 0)
 		{
-			if (loaded > 0)
-				memcpy(player_key_cached, read_key, PLAYER_KEY_SIZE);
+			memcpy(player_key_cached, read_key, PLAYER_KEY_SIZE);
 			player_key_loaded = loaded;
 		}
 		pthread_mutex_unlock(&browser_lock);
@@ -567,9 +573,14 @@ static void start_connect(int serial, const unsigned short *name)
 	int seconds = 0, status, size = 0, x, y;
 
 	server_url("/v1/connect/start", url, sizeof(url));
-	if (!safe_for_key(url) || !player_key(key))
+	if (!safe_for_key(url))
 	{
-		connect_failed(serial, "Link Profile needs an HTTPS game list and a player key.");
+		connect_failed(serial, "Link Profile needs an HTTPS game list (network.browser_url).");
+		return;
+	}
+	if (!player_key(key))
+	{
+		connect_failed(serial, "Link Profile could not read or make this copy's player key. debug.txt has its path.");
 		return;
 	}
 	p2p_hex(key, PLAYER_KEY_SIZE, key_text);
