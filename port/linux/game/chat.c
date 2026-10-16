@@ -1031,7 +1031,9 @@ void chat_update(void)
 /* ---------- drawing */
 
 /* The lines are drawn as the HUD's messages are: its message font, in its
-message tint, with the font's light shadow, at the HUD's scale. They sit at
+message tint, a size smaller than its messages (so that they keep out of the
+way and break into fewer lines) and with a heavier shadow than the font's own,
+as Halo PC's chat has, to read over bright ground. They sit at
 the lower left, anchored to the screen's lower left corner as the motion
 sensor is, a little above it, and keep to the left half of the screen;
 the HUD's units are the same at every aspect ratio and with the high-res
@@ -1046,6 +1048,12 @@ enum
 	/* the lines end this short of the screen's middle */
 	CHAT_SHORT_OF_MIDDLE = 32,
 };
+
+/* the lines' size, against the HUD's messages' */
+#define CHAT_SCALE 0.8f
+/* the heavier shadow: the line again, in black this much as solid, a unit
+down and right of it (under the font's own shadow, a unit further) */
+#define CHAT_SHADOW_ALPHA 0.6f
 
 /* the HUD's message tint (the state messages': "Hold BACK for score") */
 static real_argb_color hud_tint(void)
@@ -1228,7 +1236,7 @@ static short draw_entry(long font_index, short line_height, struct chat_entry co
 	long breaks[16];
 	real_argb_color colors[NUMBER_OF_PARTS];
 	short width = (short)(area->x1 - area->x0);
-	short line_count = 0, line, top;
+	short line_count = 0, line, top, pass;
 	long index, length = 0;
 
 	entry_words(entry, name, NUMBEROF(name));
@@ -1269,6 +1277,9 @@ static short draw_entry(long font_index, short line_height, struct chat_entry co
 			index++;
 	}
 	top = (short)(bottom - line_count * line_height);
+	/* (the shadow first, all of it, so that no run's falls over another's
+	letters; then the letters) */
+	for (pass = 0; pass < 2; pass++)
 	for (line = 0; line < line_count; line++)
 	{
 		long end = line + 1 < line_count ? breaks[line + 1] : length;
@@ -1287,7 +1298,19 @@ static short draw_entry(long font_index, short line_height, struct chat_entry co
 			bounds.x1 = (short)MAX(area->x1, bounds.x0 + 1);
 			bounds.y0 = (short)(top + line * line_height);
 			bounds.y1 = (short)(bounds.y0 + line_height);
-			draw_string_set_draw_mode(font_index, NONE, 0, 0, &colors[part[index]]);
+			if (!pass)
+			{
+				real_argb_color shadow = *global_real_argb_black;
+
+				shadow.alpha = colors[part[index]].alpha * CHAT_SHADOW_ALPHA;
+				bounds.x0++;
+				bounds.x1++;
+				bounds.y0++;
+				bounds.y1++;
+				draw_string_set_draw_mode(font_index, NONE, 0, 0, &shadow);
+			}
+			else
+				draw_string_set_draw_mode(font_index, NONE, 0, 0, &colors[part[index]]);
 			draw_string_set_indents(0, 0);
 			rasterizer_draw_unicode_string(&bounds, NULL, NULL, 0, buffer);
 		}
@@ -1304,6 +1327,7 @@ void chat_draw(short local_player_index)
 	unsigned long now = system_milliseconds();
 	short line_height, bottom;
 	long shown = 0, index;
+	real anchor_x, anchor_y;
 
 	/* (not over a menu: the pause menu, the pregame's) */
 	if (local_player_index != local_player_get_next(NONE) || font_index == NONE || !delta_peer_game_role() ||
@@ -1319,6 +1343,13 @@ void chat_draw(short local_player_index)
 	area.y0 = (short)(window.y0 - render.camera.viewport_bounds.y0);
 	area.y1 = (short)(window.y1 - render.camera.viewport_bounds.y0);
 	bottom = (short)(area.y1 - CHAT_ABOVE_BOTTOM);
+	/* (drawn CHAT_SCALE times the size about the lines' lower left: laid
+	out over the area as it is before the scale) */
+	anchor_x = (real)area.x0;
+	anchor_y = (real)bottom;
+	area.x1 = (short)(area.x0 + (area.x1 - area.x0) / CHAT_SCALE);
+	area.y0 = (short)(bottom - (bottom - area.y0) / CHAT_SCALE);
+	rasterizer_text_set_scale(CHAT_SCALE, anchor_x, anchor_y);
 
 	/* the line typed (Halo PC's "Say:"), or the quick line picked */
 	if (chat.typing || chat.quick_shown)
@@ -1423,6 +1454,7 @@ void chat_draw(short local_player_index)
 		if (bottom < area.y0 + line_height * 4)
 			break;
 	}
+	rasterizer_text_set_scale(1.0f, 0.0f, 0.0f);
 }
 
 #endif
