@@ -138,6 +138,10 @@ static const struct config_setting config_settings[] =
 		"How wide the first-person view is, in degrees across a 4:3 picture:\n"
 		"70 as on the Xbox, 50 to 120 (wider screens see more at the sides).\n"
 		"Scopes zoom in as much as before." },
+	{ "display.far_clip_distance", _config_real, "1024.0", "HALO_FAR_CLIP_DISTANCE", _environment_value, _platform_all,
+		"How far the world is drawn: 1024 as on the Xbox, up to 10000. Raise\n"
+		"it for large maps that cut off in the distance. Drawing only; the\n"
+		"game itself is unchanged. Fog can still end the view sooner." },
 	{ "display.match_timer", _config_boolean, "false", "HALO_MATCH_TIMER", _environment_value, _platform_all,
 		"In a multiplayer game with a time limit, show the time left at the top\n"
 		"of the screen; false shows it only on the scoreboard, as the Xbox did." },
