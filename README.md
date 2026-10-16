@@ -52,9 +52,10 @@ games to join: [discord.gg/chupathingy](https://discord.gg/chupathingy).
 
 **The game**
 - The campaign, split screen and System Link, running natively (no emulator)
+- LAN parties the old way: System Link on your own network and split screen need no internet and no account
 - High-res HUD and text, and widescreen menus
 - Controller prompts for Xbox, PlayStation and Nintendo pads, and the keyboard
-- Updates itself: it checks for new releases when it starts, and asks first
+- Updates itself on Windows, Linux and Android: it checks for new releases when it starts, and asks first (on Mac it opens the download)
 
 **Platforms**
 
