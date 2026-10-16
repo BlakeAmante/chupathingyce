@@ -73,10 +73,10 @@ enum
 {
 	/* the lines kept for the log, and shown over the game at once */
 	LOG_LINES = 48,
-	SHOWN_LINES = 6,
+	SHOWN_LINES = 4,
 	LOG_SHOWN_LINES = 12,
 	/* a line shows this long, then fades for this long (milliseconds) */
-	LINE_TIME = 8000,
+	LINE_TIME = 6000,
 	FADE_TIME = 1000,
 	/* a refusal or note of this copy's shows a little shorter */
 	NOTE_TIME = 5000,
@@ -115,6 +115,8 @@ struct chat_entry
 	short machine;
 	/* a notice the banner shows already: the log has it, the HUD does not */
 	boolean log_only;
+	/* its blocked words starred out (chat.filter mask): the stars drawn dim */
+	boolean masked;
 	wchar_t name[NAME_LENGTH];
 	wchar_t text[TEXT_LENGTH];
 };
@@ -419,7 +421,8 @@ static void line_heard(struct delta_wire_chat_line const *line)
 	}
 	log_add(server ? (line->kind == _delta_chat_kind_server ? _entry_server : _entry_system) :
 		line->kind == _delta_chat_kind_moderator ? _entry_moderator : _entry_player, line->scope, team, machine, name,
-		text);
+		text)->masked = blocked && !server && (strlen(masked) != (size_t)line->length ||
+		memcmp(masked, line->text, (size_t)line->length) != 0);
 }
 
 /* ---------- the host's */
@@ -1027,30 +1030,83 @@ void chat_update(void)
 
 /* ---------- drawing */
 
+/* The lines are drawn as the HUD's messages are: its message font, in its
+message tint, with the font's light shadow, at the HUD's scale. They sit at
+the lower left, anchored to the screen's lower left corner as the motion
+sensor is, a little above it, and keep to the left half of the screen;
+the HUD's units are the same at every aspect ratio and with the high-res
+HUD's bitmaps, so the lines keep their place beside it. */
+
+enum
+{
+	/* the lines' left edge, and their bottom above the screen's bottom (in
+	the HUD's units: the motion sensor's left edge, and above its top) */
+	CHAT_LEFT = 4,
+	CHAT_ABOVE_BOTTOM = 92,
+	/* the lines end this short of the screen's middle */
+	CHAT_SHORT_OF_MIDDLE = 32,
+};
+
+/* the HUD's message tint (the state messages': "Hold BACK for score") */
+static real_argb_color hud_tint(void)
+{
+	real_argb_color tint;
+
+	hud_get_text_color(&tint);
+	/* (a map without one: a pale steel blue, as the stock HUD's) */
+	if (tint.alpha <= 0.0f)
+	{
+		tint.alpha = 0.85f;
+		tint.red = 0.62f;
+		tint.green = 0.74f;
+		tint.blue = 0.86f;
+	}
+	/* (a little more solid than the HUD's own messages: lines are read) */
+	tint.alpha = MAX(tint.alpha, 0.8f);
+	return tint;
+}
+
+/* the tint with this color in it (a name's, a server line's), as bright */
+static real_argb_color tinted(real_argb_color tint, real red, real green, real blue, real amount)
+{
+	tint.red = tint.red * (1.0f - amount) + red * amount;
+	tint.green = tint.green * (1.0f - amount) + green * amount;
+	tint.blue = tint.blue * (1.0f - amount) + blue * amount;
+	return tint;
+}
+
 static void entry_colors(struct chat_entry const *entry, real_argb_color *name, real_argb_color *text)
 {
-	static real_argb_color const white = { { 1.0f, 1.0f, 1.0f, 1.0f } };
-	static real_argb_color const red = { { 1.0f, 1.0f, 0.42f, 0.36f } };
-	static real_argb_color const blue = { { 1.0f, 0.45f, 0.62f, 1.0f } };
-	static real_argb_color const amber = { { 1.0f, 0.95f, 0.76f, 0.31f } };
-	static real_argb_color const grey = { { 1.0f, 0.68f, 0.72f, 0.78f } };
-	static real_argb_color const green = { { 1.0f, 0.5f, 0.86f, 0.5f } };
+	real_argb_color const tint = hud_tint();
+	boolean teams = game_teams(chat_game());
 
-	*text = white;
+	/* (the words: the tint paled, as the HUD's numbers; names stand out) */
+	*text = tinted(tint, 0.92f, 0.95f, 1.0f, 0.5f);
 	switch (entry->kind)
 	{
 	case _entry_server:
-		*name = amber;
-		*text = amber;
+		/* (a muted amber, the HUD's warnings') */
+		*name = tinted(tint, 0.92f, 0.72f, 0.36f, 0.8f);
+		*text = tinted(tint, 0.92f, 0.78f, 0.50f, 0.6f);
 		break;
 	case _entry_system:
 	case _entry_note:
-		*name = grey;
-		*text = grey;
+		*name = tint;
+		*text = tint;
+		name->alpha *= 0.75f;
+		text->alpha *= 0.75f;
 		break;
 	default:
-		*name = entry->team == 0 && game_teams(chat_game()) ? red : entry->team == 1 && game_teams(chat_game()) ?
-			blue : entry->kind == _entry_moderator ? green : white;
+		/* (the team's color, muted toward the tint; no team, the tint a
+		little brighter) */
+		if (teams && entry->team == 0)
+			*name = tinted(tint, 0.95f, 0.40f, 0.36f, 0.85f);
+		else if (teams && entry->team == 1)
+			*name = tinted(tint, 0.32f, 0.52f, 1.0f, 0.85f);
+		else if (entry->kind == _entry_moderator)
+			*name = tinted(tint, 0.50f, 0.84f, 0.54f, 0.8f);
+		else
+			*name = tint;
 		break;
 	}
 }
@@ -1096,51 +1152,155 @@ static void entry_words(struct chat_entry const *entry, wchar_t *name, int size)
 	name[length] = 0;
 }
 
-/* one entry, its bottom at bottom: its top */
-static short draw_entry(long font_index, struct chat_entry const *entry, rectangle2d const *area, short bottom,
-	real alpha)
+/* the parts of an entry's line, each in its own color */
+enum
+{
+	_part_name,
+	_part_text,
+	_part_stars,
+	_part_caret,
+	NUMBER_OF_PARTS
+};
+
+enum
+{
+	/* a line as drawn: its name part, its text and the caret */
+	WHOLE_LENGTH = NAME_LENGTH + 16 + TEXT_LENGTH + 2,
+};
+
+/* the width of a line's characters from first, count of them, in the font
+set (the game's Unicode strings never wrap: the lines are broken here) */
+static short text_width(wchar_t const *text, long first, long count)
+{
+	wchar_t buffer[WHOLE_LENGTH];
+	rectangle2d bounds, text_bounds, cursor;
+
+	count = MIN(count, (long)NUMBEROF(buffer) - 1);
+	csmemcpy(buffer, text + first, count * sizeof(wchar_t));
+	buffer[count] = 0;
+	if (!count)
+		return 0;
+	bounds.x0 = 0;
+	bounds.y0 = 0;
+	bounds.x1 = SHORT_MAX / 2;
+	bounds.y1 = SHORT_MAX / 2;
+	draw_string_set_indents(0, 0);
+	draw_unicode_string_compute_bounds(&bounds, buffer, &text_bounds, &cursor);
+	return cursor.x0;
+}
+
+/* where the line from first breaks to fit width: past its last whole word
+that fits (a word too long for a line alone, where it reaches the edge) */
+static long line_break(wchar_t const *text, long first, long length, short width)
+{
+	long end = first, fits = first;
+
+	while (end < length)
+	{
+		long next = end;
+
+		while (next < length && text[next] == L' ')
+			next++;
+		while (next < length && text[next] != L' ')
+			next++;
+		if (text_width(text, first, next - first) > width)
+			break;
+		fits = end = next;
+	}
+	if (fits == first)
+	{
+		/* (one long word: as many of its characters as fit, at least one) */
+		for (fits = first + 1; fits < length && text_width(text, first, fits + 1 - first) <= width; fits++)
+			;
+	}
+	return fits;
+}
+
+/* one entry, its bottom at bottom: its top. Its name part in the name's
+color, its text in the text's (a masked line's stars dimmer), broken into
+lines that fit the area; the caret, when typing, after the text. */
+static short draw_entry(long font_index, short line_height, struct chat_entry const *entry, rectangle2d const *area,
+	short bottom, real alpha, boolean caret)
 {
 	wchar_t name[NAME_LENGTH + 16];
-	wchar_t whole[NAME_LENGTH + 16 + TEXT_LENGTH];
-	real_argb_color name_color, text_color;
-	rectangle2d bounds = *area, text_bounds, cursor;
-	short height;
-	long index, length;
+	wchar_t whole[WHOLE_LENGTH];
+	byte part[WHOLE_LENGTH];
+	long breaks[16];
+	real_argb_color colors[NUMBER_OF_PARTS];
+	short width = (short)(area->x1 - area->x0);
+	short line_count = 0, line, top;
+	long index, length = 0;
 
 	entry_words(entry, name, NUMBEROF(name));
-	/* (its height: the whole line as it wraps) */
-	for (index = 0, length = 0; name[index]; index++)
-		whole[length++] = name[index];
-	for (index = 0; entry->text[index] && length < (long)NUMBEROF(whole) - 1; index++)
-		whole[length++] = entry->text[index];
-	whole[length] = 0;
-	entry_colors(entry, &name_color, &text_color);
-	name_color.alpha *= alpha;
-	text_color.alpha *= alpha;
-	draw_string_set_draw_mode(font_index, NONE, 0, 0, &text_color);
-	draw_string_set_indents(0, 0);
-	draw_unicode_string_compute_bounds(&bounds, whole, &text_bounds, &cursor);
-	height = (short)(text_bounds.y1 - text_bounds.y0);
-	bounds.y0 = (short)(bottom - height);
-	bounds.y1 = bottom;
-	if (name[0])
+	for (index = 0; name[index] && length < WHOLE_LENGTH - 2; index++)
 	{
-		draw_string_set_draw_mode(font_index, NONE, 0, 0, &name_color);
-		draw_unicode_string_compute_bounds(&bounds, name, &text_bounds, &cursor);
-		rasterizer_draw_unicode_string(&bounds, NULL, NULL, 0, name);
-		draw_string_set_indents((short)(cursor.x0 - bounds.x0), 0);
+		part[length] = _part_name;
+		whole[length++] = name[index];
 	}
-	draw_string_set_draw_mode(font_index, NONE, 0, 0, &text_color);
-	rasterizer_draw_unicode_string(&bounds, NULL, NULL, 0, entry->text);
-	draw_string_set_indents(0, 0);
-	return bounds.y0;
+	for (index = 0; entry->text[index] && length < WHOLE_LENGTH - 2; index++)
+	{
+		part[length] = entry->masked && entry->text[index] == L'*' ? _part_stars : _part_text;
+		whole[length++] = entry->text[index];
+	}
+	if (caret)
+	{
+		part[length] = _part_caret;
+		whole[length++] = L'_';
+	}
+	whole[length] = 0;
+	if (!length)
+		return bottom;
+
+	entry_colors(entry, &colors[_part_name], &colors[_part_text]);
+	colors[_part_name].alpha *= alpha;
+	colors[_part_text].alpha *= alpha;
+	colors[_part_stars] = colors[_part_text];
+	colors[_part_stars].alpha *= 0.55f;
+	colors[_part_caret] = colors[_part_name];
+	colors[_part_caret].alpha *= (system_milliseconds() / 500) % 2 ? 1.0f : 0.2f;
+
+	/* (its lines: where each starts) */
+	draw_string_set_draw_mode(font_index, NONE, 0, 0, &colors[_part_text]);
+	for (index = 0; index < length && line_count < (short)NUMBEROF(breaks); )
+	{
+		breaks[line_count++] = index;
+		index = line_break(whole, index, length, width);
+		while (index < length && whole[index] == L' ')
+			index++;
+	}
+	top = (short)(bottom - line_count * line_height);
+	for (line = 0; line < line_count; line++)
+	{
+		long end = line + 1 < line_count ? breaks[line + 1] : length;
+		long run;
+
+		for (index = breaks[line]; index < end; index = run)
+		{
+			wchar_t buffer[WHOLE_LENGTH];
+			rectangle2d bounds = *area;
+
+			for (run = index; run < end && part[run] == part[index]; run++)
+				;
+			csmemcpy(buffer, whole + index, (run - index) * sizeof(wchar_t));
+			buffer[run - index] = 0;
+			bounds.x0 = (short)(area->x0 + text_width(whole, breaks[line], index - breaks[line]));
+			bounds.x1 = (short)MAX(area->x1, bounds.x0 + 1);
+			bounds.y0 = (short)(top + line * line_height);
+			bounds.y1 = (short)(bounds.y0 + line_height);
+			draw_string_set_draw_mode(font_index, NONE, 0, 0, &colors[part[index]]);
+			draw_string_set_indents(0, 0);
+			rasterizer_draw_unicode_string(&bounds, NULL, NULL, 0, buffer);
+		}
+	}
+	return top;
 }
 
 void chat_draw(short local_player_index)
 {
 	long font_index = hud_get_font_index();
 	struct font_header *font;
-	rectangle2d area = render.camera.window_bounds;
+	rectangle2d const window = render.camera.window_bounds;
+	rectangle2d area = window;
 	unsigned long now = system_milliseconds();
 	short line_height, bottom;
 	long shown = 0, index;
@@ -1153,13 +1313,14 @@ void chat_draw(short local_player_index)
 	}
 	font = font_definition_get(font_index);
 	line_height = (short)(font->ascending_height + font->descending_height + font->leading_height);
-	/* (the lower left, above the motion tracker; three fifths of the width) */
-	area.x0 = (short)(area.x0 + 24);
-	area.x1 = (short)(area.x0 + (render.camera.window_bounds.x1 - render.camera.window_bounds.x0) * 3 / 5);
-	area.y0 = render.camera.window_bounds.y0;
-	bottom = (short)(render.camera.window_bounds.y1 - 128);
+	/* (the lower left, above the motion sensor, short of the middle) */
+	area.x0 = (short)(window.x0 - render.camera.viewport_bounds.x0 + CHAT_LEFT);
+	area.x1 = (short)((window.x0 + window.x1) / 2 - render.camera.viewport_bounds.x0 - CHAT_SHORT_OF_MIDDLE);
+	area.y0 = (short)(window.y0 - render.camera.viewport_bounds.y0);
+	area.y1 = (short)(window.y1 - render.camera.viewport_bounds.y0);
+	bottom = (short)(area.y1 - CHAT_ABOVE_BOTTOM);
 
-	/* the line typed, or the quick line picked */
+	/* the line typed (Halo PC's "Say:"), or the quick line picked */
 	if (chat.typing || chat.quick_shown)
 	{
 		struct chat_entry entry;
@@ -1167,23 +1328,24 @@ void chat_draw(short local_player_index)
 		char text[INPUT_SIZE + QUICK_SIZE + 32];
 
 		csmemset(&entry, 0, sizeof(entry));
-		entry.kind = _entry_note;
+		entry.kind = _entry_player;
+		entry.team = NO_TEAM;
 		if (chat.typing)
 		{
-			snprintf(text, sizeof(text), "%s%s%s", chat.typing_scope == _delta_chat_scope_team ? "Say to team: " :
-				"Say: ", chat.input, (now / 500) % 2 ? "_" : "");
+			wide_from_ascii(chat.typing_scope == _delta_chat_scope_team ? "Say to team" : "Say", entry.name,
+				NAME_LENGTH);
+			snprintf(text, sizeof(text), "%s", chat.input);
 		}
 		else
 		{
 			short count = quick_lines(lines);
 
-			snprintf(text, sizeof(text), "Quick: %s   (D-pad down says it)",
-				count ? lines[MIN(chat.quick_index, count - 1)] : "");
+			wide_from_ascii("Quick", entry.name, NAME_LENGTH);
+			snprintf(text, sizeof(text), "%s   (D-pad down says it)", count ? lines[MIN(chat.quick_index, count - 1)] :
+				"");
 		}
 		utf8_to_wide(text, (int)strlen(text), entry.text, TEXT_LENGTH);
-		entry.kind = _entry_player;
-		entry.team = NO_TEAM;
-		bottom = draw_entry(font_index, &entry, &area, bottom, 1.0f);
+		bottom = draw_entry(font_index, line_height, &entry, &area, bottom, 1.0f, chat.typing);
 		bottom = (short)(bottom - line_height / 3);
 	}
 
@@ -1200,7 +1362,7 @@ void chat_draw(short local_player_index)
 		entry.kind = _entry_note;
 		wide_from_ascii("Up and down choose a player, M mutes or unmutes them for you; H or Escape closes", entry.text,
 			TEXT_LENGTH);
-		bottom = draw_entry(font_index, &entry, &area, bottom, 1.0f);
+		bottom = draw_entry(font_index, line_height, &entry, &area, bottom, 1.0f, FALSE);
 		for (row = (short)MIN(count, 8) - 1; row >= 0; row--)
 		{
 			short player = (short)(MAX(0, chat.log_choice - 7) + row);
@@ -1223,14 +1385,14 @@ void chat_draw(short local_player_index)
 				ustrncpy(text + end, suffix, TEXT_LENGTH - end - 1);
 			}
 			ustrncpy(entry.text, text, TEXT_LENGTH - 1);
-			bottom = draw_entry(font_index, &entry, &area, bottom, 1.0f);
+			bottom = draw_entry(font_index, line_height, &entry, &area, bottom, 1.0f, FALSE);
 		}
 		if (!count)
 		{
 			csmemset(&entry, 0, sizeof(entry));
 			entry.kind = _entry_note;
 			wide_from_ascii("No other players", entry.text, TEXT_LENGTH);
-			bottom = draw_entry(font_index, &entry, &area, bottom, 1.0f);
+			bottom = draw_entry(font_index, line_height, &entry, &area, bottom, 1.0f, FALSE);
 		}
 		bottom = (short)(bottom - line_height / 2);
 	}
@@ -1256,7 +1418,7 @@ void chat_draw(short local_player_index)
 			if (age > time)
 				alpha = 1.0f - (real)(age - time) / (real)FADE_TIME;
 		}
-		bottom = draw_entry(font_index, entry, &area, bottom, alpha);
+		bottom = draw_entry(font_index, line_height, entry, &area, bottom, alpha, FALSE);
 		shown++;
 		if (bottom < area.y0 + line_height * 4)
 			break;
