@@ -505,6 +505,11 @@ MAP_KIND_CHOOSER = "main_menu/new_select/list_item_0_map_kind"
 # changes to the PC version's widgets (by our names): attributes set, all
 # their handlers replaced, children added, game data inputs added
 WIDGET_PATCHES = {
+    # The host returns here after a round with no menu history. Back must
+    # reopen the main menu when it closes the last screen, as the lobby does.
+    f"{MT}/connected/connected_map_select_wrapper": {"set": {
+        "flags": "pass_unhandled_to_focused_child pause_game main_menu_if_no_history tag_controller_index force_handle_mouse",
+    }},
     # (Privacy's row after Network Setup's, and Change Color and About below
     # it: their offsets from the tops the PC version gave them)
     f"{PE}/profile_edit_select_list": {
