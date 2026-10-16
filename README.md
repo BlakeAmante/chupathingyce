@@ -15,7 +15,7 @@
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue" alt="License: GPL-3.0-or-later"></a>
 <a href="https://github.com/ChupathingyCE/chupathingyce/releases/latest"><img src="https://img.shields.io/github/v/release/ChupathingyCE/chupathingyce?label=release" alt="Latest release"></a>
 <a href="https://github.com/ChupathingyCE/chupathingyce/releases/tag/nightly"><img src="https://img.shields.io/badge/nightly-daily%20build-orange" alt="Latest nightly"></a>
-<a href="https://github.com/ChupathingyCE/chupathingyce/actions/workflows/build.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/ChupathingyCE/chupathingyce/build.yml?branch=main&label=build" alt="Build status on main"></a>
+<a href="https://github.com/ChupathingyCE/chupathingyce/actions/workflows/build.yml?query=branch%3Amain+event%3Apush"><img src="https://img.shields.io/github/actions/workflow/status/ChupathingyCE/chupathingyce/build.yml?branch=main&event=push&label=build" alt="Build status on main"></a>
 <a href="https://discord.gg/chupathingy"><img src="https://img.shields.io/badge/discord-join-5865F2" alt="Discord"></a>
 <img src="https://img.shields.io/badge/platforms-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20Android-lightgrey" alt="Platforms: Windows, macOS, Linux, Android">
 </p>
