@@ -1478,7 +1478,7 @@ static boolean solo_level_initialize_list_single_player(
 /* ---------- globals */
 
 static wchar_t new_campaign_profile_name[12] = { 0 };
-byte single_player_level_data[0x50] = { 0 };
+struct single_player_level_entry single_player_level_data[NUMBER_OF_SINGLE_PLAYER_LEVELS] = { 0 };
 struct persistent_game_difficulty
 {
 	short value;
@@ -4263,7 +4263,7 @@ static boolean solo_level_initialize_list_coop(
 	short highest_difficulties[2];
 	struct ui_widget_definition *definition;
 
-	memset(single_player_level_data, 0, 0x50);
+	memset(single_player_level_data, 0, sizeof(single_player_level_data));
 	{
 		player_ui_get_active_player_profile(0, &profile0);
 		player_profile_get_highest_completed_solo_level(&profile0, &highest_levels[0], &highest_difficulties[0]);
@@ -4275,16 +4275,16 @@ static boolean solo_level_initialize_list_coop(
 
 		for (level_index = 0; level_index < 10; level_index++)
 		{
-			((struct single_player_level_entry *)single_player_level_data)[level_index].map_name = event_handler_functions.single_player_levels[level_index];
+			single_player_level_data[level_index].map_name = event_handler_functions.single_player_levels[level_index];
 			if (profile0.single_player_map_flags[level_index] || level_index == highest_levels[0] + 1 || profile1.single_player_map_flags[level_index] || level_index == highest_levels[1] + 1 || level_index == 0)
 			{
 				unsigned long level_flags;
 
 				level_flags = (char)profile0.single_player_map_flags[level_index] | (char)profile1.single_player_map_flags[level_index];
-				((struct single_player_level_entry *)single_player_level_data)[level_index].unknown5 = (level_flags >> 1) & 1;
-				((struct single_player_level_entry *)single_player_level_data)[level_index].available = TRUE;
-				((struct single_player_level_entry *)single_player_level_data)[level_index].unknown6 = (level_flags >> 2) & 1;
-				((struct single_player_level_entry *)single_player_level_data)[level_index].unknown7 = (level_flags >> 3) & 1;
+				single_player_level_data[level_index].unknown5 = (level_flags >> 1) & 1;
+				single_player_level_data[level_index].available = TRUE;
+				single_player_level_data[level_index].unknown6 = (level_flags >> 2) & 1;
+				single_player_level_data[level_index].unknown7 = (level_flags >> 3) & 1;
 			}
 		}
 	}
@@ -5945,15 +5945,15 @@ static boolean solo_level_initialize_list_single_player(
 	{
 		unsigned long level_flags;
 
-		((struct single_player_level_entry *)single_player_level_data)[level_index].map_name =
+		single_player_level_data[level_index].map_name =
 			event_handler_functions.single_player_levels[level_index];
 		if (profile.single_player_map_flags[level_index] || level_index == highest_level + 1 || level_index == 0)
 		{
 			level_flags = (char)profile.single_player_map_flags[level_index];
-			((struct single_player_level_entry *)single_player_level_data)[level_index].unknown5 = (level_flags >> 1) & 1;
-			((struct single_player_level_entry *)single_player_level_data)[level_index].available = TRUE;
-			((struct single_player_level_entry *)single_player_level_data)[level_index].unknown6 = (level_flags >> 2) & 1;
-			((struct single_player_level_entry *)single_player_level_data)[level_index].unknown7 = (level_flags >> 3) & 1;
+			single_player_level_data[level_index].unknown5 = (level_flags >> 1) & 1;
+			single_player_level_data[level_index].available = TRUE;
+			single_player_level_data[level_index].unknown6 = (level_flags >> 2) & 1;
+			single_player_level_data[level_index].unknown7 = (level_flags >> 3) & 1;
 		}
 	}
 
