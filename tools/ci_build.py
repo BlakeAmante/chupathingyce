@@ -183,10 +183,6 @@ def main() -> int:
     # Chupathingy's own license (GPL-3.0-or-later), which asks every copy to
     # carry it
     shutil.copy2(ROOT / "LICENSE", dist / "LICENSE.txt")
-    # the disc image readers (port/linux/src/xiso.c, and the Android app's
-    # XisoExtractor.java) follow extract-xiso, whose license asks binaries
-    # to carry its notice
-    shutil.copy2(ROOT / "port/third_party/extract-xiso/LICENSE.TXT", dist / "extract-xiso-LICENSE.txt")
     # the game list's and the self-updater's TLS (port/third_party/mbedtls),
     # in every build (HALO_GAME_BROWSER), whose Apache license asks the same
     shutil.copy2(ROOT / "port/third_party/mbedtls/LICENSE", dist / "mbedtls-LICENSE.txt")
@@ -272,7 +268,6 @@ def server_dist(platform: str, config: str, output: str) -> int:
                          ("port/third_party/mbedtls/LICENSE", "mbedtls-LICENSE.txt"),
                          ("port/third_party/miniupnpc/LICENSE", "miniupnpc-LICENSE.txt"),
                          ("port/third_party/expat/COPYING", "expat-COPYING.txt"),
-                         ("port/third_party/extract-xiso/LICENSE.TXT", "extract-xiso-LICENSE.txt"),
                          ("port/assets/fonts/Overpass-OFL.txt", "Overpass-OFL.txt"),
                          ("port/assets/fonts/OpenCE-OFL.txt", "OpenCE-OFL.txt"),
                          ("port/linux/ui/fonts/OFL.txt", "NotoSans-OFL.txt"),
