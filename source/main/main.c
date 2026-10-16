@@ -2283,8 +2283,11 @@ static void main_frame_rate_debug(
 			FILE *file;
 
 			GetSystemTime(&system_time);
-			sprintf(
+			/* port: snprintf, here and below (a map's tag's name may be any
+			length) */
+			snprintf(
 				core_name,
+				sizeof(core_name),
 				"%s_slow_%d_%d_%d_%d_%d_%d.bin",
 				scenario_name,
 				system_time.wMonth,
@@ -2294,7 +2297,7 @@ static void main_frame_rate_debug(
 				system_time.wMinute,
 				system_time.wSecond);
 			game_state_save_core(core_name);
-			sprintf(init_file_name, "d:\\%s_init.txt", scenario_name);
+			snprintf(init_file_name, sizeof(init_file_name), "d:\\%s_init.txt", scenario_name);
 
 			file = fopen(init_file_name, "r");
 			if (!file)
@@ -2721,10 +2724,14 @@ void main_rasterizer_throttle(
 			profile_idle_start();
 			while ((__int64)rasterizer_globals.frame_and_vertical_blank_index < target_index)
 			{
-				if (precache_in_progress)
-				{
-					Sleep(1);
-				}
+				/* the native builds sleep between looks: the Xbox spun here,
+				and on a port each look at the clock is a system call, so a
+				game held at 30 frames a second (display.interpolation off)
+				spent half its game thread asking the time. A millisecond is
+				well inside a 33 ms frame (Windows sets its timer to 1 ms:
+				win32_posix.c) */
+				(void)precache_in_progress;
+				Sleep(1);
 				if (system_milliseconds() > start_milliseconds + 1000)
 				{
 					console_warning(
