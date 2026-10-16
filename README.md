@@ -400,6 +400,7 @@ If you contribute, the same applies to you: see [CONTRIBUTING](CONTRIBUTING.md#u
   icon is MrBruh's helmet, with tusks.
 - Fonts: [Noto Sans](https://fonts.google.com/noto) (SIL OFL) and
   [Kenney's Input Prompts](https://kenney.nl/assets/input-prompts) (CC0).
+- Controller button icons by snapchipper, CC0 (`port/assets/prompts`).
 - HaloMD map names: from [MacGamingMods](https://macgamingmods.com)' public
   HaloMD mod list, so the menus can show each map's own name.
 - Missing Custom Edition maps: downloaded from the community map
