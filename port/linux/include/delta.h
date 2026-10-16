@@ -85,7 +85,8 @@ enum delta_capability
 	/* a host answers Online Games' pings before joining (p2p_probe.c):
 	announced on Delta List only, never offered in a HELLO or WELCOME
 	(docs/delta.md, Pings before joining) */
-	_delta_capability_ping = 11,
+	/* bit 11 is `bomb` (docs/delta.md); its enum entry lands with that feature */
+	_delta_capability_ping = 12,
 
 	NUMBER_OF_DELTA_CAPABILITIES
 };

@@ -136,7 +136,8 @@ shares.
 | 8 | `vote` | map and game type votes |
 | 9 | `console_slots` | retired before use: a console's slots are its platform key's limits (below). Never set, never reused |
 | 10 | `moderation` | a dedicated server's moderators sign in and act from the game (below, "Moderation") |
-| 11 | `ping` | the host answers Online Games' pings before joining; announced on Delta List only, never in a HELLO (see "Pings before joining") |
+| 11 | `bomb` | Bomb game types (Bomb, Grifball, Open Pitch: [bomb.md](bomb.md)) and their player traits (TRAITS). Room-wide: a host playing one drops every machine without it |
+| 12 | `ping` | the host answers Online Games' pings before joining; announced on Delta List only, never in a HELLO (see "Pings before joining") |
 
 The registry lives in the repository next to the compatibility table and is
 the single source for the bit numbers. Built so far: `platform`, `profile`,
@@ -686,7 +687,7 @@ last):
 | `platform_key` | the host machine's platform key (see "Platform keys"), 16 hexadecimal digits |
 | `arch` | `x64`, `x86`, `arm64` or `arm` |
 | `build` | the build's version (`0.7.1b`) |
-| `capabilities` | the capabilities it offers, 8 hexadecimal digits; bit 11 (`ping`) is set here alone, by a host that answers pings before joining |
+| `capabilities` | the capabilities it offers, 8 hexadecimal digits; bit 12 (`ping`) is set here alone, by a host that answers pings before joining |
 | `machines` | while hosting with Delta: the game's machines by platform, `pc_linux:2,xbox:1,legacy:1` (`legacy`: a machine without Delta; `unknown`: a Delta machine that does not share its platform; a dedicated server leaves itself out). Counts only, never a player (`delta_peer_game_host_summary`) |
 
 Compatibility both ways: a site from before these fields ignores them (it
@@ -782,7 +783,7 @@ country, else its continent. The site's defaults are our own hosts for
 North America and a cloud provider's regional endpoints elsewhere
 (`--anchors` replaces them).
 
-Compatibility: only hosts that announce bit 11 are probed; older hosts show
+Compatibility: only hosts that announce bit 12 are probed; older hosts show
 an estimate or nothing. A site from before field 19 gives no capabilities:
 no probes, estimates only if it has anchors. Nothing else changes meaning,
 and the legacy table's per-capability kill switch turns `ping` off (no
