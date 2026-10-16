@@ -546,6 +546,13 @@ the distribution (`src/posix_update.c`, with Mbed TLS); on Windows, the
 certificate store of Windows (WinHTTP). The folder of the executable must
 let the game write to it.
 
+The game installs only files that the release key signed. First, it reads
+the list of update files of the release (`updates.json`) and examines the
+signature of the list (`updates.json.sig`). Then it downloads the file that
+the list gives for this platform and examines its size and SHA-256 against
+the list. A release from before version 0.8.0 has no list. For such a
+release, the game examines the signature of the zip (`<zip>.sig`).
+
 Builds that you make yourself have no build number. They do not look for
 updates.
 
