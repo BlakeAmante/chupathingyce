@@ -150,6 +150,16 @@ static const struct config_setting config_settings[] =
 		"(Overpass) at the resolution the game draws at, and the menus' titles\n"
 		"from port/assets/titles; false draws the maps' bitmap fonts and titles.\n"
 		"The Server Browser and moderation overlays use the system's fonts." },
+	{ "display.high_res_font", _config_string, "\"\"", "HALO_HIGH_RES_FONT", _environment_value, _platform_all,
+		"Your own font file (.ttf or .otf) for the high-res text and Online\n"
+		"Games, in place of the built-in fonts; a name alone is a file in\n"
+		"data/fonts beside the maps folder. Empty: the built-in fonts. One that\n"
+		"is missing or cannot be read is noted in debug.txt, and the built-in\n"
+		"font drawn." },
+	{ "display.high_res_font_large", _config_string, "\"\"", "HALO_HIGH_RES_FONT_LARGE", _environment_value,
+		_platform_all,
+		"A font file for the large text only (the menus' items, the HUD's\n"
+		"messages), as display.high_res_font; empty: display.high_res_font's." },
 	{ "display.version_watermark", _config_boolean, "false", "HALO_VERSION_WATERMARK", _environment_value,
 		_platform_all,
 		"Show this build's version (as the main menu does) in the bottom right\n"
@@ -235,6 +245,12 @@ static const struct config_setting config_settings[] =
 	{ "audio.effects_volume", _config_real, "1.0", "HALO_EFFECTS_VOLUME", _environment_value, _platform_all,
 		"The volume of every other sound (effects and speech), 0.0 to 1.0 (of\n"
 		"audio.volume)." },
+	/* (audio.voice_device is kept for a voice output of its own, later:
+	dsound_sdl.c's audio_device_named opens either) */
+	{ "audio.device", _config_string, "\"default\"", "HALO_AUDIO_DEVICE", _environment_value, _platform_desktop,
+		"The output the sound plays on, by its name as the system gives it (Audio\n"
+		"Setup lists them): \"default\" follows the system's default output as\n"
+		"it changes. One that is not connected plays on the default." },
 	{ "audio.buffer_frames", _config_integer, DEFAULT_AUDIO_BUFFER_FRAMES, "HALO_AUDIO_BUFFER_FRAMES", _environment_value,
 		_platform_all,
 		"The audio device's buffer, in sample frames at 48 kHz (64 to 8192): larger\n"
@@ -394,6 +410,12 @@ static const struct config_setting config_settings[] =
 	{ "paths.saves", _config_string, "\"\"", "HALO_SAVE_ROOT", _environment_value, _platform_desktop,
 		"Where saved games and profiles go; empty for the usual place\n"
 		"(~/.local/share/chupathingyce, or %APPDATA%\\ChupathingyCE on Windows)." },
+	{ "paths.logs", _config_string, "\"\"", "HALO_LOG_ROOT", _environment_value, _platform_desktop,
+		"Where the logs go (debug.txt, halo.log and crash reports waiting to be\n"
+		"sent); empty for logs/ in the data folder, beside maps." },
+	{ "paths.cache", _config_string, "\"\"", "HALO_CACHE_ROOT", _environment_value, _platform_desktop,
+		"Where the game keeps what it can make again; empty for cache/ in the\n"
+		"save folder." },
 
 	{ "network.address", _config_string, "\"\"", "HALO_NET_ADDRESS", _environment_value, _platform_all,
 		"This machine's IPv4 address for system link, for a machine on several\n"
