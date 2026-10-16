@@ -96,8 +96,15 @@ ChupathingyCE doesn't include the game's maps, sounds or art. You need an Xbox
 disc image (`.iso` or `.xiso`) of Halo: Combat Evolved. Any region works.
 
 1. Start ChupathingyCE.
-2. The first time, it asks for your disc image. Pick it.
+2. The first time, it asks where to get the maps. Choose **Xbox disc image**
+   and pick your image.
 3. It copies the game's `maps` folder out of the image (about 2 GB), then starts.
+
+The same screen can also add Halo PC's maps from your own copies, as
+optional extras: a Halo PC CD image (`.iso`) fills `maps_pc`, and the Custom
+Edition installer (`halocesetup_en_1.00.exe`) fills `maps_ce`. Or choose
+**Make the folders** to get empty `maps`, `maps_ce`, `maps_pc` and `maps_md`
+folders and copy the files in yourself.
 
 On Android, copy the disc image to your phone first; the maps, settings and
 saves go in `/sdcard/Android/data/dev.horrible.chupathingyce/files`. On a

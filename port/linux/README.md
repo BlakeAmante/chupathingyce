@@ -165,12 +165,23 @@ sequence:
 4. `assets/` in the current folder, and `assets/` in the repository that
    contains the executable.
 
-If the game finds no data, it asks for an Xbox disc image (`.xiso` or
-`.iso`). This occurs at the first start:
+If the game finds no data (or finds an empty `maps/`), it asks where to
+get it. This occurs at the first start:
 
-- Select "No" to stop the game.
-- Select "Yes" to open a file picker. Select the disc image. The game copies
-  `maps/` next to the executable and shows the progress.
+- "Xbox disc image" (the default) opens a file picker. Select an Xbox disc
+  image (`.xiso` or `.iso`). The game copies `maps/` next to the executable
+  and shows the progress.
+- "Halo PC or Custom Edition" opens the same picker for optional extras: a
+  Halo PC CD image (`.iso`) fills `maps_pc/` (pc_disc.c), and Custom
+  Edition's installer (`halocesetup_en_1.00.exe`) fills `maps_ce/`
+  (ce_installer.c). Both read the Microsoft cabinets the maps are packed in
+  (cabinet.c). Only maps the folder lacks are written. The game still needs
+  the Xbox maps, so it asks again afterward.
+- "Make the folders" makes empty `maps/`, `maps_ce/`, `maps_pc/` and
+  `maps_md/`, says what goes in each, and checks again when you say so.
+- "Quit" stops the game.
+
+Either picker finds out what a file is from its contents, not its name.
 
 The game writes the copy to `maps.partial`. When the copy is complete, the
 game changes the name to `maps`. If the copy stops before it is complete,
