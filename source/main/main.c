@@ -668,6 +668,9 @@ typedef char screenshot_and_framerate_globals_size_assert[
 	sizeof(struct _screenshot_and_framerate_globals) == 0x38B ? 1 : -1];
 
 void network_test_update(boolean main_menu_loaded, real seconds);
+#ifdef HALO_GAME_BROWSER
+void chat_update(void);
+#endif
 
 /* ---------- prototypes */
 
@@ -1172,6 +1175,29 @@ static real first_person_field_of_view_scale(
 	return scale;
 }
 
+/* port: display.far_clip_distance, how far the world is drawn (1024 as on
+the Xbox, to 10000). It is a floor under the camera's far clip, applied each
+frame: the map's own value, a script or init.txt can raise the clip beyond it
+but not lower it below it, and it holds across map loads and joins. Render
+only; the game's state never reads it. The near clip stays as it was, and the
+fog (which can end the view sooner) still applies after this. */
+static real far_clip_distance_floor(
+	void)
+{
+	static unsigned long read_at = (unsigned long)-1;
+	static real distance = 1024.0f;
+
+	if (read_at != config_changes())
+	{
+		real value = (real)config_real("display.far_clip_distance");
+
+		read_at = config_changes();
+		distance = valid_real(value) ? PIN(value, 1024.0f, 10000.0f) : 1024.0f;
+	}
+
+	return distance;
+}
+
 void set_window_camera_values(
 	struct render_window *window,
 	struct observer_result const *observer)
@@ -1231,7 +1257,7 @@ void set_window_camera_values(
 
 	window->rasterizer_camera.mirrored = FALSE;
 	window->rasterizer_camera.z_near = rasterizer_globals.near_clip_distance;
-	window->rasterizer_camera.z_far = rasterizer_globals.far_clip_distance;
+	window->rasterizer_camera.z_far = MAX(rasterizer_globals.far_clip_distance, far_clip_distance_floor());
 	if (!debug_render_freeze)
 		window->render_camera = window->rasterizer_camera;
 
@@ -3440,6 +3466,10 @@ void main_loop(
 
 			/* automated system link tests (port/linux/game/network_test.c) */
 			network_test_update(main_globals.main_menu_scenario_loaded, main_globals.seconds_elapsed);
+#ifdef HALO_GAME_BROWSER
+			/* text chat (port/linux/game/chat.c) */
+			chat_update();
+#endif
 			connection = main_globals.connection;
 			if (connection==_game_connection_network_client)
 			{
@@ -3477,16 +3507,19 @@ void main_loop(
 				/* the dedicated server's director (server/src/dedicated.c); the
 				game list's probe (server/src/probe.c); the game list's confirmed
 				players (port/linux/game/game_list_claims.c) and statistics
-				recorder (port/linux/game/game_stats.c) */
+				recorder (port/linux/game/game_stats.c); the game on Discord
+				(port/linux/game/discord_game.c) */
 				void dedicated_server_update(void);
 				void probe_update(void);
 				void game_list_claims_update(void);
 				void game_stats_update(void);
+				void discord_game_update(void);
 
 				dedicated_server_update();
 				probe_update();
 				game_list_claims_update();
 				game_stats_update();
+				discord_game_update();
 			}
 #endif
 			bink_playback_update();

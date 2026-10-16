@@ -699,6 +699,13 @@ void moderation_screen_process(void);
 void moderation_screen_render(void);
 /* the menus' pointer, while it is up (its own taps and clicks) */
 void browser_screen_pointer(struct halo_ui_pointer const *pointer);
+/* port: the question before joining a clipboard's invite
+(port/linux/game/invite_prompt.c) */
+boolean invite_prompt_active(void);
+void invite_prompt_update(boolean menu_open);
+void invite_prompt_process(void);
+void invite_prompt_pointer(struct halo_ui_pointer const *pointer);
+void invite_prompt_render(void);
 /* (ONLINE GAMES, below: its list moves focus item by item) */
 boolean ui_widget_online_games_list(struct widget_instance *widget);
 #endif
@@ -1403,6 +1410,16 @@ boolean pc_menu_frame_placement(
 	short *width,
 	short *height,
 	short *texel_y);
+/* port: a picture of a controller's button in the menus' prompts drawn
+as the keyboard's key cap instead, while the keyboard or mouse was used
+last (port/linux/game/menu_tags.c): TRUE when it was */
+boolean pc_menu_button_key_cap(
+	long bitmap_tag_index,
+	short x0,
+	short y0,
+	short x1,
+	short y1,
+	float alpha);
 /* port: the row of the bitmap draw_bitmap_in_rect starts from (a frame the
 menus place, pc_menu_frame_placement): 0 but while one is drawn */
 static short draw_bitmap_texel_y = 0;
@@ -1513,6 +1530,9 @@ static struct ui_widget_bss_prefix ui_widget_globals_storage;
 #define dpad_event_times ui_widget_globals_storage.dpad_event_times
 real_argb_color ui_plasma_effect_color;
 short local_player_index_for_draw_string_and_hack_in_icons;
+/* port: draw_string_and_hack_in_icons draws a widget's text (the menus'
+keys for the buttons, not the game's: input_abstraction_port_icon_key) */
+static boolean draw_string_icons_for_menus = FALSE;
 
 /* January defines this and never references it, as we do not */
 real const _one_over_255 = 1.0f / 255.0f;
@@ -4353,6 +4373,24 @@ void draw_string_and_hack_in_icons(
 			short icon_index;
 
 			current = icon_spec + wcslen(icon_names[icon_type]);
+			/* port: the keyboard's key, "[E]", in place of the controller's
+			button while the keyboard or mouse was used last (the menus'
+			own keys in the menus: input_abstraction_port_icon_key) */
+			{
+				wchar_t key_text[48];
+
+				if (icon_type <= _icon_look &&
+					input_abstraction_port_icon_key(
+						local_player_index_for_draw_string_and_hack_in_icons,
+						icon_type,
+						draw_string_icons_for_menus,
+						key_text,
+						NUMBEROF(key_text)))
+				{
+					render_state_text(bounds, &cursor_bounds, key_text);
+					continue;
+				}
+			}
 			remapped_icon_type = remap_sticks_for_local_player(
 				icon_type,
 				local_player_index_for_draw_string_and_hack_in_icons);
@@ -4856,6 +4894,42 @@ void display_error_damaged_media(
 	void)
 {
 	display_error_abort_to_dashboard(_error_media_damaged, FALSE);
+	input_frame_end();
+	main_loop_of_death();
+
+	return;
+}
+
+/* port: the damaged disc error's screen with the port's own text in place
+of the error's (a Custom Edition map refused: cache_files_windows.c), as the
+game has no error that names a map's problem */
+void display_error_damaged_media_text(
+	wchar_t const *text)
+{
+	static wchar_t error_text[512];
+	struct widget_instance *widget;
+
+	ui_widgets_close_all();
+	widget = ui_widget_load_by_name_or_tag("ui\\shell\\error\\error_abort_to_dashboard_you_have_no_choice", NONE, NULL,
+		NONE, NONE, NONE, NONE);
+	if (widget && widget->type == _ui_widget_type_text_box)
+	{
+		widget->parameters.text_box.string_list_index = _error_media_damaged;
+		widget->widget_is_error_dialog = TRUE;
+		dashboard_abort_error = _error_media_damaged;
+		if (text && text[0])
+		{
+			ustrncpy(error_text, text, NUMBEROF(error_text) - 1);
+			error_text[NUMBEROF(error_text) - 1] = 0;
+			ui_widget_port_error_text_box = widget;
+			ui_widget_port_error_text = error_text;
+		}
+	}
+	else
+	{
+		/* (the game's own, which says why it failed) */
+		display_error_abort_to_dashboard(_error_media_damaged, FALSE);
+	}
 	input_frame_end();
 	main_loop_of_death();
 
@@ -5625,7 +5699,11 @@ static void widget_instance_render_text_box(
 		ui_widget_port_text_wrap(*text, &bounds, width);
 	}
 	if (string_has_icons_to_draw(*text))
+	{
+		draw_string_icons_for_menus = TRUE;
 		draw_string_and_hack_in_icons(&bounds, &clip, NULL, 0, *text, FALSE);
+		draw_string_icons_for_menus = FALSE;
+	}
 	else
 		rasterizer_draw_unicode_string(&bounds, &clip, NULL, 0, *text);
 
@@ -7030,14 +7108,17 @@ static void ui_widgets_process_mouse(
 			ui_debug_log_keyboard_tap(pointer.click_x, pointer.click_y, hit);
 	}
 #ifdef HALO_GAME_BROWSER
-	/* Online Games takes the pointer itself, as the virtual keyboard does */
-	if (pointer_active && !keyboard_active && browser_screen_active())
+	/* Online Games takes the pointer itself, as the virtual keyboard does
+	(and the clipboard invite's question, over it) */
+	if (pointer_active && !keyboard_active && invite_prompt_active())
+		invite_prompt_pointer(&pointer);
+	else if (pointer_active && !keyboard_active && browser_screen_active())
 		browser_screen_pointer(&pointer);
 #endif
 	if (!pointer_active || keyboard_active
 #ifdef HALO_GAME_BROWSER
 		/* (nor over Online Games: a click left in the queue would pick a game) */
-		|| browser_screen_active()
+		|| browser_screen_active() || invite_prompt_active()
 #endif
 		)
 	{
@@ -7345,7 +7426,17 @@ static void widget_instance_render_recursive(
 			short frame_x, frame_y, frame_width, frame_height, texel_y = 0;
 			boolean shown = TRUE;
 
-			if (pc_menu_frame_placement(bitmap, &frame_x, &frame_y, &frame_width, &frame_height, &texel_y))
+			if (pc_menu_button_key_cap(
+				definition->background_bitmap.index,
+				bounds.x0,
+				bounds.y0,
+				bounds.x1,
+				bounds.y1,
+				(float)alpha))
+			{
+				shown = FALSE;
+			}
+			else if (pc_menu_frame_placement(bitmap, &frame_x, &frame_y, &frame_width, &frame_height, &texel_y))
 			{
 				bounds.x0 += frame_x;
 				bounds.y0 += frame_y;
@@ -7564,6 +7655,13 @@ void render_ui_widgets(
 					should_render = TRUE;
 				}
 			}
+#ifdef HALO_GAME_BROWSER
+			/* (Online Games is drawn over the menus' background alone, as a
+			screen of their own: the screen it opened over is not drawn under
+			it, an error dialog still is) */
+			if (should_render && browser_screen_active() && !widget->widget_is_error_dialog)
+				should_render = FALSE;
+#endif
 			if (should_render)
 			{
 				point2d offset;
@@ -7644,7 +7742,10 @@ void render_ui_widgets(
 	if (browser_screen_active())
 		browser_screen_render();
 	if (first_players_render)
+	{
 		moderation_screen_render();
+		invite_prompt_render();
+	}
 #endif
 	ui_debug_draw_targets(first_players_render);
 
@@ -8683,6 +8784,14 @@ void process_ui_widgets(
 		return;
 	}
 #ifdef HALO_GAME_BROWSER
+	/* port: an invite on the clipboard, asked about over the menus */
+	invite_prompt_update(widget_globals.active_widgets[0] != NULL);
+	if (invite_prompt_active())
+	{
+		invite_prompt_process();
+
+		return;
+	}
 	if (browser_screen_active())
 	{
 		browser_screen_process();

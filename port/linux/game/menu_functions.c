@@ -363,6 +363,19 @@ static boolean setting_text(char const *name, char *text, unsigned int size, boo
 				scale = 1;
 			snprintf(text, size, "%ldx%ld", 640 * scale, 480 * scale);
 		}
+		/* (Video Setup's Frame Rate: 30 while display.interpolation is off,
+		the game's own frames, whatever display.max_fps says) */
+		if (!strcmp(name, "display.max_fps"))
+		{
+			char interpolation[16] = "";
+
+			if (default_value)
+				config_default("display.interpolation", interpolation, sizeof(interpolation));
+			else
+				config_text("display.interpolation", interpolation, sizeof(interpolation));
+			if (!strcmp(interpolation, "false"))
+				snprintf(text, size, "30");
+		}
 		return TRUE;
 	}
 	for (index = 0; index < NUMBEROF(profile_settings); index++)
@@ -395,6 +408,11 @@ static boolean setting_write(char const *name, char const *value)
 {
 	short index;
 
+	/* (Video Setup's Frame Rate: 30 draws the game's own frames, with
+	display.interpolation off; the others blend between them) */
+	if (!strcmp(name, "display.max_fps") &&
+		!config_write("display.interpolation", strcmp(value, "30") ? "true" : "false"))
+		return FALSE;
 	if (strncmp(name, "profile.", 8))
 		return config_write(name, value);
 	for (index = 0; index < NUMBEROF(profile_settings); index++)
@@ -1877,6 +1895,9 @@ static struct
 	{ "controls.flashlight", L"FLASHLIGHT", 2 },
 	{ "controls.scoreboard", L"SHOW SCORES", 2 },
 	{ "controls.pause", L"PAUSE MENU", 2 },
+	{ "controls.chat_all", L"CHAT", 2 },
+	{ "controls.chat_team", L"TEAM CHAT", 2 },
+	{ "controls.chat_log", L"CHAT LOG", 2 },
 };
 
 static struct
@@ -2212,6 +2233,8 @@ void ui_widget_port_post_button(short controller_index, short button_index);
 
 static wchar_t const *const engine_names[] = { L"", L"CTF", L"SLAYER", L"ODDBALL", L"KING OF THE HILL", L"RACE" };
 static short const maximum_players[] = { 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128 };
+/* the most players a hosted game starts with (16), up to the list's 128 */
+#define HOST_DEFAULT_MAXIMUM_PLAYERS_INDEX 4
 
 static struct
 {
@@ -2248,7 +2271,7 @@ static struct
 	/* Server Setup's PASSWORD (a public internet game's; empty: none), kept
 	while the game runs, never written down */
 	char game_password[PASSWORD_LENGTH + 1];
-} multiplayer = { .maximum_players_index = NUMBEROF(maximum_players) - 1 };
+} multiplayer = { .maximum_players_index = HOST_DEFAULT_MAXIMUM_PLAYERS_INDEX };
 
 /* ---- a text field (Direct Link's link, the game's name): the keyboard
 types into it (Ctrl+V pastes), its row's A (enter) is done, B (escape)
@@ -3696,11 +3719,23 @@ static void lobby_browser_add_listed(void)
 		engine = (short)PIN(listed->engine, 0, NUMBEROF(gametypes) - 1);
 		snprintf(game->gametype, sizeof(game->gametype), "%s%s", listed->teams && engine != 1 ? "Team " : "",
 			gametypes[engine]);
+		/* (a campaign level is a co-op game, whatever variant its host had chosen last) */
+		if (campaign_level_of(game->map) != NONE)
+		{
+			static char const *const difficulties[] = { "Easy", "Normal", "Heroic", "Legendary" };
+
+			engine = 0;
+			if (listed->difficulty >= 1 && listed->difficulty <= NUMBEROF(difficulties))
+				snprintf(game->gametype, sizeof(game->gametype), "Co-op (%s)", difficulties[listed->difficulty - 1]);
+			else
+				snprintf(game->gametype, sizeof(game->gametype), "Co-op");
+		}
 		game->player_count = (unsigned char)PIN(listed->players, 0, 255);
 		game->maximum_player_count = (unsigned char)PIN(listed->maximum_players, 0, 255);
 		game->engine_type = (unsigned char)engine;
 		game->open = listed->open;
 		game->has_teams = listed->teams;
+		game->version = listed->version;
 		game->ping = -1;
 	}
 }
@@ -3927,7 +3962,7 @@ static void lobby_browser_update(struct widget_instance *list)
 		text_set(named(row, "server_item_players", 0), text);
 		/* (no ping yet: its host is reached only on joining) */
 		text_set(named(row, "server_item_ping", 0), game->failed ? L"FAILED" : !game->open ? L"CLOSED" :
-			game->in_progress ? L"LIVE" : L"-");
+			game->in_progress ? L"LIVE" : L"");
 		/* (the lock: a game with a password. Its bitmap's first frame is
 		empty, the PC version's for no lock; the next is the lock, in the
 		menus' blue) */

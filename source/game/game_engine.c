@@ -558,6 +558,7 @@ symbols in this file:
 #include "interface/terminal.h"
 #include "interface/ui_widget.h"
 #include "input/input.h"
+#include "input/input_abstraction.h"
 #include "items/equipment_definitions.h"
 #include "items/item_definitions.h"
 #include "items/weapon_definitions.h"
@@ -569,6 +570,7 @@ symbols in this file:
 #include "networking/network_server_manager.h"
 #include "networking/network_game_manager.h"
 #include "network_coop.h" /* port: port/linux/game/network_coop.c */
+#include "follow_camera.h" /* port: port/linux/game/follow_camera.c */
 /* (network_server_manager_internal.h's: the host's game record) */
 struct network_game *network_game_server_get_game(struct network_game_server *server);
 #include "objects.h"
@@ -599,6 +601,7 @@ struct network_game *network_game_server_get_game(struct network_game_server *se
 void game_stats_player_killed(long killing_player_index, long dead_player_index, boolean friendly_fire);
 void game_stats_player_extra(long player_index, char *text, long size, short *multikills);
 void game_stats_game_extra(boolean host, char *text, long size);
+boolean game_stats_line_full(long player_index, boolean host);
 #endif
 
 #ifdef HALO_CUSTOM_EDITION
@@ -4547,6 +4550,10 @@ void game_engine_player_killed(
 		valid_players = FALSE;
 	player_kill = !friendly_fire && valid_players && !same_player;
 
+	/* port: who killed whom, for the follow camera (port/linux/game/
+	follow_camera.c), which follows the killer in a game without teams */
+	follow_camera_player_killed(killing_player_index, dead_player_index);
+
 	dead_player->respawn_timer =
 		dead_player->respawn_penalty + global_variant.universal_variant.respawn_time;
 	if (global_variant.universal_variant.respawn_time_growth > 0)
@@ -5246,6 +5253,7 @@ long game_engine_report_lines(
 		line->shots_fired = player->statistics.shots_fired;
 		line->shots_hit = player->statistics.shots_hit;
 		line->color = player->network_player_data.primary_color_index;
+		line->minimal = !game_stats_line_full(ranking[index].player_index, server != NULL);
 		if (server)
 		{
 			unsigned long network_game_server_machine_ipv4_address(struct network_game_server *server,
@@ -5277,8 +5285,9 @@ long game_engine_report_lines(
 			short multikills = line->multikills;
 
 			extras[index][0] = 0;
-			game_stats_player_extra(ranking[index].player_index, extras[index], BROWSER_REPORT_EXTRA_SIZE,
-				&multikills);
+			if (!line->minimal)
+				game_stats_player_extra(ranking[index].player_index, extras[index], BROWSER_REPORT_EXTRA_SIZE,
+					&multikills);
 			line->multikills = multikills;
 			line->extra = extras[index];
 		}
@@ -8946,6 +8955,10 @@ boolean game_engine_get_state_message(
 				NONE,
 				message,
 				message_character_count);
+			/* port: the scoreboard's key for BACK while the keyboard or
+			mouse was used last (Halo PC's prompts) */
+			if (result)
+				input_abstraction_port_back_word(message, message_character_count);
 		}
 		else if (player->state_message != NONE)
 		{
