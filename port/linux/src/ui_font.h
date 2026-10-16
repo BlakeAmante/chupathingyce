@@ -18,6 +18,11 @@ enum
 	POSIX_UI_FONT_PLAYSTATION,
 	POSIX_UI_FONT_NINTENDO,
 	POSIX_UI_FONT_KEYBOARD,
+	/* the menus' faces (port/assets/fonts): Overpass 900 and 750, as
+	text_hires.c draws ui\large_ui and ui\small_ui, and OpenCE, the titles' */
+	POSIX_UI_FONT_MENU,
+	POSIX_UI_FONT_MENU_SMALL,
+	POSIX_UI_FONT_TITLE,
 
 	POSIX_UI_FONT_COUNT
 };

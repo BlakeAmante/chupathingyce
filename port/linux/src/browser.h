@@ -82,6 +82,13 @@ struct browser_game
 	unsigned char hosting;
 	unsigned char protocol;
 	unsigned char machines[BROWSER_MACHINE_KINDS];
+	/* (browser_get_games's, from what this machine knows itself) the round
+	trip to its host in milliseconds while the tunnel reaches it (p2p.c's
+	pings: a game being joined or played), else -1; and whether it has a
+	password, as its host's public listing says (p2p_lobby.c, while the
+	public listings are browsed: p2p_lobby_browse) */
+	short ping;
+	unsigned char locked;
 };
 
 /* one player's line of a finished game's carnage report */
@@ -175,6 +182,22 @@ void browser_server_name(char *text, int size);
 is more than a few seconds old: those of this machine's network version,
 without this machine's own. Returns their count. */
 int browser_get_games(struct browser_game *games, int maximum_count);
+/* the public listings (OpenCE's, p2p_lobby.c) followed while a screen of
+listed games is up, for which of them have a password */
+void browser_follow_listings(int on);
+/* how the last asking for the list went, for a screen with no games to say
+why: BROWSER_LIST_* */
+enum
+{
+	BROWSER_LIST_ANSWERED,
+	/* not answered yet */
+	BROWSER_LIST_WAITING,
+	/* the last asking failed (asked again after a while) */
+	BROWSER_LIST_FAILED,
+	/* no list (network.browser_url empty) */
+	BROWSER_LIST_NONE,
+};
+int browser_list_status(void);
 
 /* whether a listed game's host is an internet play peer of this machine
 (joining it, or joined): its address in the game's network then */

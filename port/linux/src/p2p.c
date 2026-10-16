@@ -1730,6 +1730,21 @@ int p2p_peer_address(const unsigned char *peer_identifier, unsigned long *addres
 	return result;
 }
 
+int p2p_peer_ping(const unsigned char *peer_identifier)
+{
+	struct peer *peer;
+	int ping = -1;
+
+	if (!p2p.running)
+		return -1;
+	pthread_mutex_lock(&p2p_lock);
+	peer = find_peer(peer_identifier);
+	if (peer && peer->connected && peer->round_trip > 0 && peer->round_trip < 10000)
+		ping = (int)peer->round_trip;
+	pthread_mutex_unlock(&p2p_lock);
+	return ping;
+}
+
 /* ---------- the game's ports: all that peers may reach */
 
 void p2p_socket_port(int socket, int stream, int listening, unsigned short port)

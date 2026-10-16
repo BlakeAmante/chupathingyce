@@ -894,7 +894,12 @@ activity sent (without the invite).
 
 Builds with the game list (`configure.py --game-browser`) have Online Games
 in the Multiplayer menu: the games on `network.browser_url`
-(halo.milenko.org). Each copy of the game has a player key in the save root
+(halo.milenko.org). The screen looks like the Xbox's menus, drawn by the
+game itself in the menus' fonts (`port/assets/fonts`). Each game's map has a
+tag for its family: XBX (the Xbox's maps), HCE (Custom Edition), HMD
+(HaloMD) and GBX (Halo PC retail). A lock marks a game with a password, as
+its public listing says. The ping column shows the round trip to a host
+that this machine is connected to (a game that you join), else a dash. Each copy of the game has a player key in the save root
 (`game_list_player.key`). The key confirms the player's lines in finished
 games. The game sends the key only to an HTTPS server, or to a server on
 this computer (`http://127.0.0.1`, `http://localhost`) for tests.

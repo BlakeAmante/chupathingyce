@@ -7564,6 +7564,13 @@ void render_ui_widgets(
 					should_render = TRUE;
 				}
 			}
+#ifdef HALO_GAME_BROWSER
+			/* (Online Games is drawn over the menus' background alone, as a
+			screen of their own: the screen it opened over is not drawn under
+			it, an error dialog still is) */
+			if (should_render && browser_screen_active() && !widget->widget_is_error_dialog)
+				should_render = FALSE;
+#endif
 			if (should_render)
 			{
 				point2d offset;

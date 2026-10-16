@@ -1804,6 +1804,63 @@ int browser_moderator_key(char *text, int size)
 	return 1;
 }
 
+/* a listed game's identifier (its invite's first bytes, made a locally
+administered address as p2p.c makes one); 0 if the invite is not one */
+static int invite_identifier(const char *invite, unsigned char *identifier)
+{
+	int index;
+
+	for (index = 0; index < P2P_IDENTIFIER_SIZE; index++)
+	{
+		unsigned int byte;
+
+		if (sscanf(invite + 2 * index, "%2x", &byte) != 1)
+			return 0;
+		identifier[index] = (unsigned char)byte;
+	}
+	identifier[0] = (unsigned char)((identifier[0] & 0xFC) | 0x02);
+	return 1;
+}
+
+/* what the list does not say of its games and this machine knows: the
+round trip to a host the tunnel reaches, and which games' public listings
+have a password (a listing's key hash is its invite's first half) */
+static void add_known(struct browser_game *games, int count)
+{
+	enum { LISTINGS = 64, LISTINGS_INTERVAL = 1000 };
+	static struct p2p_listing listings[LISTINGS];
+	static int listing_count;
+	static unsigned long listings_time;
+	static int listings_read;
+	int index, other;
+
+	if (!listings_read || elapsed(listings_time, LISTINGS_INTERVAL))
+	{
+		listing_count = p2p_lobby_browsing() ? p2p_lobby_games(listings, LISTINGS) : 0;
+		listings_time = p2p_now();
+		listings_read = 1;
+	}
+	for (index = 0; index < count; index++)
+	{
+		unsigned char identifier[P2P_IDENTIFIER_SIZE];
+		char key_hash[2 * P2P_KEY_HASH_SIZE + 1];
+
+		games[index].ping = (short)(invite_identifier(games[index].invite, identifier) ? p2p_peer_ping(identifier) : -1);
+		games[index].locked = 0;
+		for (other = 0; other < listing_count; other++)
+		{
+			if (!listings[other].locked)
+				continue;
+			p2p_hex(listings[other].key_hash, P2P_KEY_HASH_SIZE, key_hash);
+			if (!SDL_strncasecmp(key_hash, games[index].invite, 2 * P2P_KEY_HASH_SIZE))
+			{
+				games[index].locked = 1;
+				break;
+			}
+		}
+	}
+}
+
 int browser_get_games(struct browser_game *games, int maximum_count)
 {
 	int count;
@@ -1814,7 +1871,26 @@ int browser_get_games(struct browser_game *games, int maximum_count)
 	count = browser.game_count < maximum_count ? browser.game_count : maximum_count;
 	memcpy(games, browser.games, sizeof(*games) * (size_t)count);
 	pthread_mutex_unlock(&browser_lock);
+	add_known(games, count);
 	return count;
+}
+
+int browser_list_status(void)
+{
+	int status;
+
+	if (!config_string("network.browser_url")[0])
+		return BROWSER_LIST_NONE;
+	pthread_mutex_lock(&browser_lock);
+	status = browser.list_failed ? BROWSER_LIST_FAILED : !browser.list_time && !browser.game_count ?
+		BROWSER_LIST_WAITING : BROWSER_LIST_ANSWERED;
+	pthread_mutex_unlock(&browser_lock);
+	return status;
+}
+
+void browser_follow_listings(int on)
+{
+	p2p_lobby_browse(on && config_boolean("network.online"));
 }
 
 int browser_game_peer(const char *invite, unsigned long *address)
