@@ -78,6 +78,8 @@ boolean pc_menu_frame_placement(struct bitmap_data const *bitmap, short *x, shor
 #define PC_MENU_TAG_PREFIX "pc\\"
 /* the Chupathingy menus' main menu (port/assets/menus/chupathingy) */
 #define CHUPATHINGY_ROOT "chupathingy/main_menu"
+/* (the Chupathingy menus' prompts' buttons, by their tags' names) */
+#define CHUPATHINGY_PROMPTS PC_MENU_TAG_PREFIX "chupathingy\\prompts\\"
 /* the multiplayer maps' widget collection, whose pause screens pause_patch
 adds to */
 #define MULTIPLAYER_COLLECTION "ui\\shell\\multiplayer"
@@ -1467,6 +1469,16 @@ the list moved down; on a custom map's, what is below the list moves down. */
 #define PAUSE_SETTINGS_SCREEN_CHUPATHINGY "chupathingy/settings/profile_edit_screen"
 #define PAUSE_BUTTON_SPACING 35
 
+/* display.menus: the Xbox's menus, Gearbox's Halo PC menus, or Chupathingy's (the
+Xbox's, with the PC version's screens that the Xbox has not, in its look:
+port/assets/menus/chupathingy) */
+enum
+{
+	_menus_xbox,
+	_menus_pc,
+	_menus_chupathingy,
+};
+
 static short menus_chosen(void);
 
 static long ui_function_named(char const *name)
@@ -1908,15 +1920,6 @@ static void pause_patch_xbox(void)
 	memset(&build, 0, sizeof(build));
 }
 
-/* display.menus: the Xbox's menus, Gearbox's Halo PC menus, or Chupathingy's (the
-Xbox's, with the PC version's screens that the Xbox has not, in its look:
-port/assets/menus/chupathingy) */
-enum
-{
-	_menus_xbox,
-	_menus_pc,
-	_menus_chupathingy,
-};
 
 /* which display.menus asks for, in any case ("gearbox" or the older "pc"
 for Gearbox's; a value that is none of them is said once in the log, and is
@@ -2252,8 +2255,10 @@ struct pc_menu_setting *pc_menu_setting_get(
 ui.map's pictures of the controller's buttons in the menus' prompts ("A =
 SELECT", "B = BACK": ui\shell\bitmaps\a_butn and the rest, and their
 smaller _sm), drawn as the keyboard's key caps while the keyboard or mouse
-was used last (halo_keyboard_prompts), as Online Games draws its prompts
-(ui_overlay.c: the keys xinput_sdl.c presses those buttons with), ending
+was used last (halo_keyboard_prompts), and with the Chupathingy menus always
+as the device last used names them (an Xbox-like pad's by snapchipper's
+icons, a PlayStation or Nintendo pad's own), as Online Games draws its
+prompts (ui_overlay.c: the keys xinput_sdl.c presses those buttons with), ending
 where the picture ends, so that the words after it stay clear. */
 
 boolean pc_menu_button_key_cap(
@@ -2283,12 +2288,22 @@ boolean pc_menu_button_key_cap(
 	char const *last;
 	long index;
 
-	if (bitmap_tag_index == NONE || !halo_keyboard_prompts())
+	/* (the Chupathingy menus: always the modern glyphs of the device last
+	used, a pad's too) */
+	boolean modern = menu_tags.loaded && menu_tags.chupathingy;
+
+	if (bitmap_tag_index == NONE || (!halo_keyboard_prompts() && !modern))
 		return FALSE;
 	name = tag_get_name(bitmap_tag_index);
-	if (!name || strncmp(name, "ui\\shell\\bitmaps\\", 17))
+	if (!name)
 		return FALSE;
-	last = name + 17;
+	/* (ui.map's, and the Chupathingy menus' own: chupathingy/prompts.xml) */
+	if (!strncmp(name, "ui\\shell\\bitmaps\\", 17))
+		last = name + 17;
+	else if (modern && !strncmp(name, CHUPATHINGY_PROMPTS, strlen(CHUPATHINGY_PROMPTS)))
+		last = name + strlen(CHUPATHINGY_PROMPTS);
+	else
+		return FALSE;
 	for (index = 0; index < (long)(sizeof(buttons) / sizeof(buttons[0])); index++)
 	{
 		size_t length = strlen(buttons[index].name);

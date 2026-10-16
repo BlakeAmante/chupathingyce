@@ -191,10 +191,10 @@ static float prompt(
 	char const *words,
 	float x,
 	float y,
-	boolean xbox)
+	boolean question_box)
 {
 	x += ui_overlay_button(button, PROMPT_BUTTON, x, y, 0xFFFFFFFF) + 3.0f;
-	if (xbox)
+	if (question_box)
 	{
 		x += ui_overlay_text(UI_FONT_MENU, PROMPT_TEXT, x, y + (PROMPT_BUTTON - PROMPT_TEXT) * 0.5f + 0.5f,
 			UI_ALIGN_LEFT, XBOX_TEXT, words);
@@ -294,7 +294,7 @@ void invite_prompt_render(
 	float center = DIALOG_X + DIALOG_WIDTH / 2;
 	float width, x;
 	/* (the Chupathingy menus': the Xbox's question box) */
-	boolean xbox = pc_menus_chupathingy();
+	boolean question_box = pc_menus_chupathingy();
 	unsigned int dim = COLOR_DIM;
 
 	if (!ui_overlay_available() || !invite_prompt.pending)
@@ -310,7 +310,7 @@ void invite_prompt_render(
 	}
 
 	ui_overlay_layer(3);
-	if (xbox)
+	if (question_box)
 	{
 		ui_overlay_rect(-200, 0, 1040, 480, 0, XBOX_SHADE);
 		ui_overlay_gradient(DIALOG_X, DIALOG_Y, DIALOG_WIDTH, DIALOG_HEIGHT, 0, XBOX_BOX_TOP, XBOX_BOX_BOTTOM);
@@ -346,11 +346,11 @@ void invite_prompt_render(
 	width = prompt_width(UI_BUTTON_B, "=NO") + PROMPT_GAP + prompt_width(UI_BUTTON_A, "=YES");
 	x = center - width / 2;
 	invite_prompt.no_x0 = x - 6;
-	x = prompt(UI_BUTTON_B, "=NO", x, PROMPT_Y, xbox);
+	x = prompt(UI_BUTTON_B, "=NO", x, PROMPT_Y, question_box);
 	invite_prompt.no_x1 = x + 6;
 	x += PROMPT_GAP;
 	invite_prompt.yes_x0 = x - 6;
-	x = prompt(UI_BUTTON_A, "=YES", x, PROMPT_Y, xbox);
+	x = prompt(UI_BUTTON_A, "=YES", x, PROMPT_Y, question_box);
 	invite_prompt.yes_x1 = x + 6;
 	ui_overlay_layer(0);
 }

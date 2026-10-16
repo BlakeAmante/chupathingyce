@@ -6,14 +6,14 @@
 		<on event="back" back="true"/>
 		<child widget="main_menu/settings_select/player_setup/player_profile_edit/controls_setup/header_profile_controls_settings"/>
 		<child widget="chupathingy/settings/controls_setup_list"/>
-		<child widget="ui\shell\main_menu\y_butn" x="78" y="414"/>
-		<child widget="chupathingy/settings/prompt_defaults" x="100" y="414"/>
-		<child widget="ui\shell\main_menu\x_butn" x="220" y="414"/>
-		<child widget="chupathingy/settings/prompt_accept_short" x="242" y="414"/>
-		<child widget="ui\shell\main_menu\b_butn" x="346" y="414"/>
-		<child widget="ui\shell\main_menu\=cancel" x="368" y="414"/>
-		<child widget="ui\shell\main_menu\a_butn" x="471" y="414"/>
-		<child widget="chupathingy/settings/prompt_change" x="493" y="414"/>
+		<child widget="chupathingy/prompts/y" x="60" y="414"/>
+		<child widget="chupathingy/prompts/defaults" x="82" y="414"/>
+		<child widget="chupathingy/prompts/x" x="215" y="414"/>
+		<child widget="chupathingy/prompts/accept" x="237" y="414"/>
+		<child widget="chupathingy/prompts/b" x="350" y="414"/>
+		<child widget="chupathingy/prompts/cancel" x="372" y="414"/>
+		<child widget="chupathingy/prompts/a" x="490" y="414"/>
+		<child widget="chupathingy/prompts/change" x="512" y="414"/>
 	</widget>
 	<widget name="chupathingy/settings/controls_setup_list" type="column_list" width="640" height="480" flags="pass_unhandled_to_focused_child up_down_tabs_children" description="main_menu/settings_select/player_setup/player_profile_edit/controls_setup/help">
 		<data input="controls update menu"/>
@@ -34,12 +34,12 @@
 		<on event="back" back="true"/>
 		<child widget="main_menu/settings_select/player_setup/player_profile_edit/video_settings/header_profile_video_settings"/>
 		<child widget="chupathingy/settings/video_settings_list"/>
-		<child widget="ui\shell\main_menu\y_butn" x="78" y="414"/>
-		<child widget="chupathingy/settings/prompt_defaults" x="100" y="414"/>
-		<child widget="ui\shell\main_menu\b_butn" x="346" y="414"/>
-		<child widget="ui\shell\main_menu\=cancel" x="368" y="414"/>
-		<child widget="ui\shell\main_menu\a_butn" x="471" y="414"/>
-		<child widget="ui\shell\main_menu\=accept_new" x="493" y="414"/>
+		<child widget="chupathingy/prompts/y" x="60" y="414"/>
+		<child widget="chupathingy/prompts/defaults" x="82" y="414"/>
+		<child widget="chupathingy/prompts/b" x="360" y="414"/>
+		<child widget="chupathingy/prompts/cancel" x="382" y="414"/>
+		<child widget="chupathingy/prompts/a" x="490" y="414"/>
+		<child widget="chupathingy/prompts/accept" x="512" y="414"/>
 	</widget>
 	<widget name="chupathingy/settings/video_settings_list" type="column_list" width="640" height="480" flags="pass_unhandled_to_focused_child up_down_tabs_children" description="main_menu/settings_select/player_setup/player_profile_edit/video_settings/help">
 		<data input="port settings help"/>
@@ -64,12 +64,12 @@
 		<on event="back" back="true"/>
 		<child widget="main_menu/settings_select/player_setup/player_profile_edit/mouse_settings/header_profile_mouse_settings"/>
 		<child widget="chupathingy/settings/mouse_settings_list"/>
-		<child widget="ui\shell\main_menu\y_butn" x="78" y="414"/>
-		<child widget="chupathingy/settings/prompt_defaults" x="100" y="414"/>
-		<child widget="ui\shell\main_menu\b_butn" x="346" y="414"/>
-		<child widget="ui\shell\main_menu\=cancel" x="368" y="414"/>
-		<child widget="ui\shell\main_menu\a_butn" x="471" y="414"/>
-		<child widget="ui\shell\main_menu\=accept_new" x="493" y="414"/>
+		<child widget="chupathingy/prompts/y" x="60" y="414"/>
+		<child widget="chupathingy/prompts/defaults" x="82" y="414"/>
+		<child widget="chupathingy/prompts/b" x="360" y="414"/>
+		<child widget="chupathingy/prompts/cancel" x="382" y="414"/>
+		<child widget="chupathingy/prompts/a" x="490" y="414"/>
+		<child widget="chupathingy/prompts/accept" x="512" y="414"/>
 	</widget>
 	<widget name="chupathingy/settings/mouse_settings_list" type="column_list" width="640" height="480" flags="pass_unhandled_to_focused_child up_down_tabs_children" description="main_menu/settings_select/player_setup/player_profile_edit/mouse_settings/help">
 		<data input="port settings help"/>
@@ -86,12 +86,12 @@
 		<on event="back" back="true"/>
 		<child widget="main_menu/settings_select/player_setup/player_profile_edit/audio_settings/header_profile_audio_settings"/>
 		<child widget="chupathingy/settings/audio_settings_list"/>
-		<child widget="ui\shell\main_menu\y_butn" x="78" y="414"/>
-		<child widget="chupathingy/settings/prompt_defaults" x="100" y="414"/>
-		<child widget="ui\shell\main_menu\b_butn" x="346" y="414"/>
-		<child widget="ui\shell\main_menu\=cancel" x="368" y="414"/>
-		<child widget="ui\shell\main_menu\a_butn" x="471" y="414"/>
-		<child widget="ui\shell\main_menu\=accept_new" x="493" y="414"/>
+		<child widget="chupathingy/prompts/y" x="60" y="414"/>
+		<child widget="chupathingy/prompts/defaults" x="82" y="414"/>
+		<child widget="chupathingy/prompts/b" x="360" y="414"/>
+		<child widget="chupathingy/prompts/cancel" x="382" y="414"/>
+		<child widget="chupathingy/prompts/a" x="490" y="414"/>
+		<child widget="chupathingy/prompts/accept" x="512" y="414"/>
 	</widget>
 	<widget name="chupathingy/settings/audio_settings_list" type="column_list" width="640" height="480" flags="pass_unhandled_to_focused_child up_down_tabs_children" description="main_menu/settings_select/player_setup/player_profile_edit/audio_settings/help">
 		<data input="port settings help"/>
@@ -109,12 +109,12 @@
 		<on event="back" back="true"/>
 		<child widget="main_menu/settings_select/player_setup/player_profile_edit/network_setup/header_profile_network_settings"/>
 		<child widget="chupathingy/settings/network_setup_list"/>
-		<child widget="ui\shell\main_menu\y_butn" x="78" y="414"/>
-		<child widget="chupathingy/settings/prompt_defaults" x="100" y="414"/>
-		<child widget="ui\shell\main_menu\b_butn" x="346" y="414"/>
-		<child widget="ui\shell\main_menu\=cancel" x="368" y="414"/>
-		<child widget="ui\shell\main_menu\a_butn" x="471" y="414"/>
-		<child widget="ui\shell\main_menu\=accept_new" x="493" y="414"/>
+		<child widget="chupathingy/prompts/y" x="60" y="414"/>
+		<child widget="chupathingy/prompts/defaults" x="82" y="414"/>
+		<child widget="chupathingy/prompts/b" x="360" y="414"/>
+		<child widget="chupathingy/prompts/cancel" x="382" y="414"/>
+		<child widget="chupathingy/prompts/a" x="490" y="414"/>
+		<child widget="chupathingy/prompts/accept" x="512" y="414"/>
 	</widget>
 	<widget name="chupathingy/settings/network_setup_list" type="column_list" width="640" height="480" flags="pass_unhandled_to_focused_child up_down_tabs_children" description="main_menu/settings_select/player_setup/player_profile_edit/network_setup/help">
 		<data input="port settings help"/>
@@ -138,12 +138,12 @@
 		<on event="back" back="true"/>
 		<child widget="main_menu/settings_select/player_setup/player_profile_edit/gamepad_setup/header_profile_controller_setting"/>
 		<child widget="chupathingy/settings/gamepad_setup_list"/>
-		<child widget="ui\shell\main_menu\y_butn" x="78" y="414"/>
-		<child widget="chupathingy/settings/prompt_defaults" x="100" y="414"/>
-		<child widget="ui\shell\main_menu\b_butn" x="346" y="414"/>
-		<child widget="ui\shell\main_menu\=cancel" x="368" y="414"/>
-		<child widget="ui\shell\main_menu\a_butn" x="471" y="414"/>
-		<child widget="ui\shell\main_menu\=accept_new" x="493" y="414"/>
+		<child widget="chupathingy/prompts/y" x="60" y="414"/>
+		<child widget="chupathingy/prompts/defaults" x="82" y="414"/>
+		<child widget="chupathingy/prompts/b" x="360" y="414"/>
+		<child widget="chupathingy/prompts/cancel" x="382" y="414"/>
+		<child widget="chupathingy/prompts/a" x="490" y="414"/>
+		<child widget="chupathingy/prompts/accept" x="512" y="414"/>
 	</widget>
 	<widget name="chupathingy/settings/gamepad_setup_list" type="column_list" width="640" height="480" flags="pass_unhandled_to_focused_child up_down_tabs_children" description="main_menu/settings_select/player_setup/player_profile_edit/gamepad_setup/help">
 		<data input="port settings help"/>
@@ -157,11 +157,5 @@
 		<child widget="main_menu/settings_select/player_setup/player_profile_edit/gamepad_setup/op_joystick_preset" x="54" y="223"/>
 		<child widget="main_menu/settings_select/player_setup/player_profile_edit/gamepad_setup/op_vibration" x="54" y="253"/>
 		<child widget="main_menu/settings_select/player_setup/player_profile_edit/gamepad_setup/op_ingame_help" x="54" y="283"/>
-	</widget>
-	<widget name="chupathingy/settings/prompt_defaults" type="text" controller="1" width="120" height="22" text="=DEFAULTS" font="ui\large_ui" color="#FF2896FF">
-	</widget>
-	<widget name="chupathingy/settings/prompt_accept_short" type="text" controller="1" width="120" height="22" text="=ACCEPT" font="ui\large_ui" color="#FF2896FF">
-	</widget>
-	<widget name="chupathingy/settings/prompt_change" type="text" controller="1" width="120" height="22" text="=CHANGE" font="ui\large_ui" color="#FF2896FF">
 	</widget>
 </menus>

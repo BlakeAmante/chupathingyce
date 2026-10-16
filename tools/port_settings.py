@@ -379,7 +379,6 @@ def settings_files() -> dict:
 CHUPATHINGY = "chupathingy/settings"
 # (every page SCREENS has, so that a page added there is here too)
 CHUPATHINGY_PAGES = ["controls_setup", *SCREENS]
-XBOX_MAIN_MENU = "ui\\shell\\main_menu"
 
 
 def _setting_places(spec: dict) -> list:
@@ -393,16 +392,11 @@ def _setting_places(spec: dict) -> list:
     return places
 
 
-def _xbox_prompt(button: str, x: int, text: str = None, caption: int = None) -> list:
-    """an Xbox prompt: its button's picture, and its text (the Xbox's
-    button_key string, else one of ours)"""
-    picture = XBOX_MAIN_MENU + "\\" + button + "_butn"
-    lines = [f'<child{attributes([("widget", picture), ("x", x), ("y", 414)])}/>']
-    if caption is not None:
-        lines.append(f'<child{attributes([("widget", caption), ("x", x + 22), ("y", 414)])}/>')
-    else:
-        lines.append(f'<child{attributes([("widget", f"{CHUPATHINGY}/prompt_{text}"), ("x", x + 22), ("y", 414)])}/>')
-    return lines
+def _xbox_prompt(button: str, x: int, word: str) -> list:
+    """a prompt laid out as the Xbox's: its button, then its word (the
+    menus' own, chupathingy/prompts.xml, which a game's map has too)"""
+    return [f'<child{attributes([("widget", f"chupathingy/prompts/{button}"), ("x", x), ("y", 414)])}/>',
+            f'<child{attributes([("widget", f"chupathingy/prompts/{word}"), ("x", x + 22), ("y", 414)])}/>']
 
 
 def chupathingy_settings_pages() -> list:
@@ -421,18 +415,16 @@ def chupathingy_settings_pages() -> list:
             handlers = ['<on event="created" run="controls screen init"/>',
                         '<on event="x" run="controls screen change set" back="true"/>',
                         '<on event="y" run="controls screen defaults"/>']
-            prompts = (_xbox_prompt("y", 78, "defaults") + _xbox_prompt("x", 220, "accept_short") +
-                       _xbox_prompt("b", 346, caption=XBOX_MAIN_MENU + "\\=cancel") +
-                       _xbox_prompt("a", 471, "change"))
+            prompts = (_xbox_prompt("y", 60, "defaults") + _xbox_prompt("x", 215, "accept") +
+                       _xbox_prompt("b", 350, "cancel") + _xbox_prompt("a", 490, "change"))
         else:
             spec = SCREENS[folder]
             rows = [(f"{base}/op_{key}", platform, place) for key, platform, place in _setting_places(spec)]
             inputs = ["port settings help"]
             handlers = ['<on event="a" run="port settings save" back="true"/>',
                         '<on event="y" run="port settings defaults"/>']
-            prompts = (_xbox_prompt("y", 78, "defaults") +
-                       _xbox_prompt("b", 346, caption=XBOX_MAIN_MENU + "\\=cancel") +
-                       _xbox_prompt("a", 471, caption=XBOX_MAIN_MENU + "\\=accept_new"))
+            prompts = (_xbox_prompt("y", 60, "defaults") + _xbox_prompt("b", 360, "cancel") +
+                       _xbox_prompt("a", 490, "accept"))
         header = spec["header"][0]
         lines += _widget(f"{CHUPATHINGY}/{folder}_screen",
                          [("width", 640), ("height", 480), ("flags", "pass_unhandled_to_focused_child pause_game"),
@@ -447,10 +439,6 @@ def chupathingy_settings_pages() -> list:
                          [("type", "column_list"), ("width", 640), ("height", 480),
                           ("flags", "pass_unhandled_to_focused_child up_down_tabs_children"),
                           ("description", f"{base}/help")], children)
-    for name, text in [("defaults", "=DEFAULTS"), ("accept_short", "=ACCEPT"), ("change", "=CHANGE")]:
-        lines += _widget(f"{CHUPATHINGY}/prompt_{name}",
-                         [("type", "text"), ("controller", 1), ("width", 120), ("height", 22), ("text", text),
-                          ("font", "ui\\large_ui"), ("color", "#FF2896FF")], [])
     return lines + ["</menus>", ""]
 
 

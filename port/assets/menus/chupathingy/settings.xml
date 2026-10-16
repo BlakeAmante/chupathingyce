@@ -1,21 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- The Chupathingy menus' SETTINGS: the PC version's profile settings and
 their rows, laid out as the Xbox's EDIT PROFILE SETTINGS is (its header, the
-line above SAVE CHANGES, its B and A prompts, "Current Profile:"). The rows
-open the pages of settings_pages.xml. -->
+line above SAVE CHANGES, its B and A prompts, "Current Profile:"), from the
+menus' own tags, so that the pause menu's SETTINGS opens it in a game too.
+The rows open the pages of settings_pages.xml. -->
 <menus>
-	<widget name="chupathingy/settings/profile_edit_screen" width="640" height="480" flags="pass_unhandled_to_focused_child pause_game" bitmap="ui\shell\bitmaps\gradient">
+	<widget name="chupathingy/settings/profile_edit_screen" width="640" height="480" flags="pass_unhandled_to_focused_child pause_game" bitmap="bitmaps/gradient">
 		<on event="created" run="close if not editing profile"/>
 		<on event="b" run="player profile end editing" back="true"/>
 		<on event="back" run="player profile end editing" back="true"/>
-		<child widget="ui\shell\main_menu\settings_select\player_setup\player_profile_edit\header_profile_settings"/>
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/header_profile_settings"/>
 		<child widget="chupathingy/settings/list"/>
-		<child widget="ui\shell\main_menu\settings_select\player_setup\player_profile_edit\profile_label" x="432" y="353"/>
+		<child widget="main_menu/settings_select/player_setup/player_profile_edit/profile_label" x="432" y="353"/>
 		<child widget="main_menu/blueline" x="64" y="364"/>
-		<child widget="ui\shell\main_menu\b_butn" x="346" y="414"/>
-		<child widget="ui\shell\main_menu\=cancel" x="368" y="414"/>
-		<child widget="ui\shell\main_menu\a_butn" x="471" y="414"/>
-		<child widget="ui\shell\main_menu\=accept" x="492" y="414"/>
+		<child widget="chupathingy/prompts/b" x="360" y="414"/>
+		<child widget="chupathingy/prompts/cancel" x="382" y="414"/>
+		<child widget="chupathingy/prompts/a" x="490" y="414"/>
+		<child widget="chupathingy/prompts/select" x="512" y="414"/>
 	</widget>
 	<!-- (its rows a little closer than the PC version's, as the Xbox's nine
 	and SAVE CHANGES fit above the prompts) -->
