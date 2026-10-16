@@ -187,6 +187,7 @@ struct game_options;
 #include "network_coop.h" /* port: port/linux/game/network_coop.c */
 #include "networking/network_game_globals.h"
 #include "tag_files/tag_files.h"
+#include "cseries/cseries_windows.h"
 
 /* network_game_globals.c's */
 boolean network_game_distributed_client(void);

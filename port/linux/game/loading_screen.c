@@ -16,6 +16,7 @@ this one, however fast the frames come.
 */
 
 #include "cseries.h"
+#include "cseries/cseries_windows.h"
 
 #include "loading_screen.h"
 
