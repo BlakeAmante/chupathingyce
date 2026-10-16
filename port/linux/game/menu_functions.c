@@ -1853,6 +1853,9 @@ static struct
 	{ "controls.flashlight", L"FLASHLIGHT", 2 },
 	{ "controls.scoreboard", L"SHOW SCORES", 2 },
 	{ "controls.pause", L"PAUSE MENU", 2 },
+	{ "controls.chat_all", L"CHAT", 2 },
+	{ "controls.chat_team", L"TEAM CHAT", 2 },
+	{ "controls.chat_log", L"CHAT LOG", 2 },
 };
 
 static struct
