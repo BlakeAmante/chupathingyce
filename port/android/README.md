@@ -110,7 +110,7 @@ To install the data from a computer:
 | Halo PC (Custom Edition) maps, with `bitmaps.map`, `sounds.map` and `loc.map` | `maps_ce` |
 | HaloMD maps | `maps_md` |
 | Halo PC (retail) maps | `maps_pc` |
-| Log | `debug.txt` |
+| Log | `logs/debug.txt` (`debug.txt` until 0.8.0) |
 | Settings | `config.toml` |
 
 To make a copy of the saved games, enter
@@ -563,7 +563,7 @@ assembly of the port is necessary:
 ## Find problems
 
 - Enter `adb logcat -s chupathingyce` to see the log of the port and the errors of
-  the game. `files/debug.txt` is the log of the game.
+  the game. `files/logs/debug.txt` is the log of the game.
 - If the guest code stops, the log shows the registers and the frame chain.
   To find the functions, enter
   `llvm-symbolizer --obj=build/android/halo_guest.elf <address>`.

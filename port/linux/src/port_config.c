@@ -390,6 +390,12 @@ static const struct config_setting config_settings[] =
 	{ "paths.saves", _config_string, "\"\"", "HALO_SAVE_ROOT", _environment_value, _platform_desktop,
 		"Where saved games and profiles go; empty for the usual place\n"
 		"(~/.local/share/chupathingyce, or %APPDATA%\\ChupathingyCE on Windows)." },
+	{ "paths.logs", _config_string, "\"\"", "HALO_LOG_ROOT", _environment_value, _platform_desktop,
+		"Where the logs go (debug.txt, halo.log and crash reports waiting to be\n"
+		"sent); empty for logs/ in the data folder, beside maps." },
+	{ "paths.cache", _config_string, "\"\"", "HALO_CACHE_ROOT", _environment_value, _platform_desktop,
+		"Where the game keeps what it can make again; empty for cache/ in the\n"
+		"save folder." },
 
 	{ "network.address", _config_string, "\"\"", "HALO_NET_ADDRESS", _environment_value, _platform_all,
 		"This machine's IPv4 address for system link, for a machine on several\n"

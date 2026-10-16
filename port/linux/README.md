@@ -208,12 +208,27 @@ delete it to copy again. A save root set in `paths.saves` or
 The game makes the folders when it needs them. Names of files and folders
 are not case-sensitive, as on the Xbox.
 
+Beside the maps and the saves, the game keeps folders of its own
+(`port/linux/src/port_folders.h`), the same on every platform:
+
+| Folder | Contents |
+| --- | --- |
+| `logs/` in the data root | The logs: `debug.txt`, `halo.log` (Windows) and `crashes/`. Zip this folder for a bug report. `paths.logs` (`HALO_LOG_ROOT`) puts it elsewhere. |
+| `data/` in the data root | What a player adds that is not a map. |
+| `cache/` in the save root | What the game can make again; safe to delete. `paths.cache` (`HALO_CACHE_ROOT`) puts it elsewhere. |
+| `private/` in the save root | What is the player's alone. |
+
+Until 0.8.0, `debug.txt` and `crashes/` were in the data root itself. The
+game does not move or delete them: crash reports waiting there are still
+sent, and an old `debug.txt` there is left as it was. An update never
+touches these folders.
+
 These files are in the data root:
 
 | File | Contents |
 | --- | --- |
-| `debug.txt` | The log of the game. At start-up, the game shows the data root in the terminal. A crash writes its report (the faulting address and the calls that led to it) here as well; the `reference address` line at the top of each session places those addresses in the build. |
-| `crashes/` | Crash reports that wait to be sent (Linux and macOS; refer to "Crash reports"). |
+| `logs/debug.txt` | The log of the game. At start-up, the game shows the logs folder and the data root in the terminal. A crash writes its report (the faulting address and the calls that led to it) here as well; the `reference address` line at the top of each session places those addresses in the build. |
+| `logs/crashes/` | Crash reports that wait to be sent (Linux and macOS; refer to "Crash reports"). |
 | `init.txt` | Console commands that the game does at start-up. For example, `map_name levels\a10\a10` starts the first campaign level. |
 
 The settings are in `config.toml` next to the executable. Refer to
@@ -229,7 +244,9 @@ backtrace to the standard error. To find the function at the address, enter
 Releases and nightlies on Linux and macOS also write a crash report when
 the game stops because of `SIGSEGV`, `SIGBUS`, `SIGILL`, `SIGFPE` or
 `SIGABRT` (`port/linux/src/posix_crash.c`). The report goes to `crashes/`
-in the data root. When the game starts the next time, it does what
+in the logs folder (`logs/crashes/`; reports from before 0.8.0 wait in
+`crashes/` in the data root and are sent from there). When the game starts
+the next time, it does what
 `crash_reports.upload` says: `"yes"` sends the reports to the ChupathingyCE
 site (`network.browser_url`, `POST /v1/crash`) in the background, `"no"`
 deletes them, and `"ask"` asks the player first. `crashes/` keeps at most 8
@@ -469,6 +486,8 @@ the setting for one start of the game. It has priority over the file.
 | `game.unlock_all_levels` | `false` | `HALO_UNLOCK_ALL_LEVELS` | `true`: a profile created afterward starts with all the campaign levels finished on all the difficulties. `false`: a new profile starts at The Pillar of Autumn, and each level opens when you finish the level before it, as on the Xbox. Existing profiles keep their progress. To start a profile over, type `profile_reset_campaign` in the console. |
 | `paths.data` | `""` | `HALO_DATA_ROOT` | The data root. Refer to "Start the game". |
 | `paths.saves` | `""` | `HALO_SAVE_ROOT` | The save root. Refer to "Files and folders". |
+| `paths.logs` | `""` | `HALO_LOG_ROOT` | The logs folder (`debug.txt`, `halo.log`, `crashes/`). Empty: `logs/` in the data root. Refer to "Files and folders". |
+| `paths.cache` | `""` | `HALO_CACHE_ROOT` | The cache folder. Empty: `cache/` in the save root. |
 | `network.address` | `""` | `HALO_NET_ADDRESS` | The IPv4 address of this machine for system link. Refer to "Play on one computer". |
 | `network.broadcast` | `""` | `HALO_NET_BROADCAST` | IPv4 addresses, with commas between them, that get the broadcasts of the game. Empty: 255.255.255.255. |
 | `network.online` | `true` | `HALO_NET_ONLINE` | `true`: internet play. `false`: system link on the local network only. |
