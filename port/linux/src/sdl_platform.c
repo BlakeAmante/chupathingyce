@@ -946,8 +946,8 @@ BOOL platform_video_initialize(unsigned long width, unsigned long height)
 	setenv("mesa_glthread", "true", 0);
 #endif
 
-	/* "ChupathingyCE 0.5.0b" */
-	snprintf(title, sizeof(title), "ChupathingyCE %s", updater_version());
+	/* "Chupathingy 0.5.0b" */
+	snprintf(title, sizeof(title), "Chupathingy %s", updater_version());
 #ifdef HALO_ANDROID
 	{
 		int scale = (int)config_integer("display.window_scale");
