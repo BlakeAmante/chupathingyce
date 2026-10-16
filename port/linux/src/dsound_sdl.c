@@ -1149,6 +1149,8 @@ static BOOL audio_silent_clock = FALSE;
 static SDL_AudioSpec audio_spec;
 /* audio.device as the stream was opened for it ("" for the system's) */
 static char audio_device_name[256];
+/* the output it plays on (SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK for the system's) */
+static SDL_AudioDeviceID audio_device = SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK;
 
 static void SDLCALL audio_callback(void *userdata, SDL_AudioStream *stream, int additional_amount, int total_amount)
 {
@@ -1267,11 +1269,13 @@ static BOOL audio_stream_open(void)
 	char const *name = config_string("audio.device");
 
 	snprintf(audio_device_name, sizeof(audio_device_name), "%s", name);
-	audio_stream = SDL_OpenAudioDeviceStream(audio_device_named(name), &audio_spec, audio_callback, NULL);
-	if (!audio_stream && name[0] && strcmp(name, "default"))
+	audio_device = audio_device_named(name);
+	audio_stream = SDL_OpenAudioDeviceStream(audio_device, &audio_spec, audio_callback, NULL);
+	if (!audio_stream && audio_device != SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK)
 	{
 		platform_log("audio: cannot open \"%s\" (%s); the system's default plays", name, SDL_GetError());
-		audio_stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &audio_spec, audio_callback, NULL);
+		audio_device = SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK;
+		audio_stream = SDL_OpenAudioDeviceStream(audio_device, &audio_spec, audio_callback, NULL);
 	}
 	if (!audio_stream)
 		return FALSE;
@@ -1287,6 +1291,12 @@ static void audio_device_update(void)
 
 	if (!audio_stream || !strcmp(name, audio_device_name))
 		return;
+	if (audio_device_named(name) == audio_device)
+	{
+		/* the same output (an unknown name plays on the default) */
+		snprintf(audio_device_name, sizeof(audio_device_name), "%s", name);
+		return;
+	}
 	SDL_DestroyAudioStream(audio_stream);
 	audio_stream = NULL;
 	if (!audio_stream_open())
