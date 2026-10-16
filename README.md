@@ -493,7 +493,10 @@ builds are made only with free tools and libraries.
   October 9, 2026.
 - ChupathingyCE: [Milenko](https://github.com/MrMilenko) and contributors. The
   icon is MrBruh's helmet, with tusks.
-- Fonts: [Noto Sans](https://fonts.google.com/noto) (SIL OFL) and
+- Fonts: Cyborg Interface Gothic, the high-res text's font, by fizzy, made
+  to match Halo's interface font from Overpass and glyphs of their own
+  (SIL OFL); [Overpass](https://github.com/RedHatOfficial/Overpass) (SIL OFL);
+  [Noto Sans](https://fonts.google.com/noto) (SIL OFL) and
   [Kenney's Input Prompts](https://kenney.nl/assets/input-prompts) (CC0).
 - Controller button icons by snapchipper, CC0 (`port/assets/prompts`).
 - High-res HUD art: Aerocatia's and Jessie's redraws from
