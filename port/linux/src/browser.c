@@ -8,7 +8,8 @@ server's list for System Link to show.
 
 Hosting: the game's server reports its game each frame
 (browser_host_update). While p2p.c hosts it on the internet (it has an
-invite) and network.list_hosted_games is on, the game is announced every
+invite), the game is public and has no password (its invite lets anyone in),
+and network.list_hosted_games is on, the game is announced every
 ANNOUNCE_INTERVAL, or a little after it changes (players join, the map
 changes), and withdrawn when the reports stop or p2p.c stops hosting. The
 server forgets a game it is not told about for a while, so a copy of the
@@ -373,18 +374,24 @@ static int player_key(unsigned char *key)
 	{
 		unsigned char read_key[PLAYER_KEY_SIZE];
 
+		/* (said once a run; a key that could not be read is tried again the
+		next time one is wanted, not given up on until the game restarts) */
+		static int logged;
+
 		player_key_path(path, sizeof(path));
 		loaded = posix_browser_private_key(path, read_key, PLAYER_KEY_SIZE) ? 1 : -1;
-		if (loaded < 0)
+		if (loaded < 0 && !logged)
+		{
+			logged = 1;
 			platform_log("Game list: no player key (%s): finished games are not confirmed", path);
+		}
 		pthread_mutex_lock(&browser_lock);
 		/* (unless a restored key took its place meanwhile) */
 		if (player_key_loaded)
 			loaded = player_key_loaded;
-		else
+		else if (loaded > 0)
 		{
-			if (loaded > 0)
-				memcpy(player_key_cached, read_key, PLAYER_KEY_SIZE);
+			memcpy(player_key_cached, read_key, PLAYER_KEY_SIZE);
 			player_key_loaded = loaded;
 		}
 		pthread_mutex_unlock(&browser_lock);
@@ -577,9 +584,14 @@ static void start_connect(int serial, const unsigned short *name)
 	int seconds = 0, status, size = 0, x, y;
 
 	server_url("/v1/connect/start", url, sizeof(url));
-	if (!safe_for_key(url) || !player_key(key))
+	if (!safe_for_key(url))
 	{
-		connect_failed(serial, "Link Profile needs an HTTPS game list and a player key.");
+		connect_failed(serial, "Link Profile needs an HTTPS game list (network.browser_url).");
+		return;
+	}
+	if (!player_key(key))
+	{
+		connect_failed(serial, "Link Profile could not read or make this copy's player key. debug.txt has its path.");
 		return;
 	}
 	p2p_hex(key, PLAYER_KEY_SIZE, key_text);
@@ -1048,6 +1060,7 @@ static void announce(const char *invite, const struct hosted_game *game)
 		pthread_mutex_lock(&browser_lock);
 		snprintf(browser.listed_invite, sizeof(browser.listed_invite), "%s", invite);
 		pthread_mutex_unlock(&browser_lock);
+		p2p_hosting_invite_announced(invite);
 	}
 	else
 	{
@@ -1069,8 +1082,10 @@ static void update_hosting(void)
 	browser.host_changed = 0;
 	pthread_mutex_unlock(&browser_lock);
 
+	/* (only a public game without a password: its invite lets anyone in,
+	so a private game's or a password game's is never listed) */
 	hosting = reported && config_boolean("network.list_hosted_games") &&
-		p2p_hosting_invite(invite, sizeof(invite));
+		p2p_hosting_listable_invite(invite, sizeof(invite));
 	if (!hosting)
 	{
 		withdraw();
@@ -1336,8 +1351,25 @@ static int parse_game(char *line, struct browser_game *game)
 		fields[16][strcspn(fields[16], "\r\n")] = 0;
 		parse_host(fields + 13, game);
 	}
-	/* (then an OpenCE public game's gametype, and the host's announced
-	capabilities, 8 hexadecimal digits: the ping bit says it answers pings) */
+	/* (then the gametype: a co-op game's names its difficulty) */
+	if (count >= 18)
+	{
+		static char const *const difficulties[] = { "easy", "normal", "heroic", "legend" };
+		char const *gametype = fields[17];
+		int index;
+
+		fields[17][strcspn(fields[17], "\r\n")] = 0;
+		if (!SDL_strncasecmp(gametype, "co-op ", 6))
+		{
+			for (index = 0; index < 4; index++)
+			{
+				if (!SDL_strncasecmp(gametype + 6, difficulties[index], strlen(difficulties[index])))
+					game->difficulty = (unsigned char)(index + 1);
+			}
+		}
+	}
+	/* (then the host's announced capabilities, 8 hexadecimal digits: the ping
+	bit says it answers pings) */
 	if (count >= 19)
 	{
 		fields[18][strcspn(fields[18], "\r\n")] = 0;

@@ -1853,6 +1853,9 @@ static struct
 	{ "controls.flashlight", L"FLASHLIGHT", 2 },
 	{ "controls.scoreboard", L"SHOW SCORES", 2 },
 	{ "controls.pause", L"PAUSE MENU", 2 },
+	{ "controls.chat_all", L"CHAT", 2 },
+	{ "controls.chat_team", L"TEAM CHAT", 2 },
+	{ "controls.chat_log", L"CHAT LOG", 2 },
 };
 
 static struct
@@ -3672,6 +3675,17 @@ static void lobby_browser_add_listed(void)
 		engine = (short)PIN(listed->engine, 0, NUMBEROF(gametypes) - 1);
 		snprintf(game->gametype, sizeof(game->gametype), "%s%s", listed->teams && engine != 1 ? "Team " : "",
 			gametypes[engine]);
+		/* (a campaign level is a co-op game, whatever variant its host had chosen last) */
+		if (campaign_level_of(game->map) != NONE)
+		{
+			static char const *const difficulties[] = { "Easy", "Normal", "Heroic", "Legendary" };
+
+			engine = 0;
+			if (listed->difficulty >= 1 && listed->difficulty <= NUMBEROF(difficulties))
+				snprintf(game->gametype, sizeof(game->gametype), "Co-op (%s)", difficulties[listed->difficulty - 1]);
+			else
+				snprintf(game->gametype, sizeof(game->gametype), "Co-op");
+		}
 		game->player_count = (unsigned char)PIN(listed->players, 0, 255);
 		game->maximum_player_count = (unsigned char)PIN(listed->maximum_players, 0, 255);
 		game->engine_type = (unsigned char)engine;
