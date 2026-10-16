@@ -417,6 +417,14 @@ version (`GPL-3.0-or-later`). It comes with no warranty. The full text is in
   else Microsoft owns.
 - **Source.** Each release's source is its tag in this repository.
 
+### Delta's wire format stays CC0
+
+So that other clients and servers can speak Delta under any license, these
+files stay under [CC0 1.0](LICENSES/CC0-1.0.txt), as each one says at its
+top: [docs/delta.md](docs/delta.md), `port/linux/src/delta_wire.c`,
+`port/linux/src/delta_wire.h` and `port/linux/include/delta.h` (the numbers
+the wire format uses). Everything else is GPL.
+
 ### Console SDK permission
 
 Chupathingy's code is also built for consoles by
