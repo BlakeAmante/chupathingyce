@@ -85,7 +85,10 @@ enum delta_capability
 	/* a host answers Online Games' pings before joining (p2p_probe.c):
 	announced on Delta List only, never offered in a HELLO or WELCOME
 	(docs/delta.md, Pings before joining) */
-	/* bit 11 is `bomb` (docs/delta.md); its enum entry lands with that feature */
+	/* Bomb game types (Bomb, Grifball: docs/bomb.md) and their player traits
+	(TRAITS). Room-wide: a host plays a Bomb game type only with machines
+	that agreed to it, and drops any other (delta_peer_machine_lacks) */
+	_delta_capability_bomb = 11,
 	_delta_capability_ping = 12,
 
 	NUMBER_OF_DELTA_CAPABILITIES
