@@ -345,7 +345,7 @@ version's.
 
 - `"chupathingy"` (the default): the Xbox's menus and look with Halo PC's
   screens added where they help, as one set: PROFILES, SETTINGS (Controls,
-  Gamepads, Mouse, Audio, Video and Network Setup) and QUIT on the main
+  Gamepads, Mouse, Audio, Video, Network Setup and Privacy) and QUIT on the main
   menu, the settings pages laid out as the Xbox's screens with its B/A/Y
   prompts, SETTINGS and the host's END GAME in the pause menu, Online Games
   in MULTIPLAYER, and the Xbox's question box for the clipboard invite
