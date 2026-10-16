@@ -336,6 +336,7 @@ A few people look for most:
 | `game.unlock_all_levels` | `true` gives new profiles every campaign level. By default a new profile starts at The Pillar of Autumn, as on the Xbox. Profiles made by earlier versions had every level open; `profile_reset_campaign` in the console starts one over. |
 | `audio.volume`, `audio.music_volume`, `audio.effects_volume` | Volumes, from 0.0 to 1.0. |
 | `input.mouse_sensitivity`, `input.invert_mouse` | Mouse aim. |
+| `input.keyboard_prompts` | `true` (the default) shows the bound key in the HUD's and menus' button prompts after you use the keyboard or mouse, as Halo PC did; `false` always shows the controller's buttons. |
 | `controls.*` | Every key: `controls.jump = "Space"`, or two at once, such as `"F, Mouse 4"`. |
 | `network.browser_url` | The game list Online Games shows (halo.milenko.org). |
 | `network.host_public` | Whether games you host are listed for everyone (true) or only joinable by invite (false). |
