@@ -281,7 +281,7 @@ a later version may append):
 | 18 | CHAT_CONFIG | host to client | mode (1: 0 off, 1 team lines alone, 2 on), flags (1: 0x01 this player is muted, 0x02 the host filters blocked words), reserved (2), a timed mute's seconds left (4; 0 none, or until the game ends) |
 | 19 | CHAT_SAY | client to host | sequence (4, above the session's last), scope (1: 0 everyone, 1 team), reserved (1), text length (1, 1 to 120), reserved (1), text (UTF-8) |
 | 20 | CHAT_LINE | host to client | line (4, the host's count), kind (1: 0 player, 1 moderator, 2 server, 3 system), scope (1), speaker's machine (1; 255 none), speaker's player (1, the game's player index; 255 none), name length (1, at most 47), text length (1, 1 to 200), reserved (2), name (UTF-8), text (UTF-8) |
-| 21 | CHAT_REFUSED | host to client | sequence (4, the CHAT_SAY's), reason (1: 1 chat off, 2 that scope is not taken, 3 muted, 4 too fast, 5 blocked words, 6 text that cannot be shown), reserved (3) |
+| 21 | CHAT_REFUSED | host to client | sequence (4, the CHAT_SAY's), reason (1: 1 chat off, 2 that scope is not taken, 3 muted, 4 too fast, 5 blocked words, 6 text that cannot be shown), reserved (1), seconds the player's chat is paused (2; with 4, 0 none: added in 0.8.0 where the field was reserved, so an older game reads none) |
 
 A roster covers every machine of the game, in as many datagrams as it takes
 (32 machines each). A client forgets a machine the roster has not named for
@@ -309,6 +309,7 @@ Limits and timeouts (`delta_peer.h`):
 | moderation: MOD_CHALLENGE (not signed in), MOD_STATE (signed in) and a waiting MOD_BIND said again | every 5 s (MOD_STATE at once when roles change) |
 | moderation: a MOD_BIND answered within | 2 minutes, else declined |
 | chat: CHAT_SAY a host takes from one machine | 1 a second, 3 at once; the same line again within 10 s is too fast |
+| chat: a machine's chat paused once it is too fast | 5 s (a dedicated server's `HALO_DEDICATED_CHAT_COOLDOWN`; 0 none) |
 | chat: CHAT_LINE a client takes from its host | 10 a second, 20 at once |
 | chat: CHAT_CONFIG | at the handshake, on a change (at most every 250 ms), and every 10 s |
 
@@ -873,8 +874,10 @@ player can turn it off (`network.report_events`, `HALO_NET_REPORT_EVENTS`
 set to false): our [D] servers, community servers and ChupathingyCE
 players who host, unless they opt out. That setting stops the events
 batch only. The host's carnage report (`/v1/report`) is a separate upload:
-it goes whenever the game is listed, and only `network.list_hosted_games =
-false` (or an empty `network.browser_url`) stops it. Everything is what the host saw, so it is exact; nothing a
+it goes whenever the game is listed, and `network.report_hosted_games =
+false` (`HALO_NET_REPORT_HOSTED`) stops it and the events batch while the
+game stays listed; `network.list_hosted_games = false` (or an empty
+`network.browser_url`) stops it too, with the listing. Everything is what the host saw, so it is exact; nothing a
 client says is taken. Co-op (campaign) games are never recorded.
 
 ### Players
@@ -893,7 +896,8 @@ them: their own copy of the game claims their line of the same game's
 report with its player key (`/v1/claim`); the site then marks the same
 line of the events. A copy claims a game it joined only with
 `network.report_joined_games` on (the default), the setting that also sends
-its own report of the game; a game it hosted, always. A host's word about who a player is is never taken. No
+its own report of the game; a game it hosted, unless
+`network.report_hosted_games` is off. A host's word about who a player is is never taken. No
 IP address is ever recorded or sent, by the game or the site.
 
 ### The batch (schema 2)

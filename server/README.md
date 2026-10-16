@@ -82,7 +82,9 @@ one machine, use [Docker or systemd](docs/docker.md).
   ChupathingyCE.
 - Plays the playlist's entries in order: once enough players have joined,
   the lobby counts down by itself; after each game the carnage report shows
-  for 20 seconds, then the next entry's lobby opens.
+  for 20 seconds (`HALO_DEDICATED_POSTGAME_SECONDS`), then the next entry's
+  lobby opens (`HALO_DEDICATED_SKIP_LOBBY` starts the next game at once when
+  enough players stayed).
 - Ends a game nobody has scored in for 5 minutes, or 30 seconds after
   everyone has left it.
 - Plays a team entry's next entry without teams while a single player waits
@@ -184,7 +186,7 @@ It is on by default; set `HALO_NET_REPORT_EVENTS=false` to turn it off:
 
 | Setting | Default | |
 | --- | --- | --- |
-| `HALO_NET_REPORT_EVENTS` | `true` | `false` stops recording and sending games' events. The carnage report still goes while the server is listed (`HALO_NET_LIST_GAMES=false` stops that). |
+| `HALO_NET_REPORT_EVENTS` | `true` | `false` stops recording and sending games' events. The carnage report still goes while the server is listed (`HALO_NET_REPORT_HOSTED=false` stops it and the events, and the server stays listed). |
 | `HALO_EVENTS_TOKEN` | (none) | A token from the site's operator: the games count as a trusted server's. Without one, the site takes a game only while the server lists it, from the same address (as the carnage report). |
 | `HALO_EVENTS_POSITIONS` | `2` | Seconds between position samples (0 none). |
 | `HALO_EVENTS_LIMIT` | `40000` | The most events a game keeps (about 60 bytes each); past it the position samples thin out first. |
