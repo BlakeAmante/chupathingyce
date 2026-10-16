@@ -17,7 +17,9 @@ A game on a Custom Edition map (Halo PC's, announced as <file>@ce) or a
 HaloMD map (announced as <file>@md: halo_map_families.h) is named as the
 menus' map list names it (ui_map_list.c: Halo PC's own names, HaloMD's mod
 list's, or the file's made readable), marked HALO PC or HALOMD as the game
-list's web pages mark it, and pictured by Halo PC's own picture of it. It is
+list's web pages mark it, and pictured by Halo PC's own picture of it (one
+of Halo PC's maps), else the site's (map_art.c: a stock map without Halo
+PC's ui.map), else a card with its name in its family's color. It is
 joined only with the map in its family's folders (and on a build with Halo
 PC map support, HALO_CUSTOM_EDITION): else its details say what is missing,
 and A says so rather than join. A Custom Edition map can instead be
@@ -35,7 +37,8 @@ downloads, so the game is left and joined again). If the map is not
 downloaded after all, Online Games closes and the main menu says the map is
 missing, as without the downloader.
 
-Start opens the player's profile page in the web browser; RB opens Link
+Start opens the player's profile page in the web browser; RB (only while
+this copy is not linked to a profile: browser_profile_linked) opens Link
 Profile over the list, for where no web browser opens: a code (and a QR
 code) to type at the game list's /connect page on another device, then the
 profile it was typed for, to confirm with A or refuse with B (browser.c).
@@ -69,6 +72,7 @@ the right button is B.
 #include "networking/network_game_globals.h"
 #include "networking/network_client_manager.h"
 #include "../src/browser.h"
+#include "../src/map_art.h"
 #include "../src/map_download.h"
 #include "../src/ui_overlay.h"
 #include "halo_ui_map_list.h"
@@ -153,6 +157,8 @@ enum
 	SORT_NAME,
 	SORT_MAP,
 	SORT_TYPE,
+	/* (the shortest round trip first; games not measured last) */
+	SORT_PING,
 
 	NUMBER_OF_SORTS
 };
@@ -271,8 +277,9 @@ static char const *map_display_name(
 		for (length = 0; length < NUMBEROF(name) && name[length]; length++)
 			characters[length] = (unsigned short)name[length];
 		utf8_text(characters, length, text, size);
+		/* (the file's name as it is, if nothing else names it) */
 		if (!text[0])
-			snprintf(text, (size_t)size, "Unknown map");
+			snprintf(text, (size_t)size, "%s", file);
 		return text;
 	}
 	for (index = 0; index < NUMBEROF(map_names); index++)
@@ -788,6 +795,9 @@ static long compare_games(
 		break;
 	}
 	case SORT_TYPE: order = (long)a->engine * 2 + a->teams - ((long)b->engine * 2 + b->teams); break;
+	case SORT_PING:
+		order = a->ping == b->ping ? 0 : a->ping < 0 ? 1 : b->ping < 0 ? -1 : (long)a->ping - (long)b->ping;
+		break;
 	default: order = (long)b->players - (long)a->players; break;
 	}
 	return order ? order : compare_names(a->name, b->name);
@@ -853,6 +863,14 @@ static char const *ce_map_blocker(
 	default:
 		return NULL;
 	}
+}
+
+/* whether this copy is linked to a profile (browser.c), and its name */
+static boolean profile_linked(
+	char *handle,
+	long size)
+{
+	return browser_profile_linked(handle, (int)size) != 0;
 }
 
 /* RB: a Link Profile code, for the profile the screen's games are joined
@@ -1145,7 +1163,8 @@ offer's while it is) */
 		fetch_games();
 		break;
 	case _gamepad_analog_button_black:
-		if (!browser_screen.connecting)
+		/* (not once this copy is linked: its prompt is not shown) */
+		if (!browser_screen.connecting && !profile_linked(NULL, 0))
 			open_link_profile();
 		break;
 	case _gamepad_analog_button_b:
@@ -1257,8 +1276,10 @@ enum
 	MAP_PICTURE_X = 42, MAP_PICTURE_WIDTH = 97,
 	TYPE_PICTURE_X = MAP_PICTURE_X + MAP_PICTURE_WIDTH + 8, TYPE_PICTURE_WIDTH = 93,
 	ROSTER_X = 471,
-	/* the prompts' right end */
+	/* the prompts' right end; the most My Profile's prompt takes with the
+	profile's name in it */
 	PROMPTS_RIGHT = 608,
+	PROFILE_PROMPT_ROOM = 200,
 };
 
 /* the list's text sizes: a row's, the column heads' and the footer's */
@@ -1283,7 +1304,7 @@ static char const *const map_picture_order[] =
 };
 static short const engine_picture[] = { 5, 0, 2, 3, 1, 4 };
 
-static char const *const sort_names[NUMBER_OF_SORTS] = { "PLAYERS", "NAME", "MAP", "TYPE" };
+static char const *const sort_names[NUMBER_OF_SORTS] = { "PLAYERS", "NAME", "MAP", "TYPE", "PING" };
 
 static void utf8_name(
 	unsigned short const *name,
@@ -1343,7 +1364,7 @@ List: a ChupathingyCE host's own word; nothing of an older or OpenCE host) */
 for the details */
 static char const *const platform_tags[] = { "", "WIN", "MAC", "LNX", "AND", "DECK", "XBOX", "360", "WIIU", "NX" };
 static char const *const platform_names[] = {
-	"Unknown", "Windows", "Mac", "Linux", "Android", "Steam Deck", "Xbox", "Xbox 360", "Wii U", "Switch",
+	"", "Windows", "Mac", "Linux", "Android", "Steam Deck", "Xbox", "Xbox 360", "Wii U", "Switch",
 };
 
 /* the row's tag before the name: the host's platform, SRV for a dedicated
@@ -1365,8 +1386,9 @@ static char const *host_text(
 	char *text,
 	long size)
 {
-	char const *platform = game->has_platform && game->host_platform < NUMBEROF(platform_names) ?
-		platform_names[game->host_platform] : NULL;
+	/* (a Delta host that does not say its platform: none named) */
+	char const *platform = game->has_platform && game->host_platform > 0 &&
+		game->host_platform < NUMBEROF(platform_names) ? platform_names[game->host_platform] : NULL;
 	char const *protocol = game->protocol == BROWSER_PROTOCOL_DELTA ? "Delta" :
 		game->protocol == BROWSER_PROTOCOL_OPENCE ? "OpenCE (legacy)" : NULL;
 	char host[48];
@@ -1415,8 +1437,9 @@ static char const *machines_text(
 static void draw_bitmap_picture(struct bitmap_data *bitmap, short art_width, short art_height, short x0, short y0,
 	short x1, short y1);
 
-/* a game's picture from the game's own bitmaps, in a cut-out of the overlay */
-static void draw_picture(
+/* a game's picture from the game's own bitmaps, in a cut-out of the overlay:
+FALSE (nothing drawn) when the menus' ui.map has none */
+static boolean draw_picture(
 	char const *tag,
 	short frame,
 	short art_width,
@@ -1429,7 +1452,85 @@ static void draw_picture(
 	long bitmap_index = tag_loaded('bitm', tag);
 	struct bitmap_data *bitmap = bitmap_index != NONE ? bitmap_group_get_bitmap_from_sequence(bitmap_index, 0, frame) : NULL;
 
+	if (!bitmap)
+		return FALSE;
 	draw_bitmap_picture(bitmap, art_width, art_height, x0, y0, x1, y1);
+	return TRUE;
+}
+
+/* a picture of the overlay's own (the site's: map_art.c) in a frame, its
+shape kept and its middle the frame's */
+static void draw_art_picture(
+	unsigned char const *pixels,
+	int width,
+	int height,
+	int serial,
+	float x,
+	float y,
+	float frame_width,
+	float frame_height)
+{
+	float scale = MIN(frame_width / (float)width, frame_height / (float)height);
+	float drawn_width = (float)width * scale, drawn_height = (float)height * scale;
+
+	ui_overlay_rect(x, y, frame_width, frame_height, 0, 0x0A1A33FF);
+	ui_overlay_picture(serial, pixels, width, height, x + (frame_width - drawn_width) * 0.5f,
+		y + (frame_height - drawn_height) * 0.5f, drawn_width, drawn_height, 0xFFFFFFFF);
+}
+
+/* a card in a picture's frame, when there is no picture: the name in white
+over a field of the color (0xRRGGBB), in one line or two, and under it the
+subtitle (or none) in the color */
+static void draw_card(
+	char const *title,
+	char const *subtitle,
+	unsigned long rgb,
+	float x,
+	float y,
+	float width,
+	float height)
+{
+	unsigned int color = (unsigned int)(rgb << 8);
+	float room = width - 10.0f;
+	float size = 12.0f, sub_size = 7.5f, line_step, top;
+	char lines[2][64];
+	short line_count = 1, index;
+
+	ui_overlay_rect(x, y, width, height, 0, 0x0A1A33FF);
+	ui_overlay_gradient(x, y, width, height, 0, color | 0x78, color | 0x1C);
+	snprintf(lines[0], sizeof(lines[0]), "%s", title);
+	lines[1][0] = 0;
+	/* (too wide: in two lines, broken at the space nearest its middle) */
+	if (ui_overlay_text_width(UI_FONT_MENU, size, title) > room && strchr(title, ' '))
+	{
+		long length = (long)strlen(title), best = NONE, at;
+
+		for (at = 0; at < length; at++)
+		{
+			if (title[at] == ' ' && (best == NONE || labs(at - length / 2) < labs(best - length / 2)))
+				best = at;
+		}
+		snprintf(lines[0], sizeof(lines[0]), "%.*s", (int)best, title);
+		snprintf(lines[1], sizeof(lines[1]), "%s", title + best + 1);
+		line_count = 2;
+	}
+	for (index = 0; index < line_count; index++)
+	{
+		while (size > 7.0f && ui_overlay_text_width(UI_FONT_MENU, size, lines[index]) > room)
+			size -= 0.5f;
+	}
+	line_step = size * 1.15f;
+	top = y + (height - (line_step * line_count + (subtitle ? sub_size + 5.0f : 0.0f))) * 0.5f;
+	for (index = 0; index < line_count; index++)
+	{
+		ui_overlay_text_glow(UI_FONT_MENU, size, x + width * 0.5f, top + index * line_step, UI_ALIGN_CENTER, 0xFFFFFFFF,
+			color | 0x90, lines[index]);
+	}
+	if (subtitle)
+	{
+		ui_overlay_text(UI_FONT_MENU_SMALL, sub_size, x + width * 0.5f, top + line_count * line_step + 5.0f,
+			UI_ALIGN_CENTER, color | 0xFF, subtitle);
+	}
 }
 
 /* a picture (or none: the box alone), in a cut-out of the overlay */
@@ -2000,21 +2101,39 @@ static void draw_header(
 		if (text[index] >= 'a' && text[index] <= 'z')
 			text[index] = (char)(text[index] - 32);
 	}
-	x = PROMPTS_RIGHT;
-	y = 27;
-	x -= ui_overlay_text_glow(UI_FONT_MENU, 9.5f, x, y, UI_ALIGN_RIGHT, COLOR_TEXT, COLOR_HALO,
-		text[0] ? text : "NONE") + 3;
-	ui_overlay_text_glow(UI_FONT_MENU, 9.5f, x, y, UI_ALIGN_RIGHT, COLOR_HEAD, COLOR_HALO, "MASTER");
+	/* (no list: no line; the list itself says why it is empty) */
+	if (text[0])
+	{
+		x = PROMPTS_RIGHT;
+		y = 27;
+		x -= ui_overlay_text_glow(UI_FONT_MENU, 9.5f, x, y, UI_ALIGN_RIGHT, COLOR_TEXT, COLOR_HALO, text) + 3;
+		ui_overlay_text_glow(UI_FONT_MENU, 9.5f, x, y, UI_ALIGN_RIGHT, COLOR_HEAD, COLOR_HALO, "MASTER");
+	}
 
-	/* RB and Start, the prompts past the bar's four */
+	/* RB and Start, the prompts past the bar's four: Link Profile only while
+	this copy is not linked to a profile, and My Profile with its name when
+	known and there is room */
 	if (browser_screen.offer == _offer_none && !browser_screen.connect_open)
 	{
-		static int const buttons[] = { UI_BUTTON_RIGHT_SHOULDER, UI_BUTTON_START };
-		static char const *const words[] = { "=LINK PROFILE", "=MY PROFILE" };
+		int buttons[] = { UI_BUTTON_RIGHT_SHOULDER, UI_BUTTON_START };
+		char const *words[] = { "=LINK PROFILE", "=MY PROFILE" };
 		boolean on[] = { !browser_screen.connecting, TRUE };
-		float width = prompts_width(NUMBEROF(buttons), buttons, words, SMALL_BUTTON, SMALL_TEXT);
+		char handle[64], mine[96];
+		boolean linked = profile_linked(handle, sizeof(handle));
+		short first = linked ? 1 : 0;
+		float width;
 
-		prompts(NUMBEROF(buttons), buttons, words, on, PROMPTS_RIGHT - width, 43, SMALL_BUTTON, SMALL_TEXT, 38, 60);
+		if (linked && handle[0])
+		{
+			snprintf(mine, sizeof(mine), "=MY PROFILE (%s)", handle);
+			words[1] = mine;
+			if (prompts_width(1, &buttons[1], &words[1], SMALL_BUTTON, SMALL_TEXT) > PROFILE_PROMPT_ROOM)
+				words[1] = "=MY PROFILE";
+		}
+		width = prompts_width((short)(NUMBEROF(buttons) - first), buttons + first, words + first, SMALL_BUTTON,
+			SMALL_TEXT);
+		prompts((short)(NUMBEROF(buttons) - first), buttons + first, words + first, on + first, PROMPTS_RIGHT - width,
+			43, SMALL_BUTTON, SMALL_TEXT, 38, 60);
 	}
 }
 
@@ -2065,13 +2184,13 @@ static void draw_row(
 	snprintf(text, sizeof(text), "%d/%d", game->players, game->maximum_players);
 	ui_overlay_text_glow(UI_FONT_MENU, ROW_SIZE, COLUMN_PLAYERS, text_y, UI_ALIGN_RIGHT,
 		game->open || picked ? color : COLOR_CLOSED, glow, text);
-	/* (the round trip, while the tunnel reaches the host: browser.c) */
+	/* (the round trip, while the tunnel reaches the host: browser.c; nothing
+	for a host not reached, whose round trip nothing measures before joining) */
 	if (game->ping >= 0)
+	{
 		snprintf(text, sizeof(text), "%d", game->ping);
-	else
-		snprintf(text, sizeof(text), "\xE2\x80\x93");
-	ui_overlay_text_glow(UI_FONT_MENU, ROW_SIZE, COLUMN_PING, text_y, UI_ALIGN_RIGHT,
-		game->ping >= 0 ? color : COLOR_ROW_DIM, game->ping >= 0 ? glow : 0, text);
+		ui_overlay_text_glow(UI_FONT_MENU, ROW_SIZE, COLUMN_PING, text_y, UI_ALIGN_RIGHT, color, glow, text);
+	}
 }
 
 /* the list with no game in it: why, in plain words, and what to do */
@@ -2156,40 +2275,77 @@ static void draw_details(
 {
 	short map_frame = NUMBEROF(map_picture_order);
 	char file[BROWSER_MAP_LENGTH], map_name[64], text[160], name[64];
-	short ce_state = ce_map_state(selected, FALSE);
+	char const *map_label;
 	short family = map_family(selected->map);
 	float y = DETAIL_Y + DETAIL_FIRST_LINE;
 	float x, line_y;
 	long index;
 
-	/* the pictures, in framed insets */
+	/* the pictures, in framed insets: the menus' own, else the site's (a
+stock map's, while it loads or without one: map_art.c), else a card with
+the map's name over its family's color (a custom map's) */
 	map_file(selected->map, file, sizeof(file));
-	if (ce_state != _ce_map_none)
+	map_label = map_display_name(selected->map, map_name, sizeof(map_name));
 	{
-		struct bitmap_data *bitmap = NULL;
+		boolean drawn = FALSE;
+		char art_path[64];
 
-#ifdef HALO_CUSTOM_EDITION
-		/* (Halo PC's picture of it, or of an unknown level: laid out as the
-		Xbox's) */
-		bitmap = ui_map_list_family_picture(family, file);
-#endif
-		draw_bitmap_picture(bitmap, 140, 116, MAP_PICTURE_X, PICTURE_Y, MAP_PICTURE_X + MAP_PICTURE_WIDTH,
-			PICTURE_Y + PICTURE_HEIGHT);
-	}
-	else
-	{
-		for (index = 0; index < NUMBEROF(map_picture_order); index++)
+		if (family == _map_family_xbox)
 		{
-			if (!strcmp(file, map_picture_order[index]))
-				map_frame = (short)index;
+			for (index = 0; index < NUMBEROF(map_picture_order); index++)
+			{
+				if (!strcmp(file, map_picture_order[index]))
+					map_frame = (short)index;
+			}
+			/* (the menus' picture of an unknown map is a question mark: none) */
+			if (map_frame < NUMBEROF(map_picture_order))
+			{
+				drawn = draw_picture("ui\\shell\\bitmaps\\mp_map_grafix", map_frame, 140, 116, MAP_PICTURE_X, PICTURE_Y,
+					MAP_PICTURE_X + MAP_PICTURE_WIDTH, PICTURE_Y + PICTURE_HEIGHT);
+			}
 		}
-		draw_picture("ui\\shell\\bitmaps\\mp_map_grafix", map_frame, 140, 116, MAP_PICTURE_X, PICTURE_Y,
-			MAP_PICTURE_X + MAP_PICTURE_WIDTH, PICTURE_Y + PICTURE_HEIGHT);
+#ifdef HALO_CUSTOM_EDITION
+		else
+		{
+			/* (Halo PC's picture of one of its own maps) */
+			struct bitmap_data *bitmap = ui_map_list_family_picture(family, file);
+
+			if (bitmap)
+			{
+				draw_bitmap_picture(bitmap, 140, 116, MAP_PICTURE_X, PICTURE_Y, MAP_PICTURE_X + MAP_PICTURE_WIDTH,
+					PICTURE_Y + PICTURE_HEIGHT);
+				drawn = TRUE;
+			}
+		}
+#endif
+		if (!drawn && map_art_site_path(family == _map_family_xbox, file, art_path, (int)sizeof(art_path)))
+		{
+			unsigned char const *pixels;
+			int width, height, serial;
+
+			if (map_art_get(art_path, &pixels, &width, &height, &serial) == MAP_ART_READY)
+			{
+				draw_art_picture(pixels, width, height, serial, MAP_PICTURE_X, PICTURE_Y, MAP_PICTURE_WIDTH,
+					PICTURE_HEIGHT);
+				drawn = TRUE;
+			}
+		}
+		if (!drawn)
+		{
+			draw_card(map_label, map_family_kind(family), map_family_color(family), MAP_PICTURE_X, PICTURE_Y,
+				MAP_PICTURE_WIDTH, PICTURE_HEIGHT);
+		}
 	}
 	ui_overlay_outline(MAP_PICTURE_X - 1, PICTURE_Y - 1, MAP_PICTURE_WIDTH + 2, PICTURE_HEIGHT + 2, 2, 1.0f, 0x4F9DFFC0);
-	draw_picture("ui\\shell\\bitmaps\\game_type_grafix",
-		engine_picture[selected->engine >= 0 && selected->engine < NUMBEROF(engine_picture) ? selected->engine : 0],
-		132, 114, TYPE_PICTURE_X, PICTURE_Y, TYPE_PICTURE_X + TYPE_PICTURE_WIDTH, PICTURE_Y + PICTURE_HEIGHT);
+	/* (the game type's: a card with its name for one the menus have no
+	picture of) */
+	if (selected->engine <= 0 || selected->engine >= NUMBEROF(engine_picture) ||
+		!draw_picture("ui\\shell\\bitmaps\\game_type_grafix", engine_picture[selected->engine], 132, 114,
+			TYPE_PICTURE_X, PICTURE_Y, TYPE_PICTURE_X + TYPE_PICTURE_WIDTH, PICTURE_Y + PICTURE_HEIGHT))
+	{
+		draw_card(type_name(selected, text, sizeof(text)), NULL, 0x3D8BFF, TYPE_PICTURE_X, PICTURE_Y,
+			TYPE_PICTURE_WIDTH, PICTURE_HEIGHT);
+	}
 	ui_overlay_outline(TYPE_PICTURE_X - 1, PICTURE_Y - 1, TYPE_PICTURE_WIDTH + 2, PICTURE_HEIGHT + 2, 2, 1.0f,
 		0x4F9DFFC0);
 
@@ -2207,7 +2363,7 @@ static void draw_details(
 	snprintf(text, sizeof(text), "%s%s", selected->open ? "Accepting players" : "In progress",
 		selected->locked ? ", password" : "");
 	DETAIL_LINE("Status:", text);
-	DETAIL_LINE("Map:", map_display_name(selected->map, map_name, sizeof(map_name)));
+	DETAIL_LINE("Map:", map_label);
 	/* (its family, spelled out beside its tag) */
 	draw_family_badge(family, BADGE_SIZE, x + 6, line_y, DETAIL_SIZE, FALSE);
 	ui_overlay_text(UI_FONT_MENU_SMALL, DETAIL_SIZE - 1.0f, x + 10 + family_badge_width(family, BADGE_SIZE), line_y + 0.5f,
@@ -2312,7 +2468,8 @@ void browser_screen_render(
 	column_head(COLUMN_TYPE, UI_ALIGN_LEFT, "TYPE", browser_screen.sort == SORT_TYPE);
 	column_head(COLUMN_PLAYERS - (browser_screen.sort == SORT_PLAYERS ? 9 : 0), UI_ALIGN_RIGHT, "PLAYERS",
 		browser_screen.sort == SORT_PLAYERS);
-	column_head(COLUMN_PING, UI_ALIGN_RIGHT, "PING", FALSE);
+	column_head(COLUMN_PING - (browser_screen.sort == SORT_PING ? 9 : 0), UI_ALIGN_RIGHT, "PING",
+		browser_screen.sort == SORT_PING);
 	page_first = (short)(browser_screen.selected - browser_screen.selected % ROWS_PER_PAGE);
 	page_count = (short)MAX(1, (browser_screen.count + ROWS_PER_PAGE - 1) / ROWS_PER_PAGE);
 	if (!dialog)

@@ -35,8 +35,9 @@ Back, each ui_prompt_icon_size square, RGBA */
 enum
 {
 	NUMBER_OF_ICONS = 10,
-	/* (a quad's radius that marks it as an icon's) */
+	/* (a quad's radius that marks it as an icon's, or as the picture's) */
 	ICON_MARK = -2,
+	PICTURE_MARK = -3,
 };
 extern const int ui_prompt_icon_size;
 extern const unsigned int *const ui_prompt_icons[NUMBER_OF_ICONS];
@@ -87,8 +88,12 @@ struct glyph
 static struct
 {
 	int ready, failed;
-	GLuint program, vertex_array, vertex_buffer, atlas, icons;
-	GLint scale_location, atlas_location, icons_location, cutouts_location, window_height_location;
+	GLuint program, vertex_array, vertex_buffer, atlas, icons, picture;
+	GLint scale_location, atlas_location, icons_location, picture_location, cutouts_location, window_height_location;
+	/* the picture (ui_overlay_picture): the serial and pixels last given,
+	and the serial in the texture */
+	int picture_serial, picture_width, picture_height, picture_uploaded;
+	unsigned char *picture_pixels;
 	/* each icon's drawn columns (from its left, of ui_prompt_icon_size) */
 	int icon_left[NUMBER_OF_ICONS], icon_right[NUMBER_OF_ICONS];
 	int icons_measured;
@@ -514,6 +519,41 @@ static float draw_icon(int icon, float size, float x, float y, unsigned int colo
 	return width;
 }
 
+void ui_overlay_picture(int serial, const unsigned char *pixels, int width, int height, float x, float y,
+	float draw_width, float draw_height, unsigned int color)
+{
+	struct quad *quad;
+
+	if (!serial || !pixels || width <= 0 || height <= 0)
+		return;
+	if (serial != overlay.picture_serial)
+	{
+		unsigned char *copy = malloc((size_t)width * (size_t)height * 4);
+
+		if (!copy)
+			return;
+		memcpy(copy, pixels, (size_t)width * (size_t)height * 4);
+		free(overlay.picture_pixels);
+		overlay.picture_pixels = copy;
+		overlay.picture_width = width;
+		overlay.picture_height = height;
+		overlay.picture_serial = serial;
+	}
+	quad = new_quad();
+	if (!quad)
+		return;
+	quad->x = x;
+	quad->y = y;
+	quad->width = draw_width;
+	quad->height = draw_height;
+	quad->radius = PICTURE_MARK;
+	quad->top = quad->bottom = color;
+	quad->u0 = 0.0f;
+	quad->v0 = 0.0f;
+	quad->u1 = 1.0f;
+	quad->v1 = 1.0f;
+}
+
 static int face_button(int button)
 {
 	return button >= UI_BUTTON_A && button <= UI_BUTTON_Y;
@@ -641,6 +681,7 @@ static const char fragment_source[] =
 	"in vec4 v_color;\n"
 	"uniform sampler2D atlas;\n"
 	"uniform sampler2DArray icons;\n"
+	"uniform sampler2D picture;\n"
 	"uniform vec4 cutouts[4];\n"
 	"uniform float window_height;\n"
 	"out vec4 fragment;\n"
@@ -653,6 +694,12 @@ static const char fragment_source[] =
 	"\tfor (int i = 0; i < 4; i++)\n"
 	"\t\tif (p.x >= cutouts[i].x && p.y >= cutouts[i].y && p.x < cutouts[i].z && p.y < cutouts[i].w)\n"
 	"\t\t\tdiscard;\n"
+	/* the picture */
+	"\tif (v_edge.x < -2.5)\n"
+	"\t{\n"
+	"\t\tfragment = texture(picture, v_texture_coordinate) * v_color;\n"
+	"\t\treturn;\n"
+	"\t}\n"
 	/* an icon (premultiplied: its color undone after filtering) */
 	"\tif (v_edge.x < -1.5)\n"
 	"\t{\n"
@@ -711,6 +758,7 @@ static int set_up(void)
 	GLuint vertex_shader, fragment_shader;
 	GLint status = 0;
 	static const unsigned char zero = 0;
+	static const unsigned char zero_texel[4] = { 0, 0, 0, 0 };
 
 	if (overlay.ready || overlay.failed)
 		return overlay.ready;
@@ -742,6 +790,7 @@ static int set_up(void)
 	overlay.scale_location = glGetUniformLocation(overlay.program, "scale");
 	overlay.atlas_location = glGetUniformLocation(overlay.program, "atlas");
 	overlay.icons_location = glGetUniformLocation(overlay.program, "icons");
+	overlay.picture_location = glGetUniformLocation(overlay.program, "picture");
 	overlay.cutouts_location = glGetUniformLocation(overlay.program, "cutouts");
 	overlay.window_height_location = glGetUniformLocation(overlay.program, "window_height");
 
@@ -815,6 +864,14 @@ static int set_up(void)
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glBindTexture(GL_TEXTURE_2D_ARRAY, (GLuint)saved_array);
 	}
+	/* the picture's texture (filled when a picture is given) */
+	glGenTextures(1, &overlay.picture);
+	glBindTexture(GL_TEXTURE_2D, overlay.picture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &zero_texel);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glBindVertexArray((GLuint)saved_vertex_array);
 	glBindBuffer(GL_ARRAY_BUFFER, (GLuint)saved_array_buffer);
 	glBindTexture(GL_TEXTURE_2D, (GLuint)saved_texture);
@@ -1008,7 +1065,7 @@ void ui_overlay_present(int x, int y, int width, int height, int window_width, i
 	GLint saved_vertex_array = 0, saved_array_buffer = 0, saved_program = 0, saved_texture = 0, saved_active = 0;
 	/* (the game's renderer binds a sampler to each unit, which would filter
 	the atlas as it filters its textures) */
-	GLint saved_sampler = 0, saved_icons = 0, saved_icons_sampler = 0;
+	GLint saved_sampler = 0, saved_icons = 0, saved_icons_sampler = 0, saved_picture = 0, saved_picture_sampler = 0;
 	GLint saved_viewport[4] = { 0, 0, 0, 0 };
 	GLboolean saved_blend = glIsEnabled(GL_BLEND), saved_depth = glIsEnabled(GL_DEPTH_TEST),
 		saved_stencil = glIsEnabled(GL_STENCIL_TEST), saved_cull = glIsEnabled(GL_CULL_FACE),
@@ -1059,21 +1116,23 @@ void ui_overlay_present(int x, int y, int width, int height, int window_width, i
 
 		if (quad->layer != layer)
 			continue;
-		if (index < shape_count && quad->radius == ICON_MARK)
+		if (index < shape_count && (quad->radius == ICON_MARK || quad->radius == PICTURE_MARK))
 		{
-			/* an icon: layout to window pixels, its layer in shape.x */
+			/* an icon: layout to window pixels, its layer in shape.x (the
+			picture: the same, marked as the picture's) */
 			float layer_index = quad->thickness;
+			float mark = quad->radius;
 
 			left = origin_x + quad->x * scale;
 			top = origin_y + quad->y * scale;
 			right = left + quad->width * scale;
 			bottom = top + quad->height * scale;
-			put_vertex(&v[0], left, top, quad->u0, quad->v0, layer_index, 0, 0, 0, ICON_MARK, 0, top_color);
-			put_vertex(&v[1], right, top, quad->u1, quad->v0, layer_index, 0, 0, 0, ICON_MARK, 0, top_color);
-			put_vertex(&v[2], left, bottom, quad->u0, quad->v1, layer_index, 0, 0, 0, ICON_MARK, 0, top_color);
-			put_vertex(&v[3], right, top, quad->u1, quad->v0, layer_index, 0, 0, 0, ICON_MARK, 0, top_color);
-			put_vertex(&v[4], right, bottom, quad->u1, quad->v1, layer_index, 0, 0, 0, ICON_MARK, 0, top_color);
-			put_vertex(&v[5], left, bottom, quad->u0, quad->v1, layer_index, 0, 0, 0, ICON_MARK, 0, top_color);
+			put_vertex(&v[0], left, top, quad->u0, quad->v0, layer_index, 0, 0, 0, mark, 0, top_color);
+			put_vertex(&v[1], right, top, quad->u1, quad->v0, layer_index, 0, 0, 0, mark, 0, top_color);
+			put_vertex(&v[2], left, bottom, quad->u0, quad->v1, layer_index, 0, 0, 0, mark, 0, top_color);
+			put_vertex(&v[3], right, top, quad->u1, quad->v0, layer_index, 0, 0, 0, mark, 0, top_color);
+			put_vertex(&v[4], right, bottom, quad->u1, quad->v1, layer_index, 0, 0, 0, mark, 0, top_color);
+			put_vertex(&v[5], left, bottom, quad->u0, quad->v1, layer_index, 0, 0, 0, mark, 0, top_color);
 		}
 		else if (index < shape_count)
 		{
@@ -1134,6 +1193,19 @@ void ui_overlay_present(int x, int y, int width, int height, int window_width, i
 	glBindSampler(1, 0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, overlay.icons);
 	glUniform1i(overlay.icons_location, 1);
+	glActiveTexture(GL_TEXTURE2);
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, &saved_picture);
+	glGetIntegerv(GL_SAMPLER_BINDING, &saved_picture_sampler);
+	glBindSampler(2, 0);
+	glBindTexture(GL_TEXTURE_2D, overlay.picture);
+	if (overlay.picture_serial != overlay.picture_uploaded && overlay.picture_pixels)
+	{
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, overlay.picture_width, overlay.picture_height, 0, GL_RGBA,
+			GL_UNSIGNED_BYTE, overlay.picture_pixels);
+		overlay.picture_uploaded = overlay.picture_serial;
+	}
+	glUniform1i(overlay.picture_location, 2);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, overlay.atlas);
 	glUniform1i(overlay.atlas_location, 0);
@@ -1161,6 +1233,9 @@ void ui_overlay_present(int x, int y, int width, int height, int window_width, i
 	glBindVertexArray((GLuint)saved_vertex_array);
 	glBindBuffer(GL_ARRAY_BUFFER, (GLuint)saved_array_buffer);
 	glUseProgram((GLuint)saved_program);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, (GLuint)saved_picture);
+	glBindSampler(2, (GLuint)saved_picture_sampler);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, (GLuint)saved_icons);
 	glBindSampler(1, (GLuint)saved_icons_sampler);

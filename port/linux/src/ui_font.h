@@ -39,4 +39,11 @@ unsigned char *posix_ui_font_glyph(int font, float pixel_height, unsigned int co
 	int *x_offset, int *y_offset);
 void posix_ui_font_free(unsigned char *bitmap);
 
+/* a JPEG picture as RGBA (4 bytes a pixel, rows from the top), NULL if it is
+not one or is larger than POSIX_UI_IMAGE_LARGEST either way; freed with
+posix_ui_image_free */
+#define POSIX_UI_IMAGE_LARGEST 1024
+unsigned char *posix_ui_image_decode(const unsigned char *data, int size, int *width, int *height);
+void posix_ui_image_free(unsigned char *pixels);
+
 #endif

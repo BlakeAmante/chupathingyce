@@ -233,6 +233,13 @@ int browser_moderator_sign(const unsigned char *message, int size, unsigned char
 	unsigned char *signature);
 int browser_moderator_key(char *text, int size);
 
+/* whether this copy's games count for a profile, as far as it knows: Link
+Profile done on this copy (kept in the save root's game_list_profile.txt,
+with the player ID it was done as), or the site's word that the player's
+own ID has a profile (asked once a run, from the first call on); the
+profile's handle in handle (empty when not linked). Never waits. */
+int browser_profile_linked(char *handle, int size);
+
 /* the profile page (halo.milenko.org/profile), signed in as this copy's
 player, opened in the web browser (MY PROFILE) */
 void browser_open_profile(void);

@@ -97,6 +97,13 @@ color's alpha dims it (a prompt that does nothing now) */
 float ui_overlay_button(int button, float size, float x, float y, unsigned int color);
 float ui_overlay_button_width(int button, float size);
 
+/* a picture (RGBA, 4 bytes a pixel, rows from the top; width by height)
+drawn in a rectangle, tinted by color (0xFFFFFFFF as it is). One picture a
+frame: serial names it (a new serial's pixels are copied; the same
+serial's are not read again), 0 none */
+void ui_overlay_picture(int serial, const unsigned char *pixels, int width, int height, float x, float y,
+	float draw_width, float draw_height, unsigned int color);
+
 /* a place the overlay leaves for the game's own drawing (a map's picture),
 for this frame (at most 4) */
 void ui_overlay_cutout(float x, float y, float width, float height);
