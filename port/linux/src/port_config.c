@@ -245,6 +245,12 @@ static const struct config_setting config_settings[] =
 	{ "audio.effects_volume", _config_real, "1.0", "HALO_EFFECTS_VOLUME", _environment_value, _platform_all,
 		"The volume of every other sound (effects and speech), 0.0 to 1.0 (of\n"
 		"audio.volume)." },
+	/* (audio.voice_device is kept for a voice output of its own, later:
+	dsound_sdl.c's audio_device_named opens either) */
+	{ "audio.device", _config_string, "\"default\"", "HALO_AUDIO_DEVICE", _environment_value, _platform_desktop,
+		"The output the sound plays on, by its name as the system gives it (Audio\n"
+		"Setup lists them): \"default\" follows the system's default output as\n"
+		"it changes. One that is not connected plays on the default." },
 	{ "audio.buffer_frames", _config_integer, DEFAULT_AUDIO_BUFFER_FRAMES, "HALO_AUDIO_BUFFER_FRAMES", _environment_value,
 		_platform_all,
 		"The audio device's buffer, in sample frames at 48 kHz (64 to 8192): larger\n"
