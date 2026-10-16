@@ -4932,6 +4932,50 @@ static void visibility_copy_batch(void)
 }
 
 #endif
+/* the loading screen's picture (progress_bar.c, made by the CPU in
+port/linux/game/loading_screen.c): `rgba` bytes, its top row first, over the
+whole back buffer */
+void halo_draw_picture(const unsigned char *rgba, long width, long height)
+{
+	static GLuint texture;
+	static long texture_width, texture_height;
+	struct render_target_entry *back_buffer;
+
+	if (!device.gl_ready || !rgba || width <= 0 || height <= 0)
+		return;
+	back_buffer = render_target_get(&device.back_buffer);
+	if (!back_buffer)
+		return;
+	/* (what the back buffer's multisampled pixels hold first, so that the
+	display's resolve leaves the picture) */
+	render_target_resolve(&back_buffer->target);
+	if (!texture)
+		glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	if (texture_width != width || texture_height != height)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, (GLsizei)width, (GLsizei)height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+		texture_width = width;
+		texture_height = height;
+	}
+	else
+	{
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, (GLsizei)width, (GLsizei)height, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+	}
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer_get(texture, 0));
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer_get(back_buffer->target.texture, 0));
+	glDisable(GL_SCISSOR_TEST);
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	/* (row 0 of the render target is the top of the picture, as of this
+	texture) */
+	glBlitFramebuffer(0, 0, (GLint)width, (GLint)height, 0, 0, (GLint)back_buffer->target.gl_width,
+		(GLint)back_buffer->target.gl_height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+	xgpu_gl_state_invalidate();
+	gl_check_errors("picture");
+}
+
 void WINAPI D3DDevice_Present(CONST RECT *source_rectangle, CONST RECT *destination_rectangle,
 	void *unused, void *unused2)
 {
