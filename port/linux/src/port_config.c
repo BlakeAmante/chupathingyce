@@ -506,9 +506,10 @@ static const struct config_setting config_settings[] =
 		"listed there, and System Link shows its games; empty for none." },
 	{ "network.list_hosted_games", _config_boolean, "true", "HALO_NET_LIST_GAMES", _environment_value, _platform_all,
 		"List the system link games this machine hosts on network.browser_url,\n"
-		"where anyone can find and join them, and send each one's carnage report\n"
-		"there when it ends. False keeps them to invites and the local network,\n"
-		"and sends no report." },
+		"where anyone can find and join them (only public games without a\n"
+		"password), and send each one's carnage report there when it ends.\n"
+		"False keeps them to invites and the local network, and sends no\n"
+		"report." },
 	{ "network.report_joined_games", _config_boolean, "true", "HALO_NET_REPORT_GAMES", _environment_value,
 		_platform_all,
 		"When an internet game this machine joined ends, send network.browser_url\n"
