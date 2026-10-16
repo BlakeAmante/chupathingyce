@@ -113,6 +113,9 @@ SCREENS = {
             ("MUSIC VOLUME:", "audio.music_volume", VOLUMES, "The music's volume.", None),
             ("EFFECTS VOLUME:", "audio.effects_volume", VOLUMES,
              "The volume of every other sound: effects and\nspeech.", None),
+            # (port/linux/game/menu_tags.c adds the system's outputs)
+            ("OUTPUT DEVICE:", "audio.device", [("DEFAULT", "default")],
+             "Where the sound plays. Default follows the\nsystem's output as it changes.", "desktop"),
             ("REVERB:", "audio.reverb", ON_OFF,
              "Echo sounds as the place you are in does, and\nmuffle those behind walls, as the Xbox did.", None),
             ("SOUND:", "audio.enabled", ON_OFF,
@@ -179,6 +182,10 @@ SCREENS = {
     },
 }
 
+# the settings whose values are long (names the system gives): their
+# spinner starts nearer the label, as wide as Controls Setup's
+WIDE_SPINNERS = {"audio.device"}
+
 # Controls Setup: the keyboard and mouse's actions, in groups (the order of
 # port/linux/game/menu_functions.c's table of them)
 CONTROL_GROUPS = ["MOVEMENT", "WEAPONS", "ACTIONS"]
@@ -191,7 +198,7 @@ STRING_OVERRIDES = {
         "Choose the keys and mouse\\nbuttons for each action.\\n\\nProfile:",
         "Set this profile's controller\\nsensitivity and layouts.\\n\\nProfile:",
         "Adjust the mouse's sensitivity\\nand aiming.\\n\\nProfile:",
-        "Adjust the volume of the music\\nand of everything else.\\n\\nProfile:",
+        "Adjust the volumes and choose\\nwhere the sound plays.\\n\\nProfile:",
         "Choose a window or the full\\nscreen, the frame rate and more.\\n\\nProfile:",
         "Internet play, updates and the\\nmultiplayer HUD.\\n\\nProfile:",
         "Change the current profile's\\nfree-for-all multiplayer color.\\n\\nProfile:",
@@ -264,6 +271,7 @@ def _setting_screen(folder: str, spec: dict) -> list:
     place = -1
     for index, (label, setting, choices, _, platform, *named) in enumerate(spec["rows"]):
         key = named[0] if named else setting.split(".", 1)[1]
+        wide = setting in WIDE_SPINNERS
         row = f"{base}/op_{key}"
         if setting not in spec.get("same_place", ()) and key not in spec.get("same_place", ()):
             place += 1
@@ -271,19 +279,19 @@ def _setting_screen(folder: str, spec: dict) -> list:
         extra += _widget(row, [("width", 512), ("height", 28), ("flags", "pass_unhandled_to_focused_child"),
                                ("bitmap", "bitmaps/option_bkds"), ("color", "#FF2896FF"), ("platform", platform)],
                          [f'<child{attributes([("widget", f"{base}/{key}_label")])}/>',
-                          f'<child{attributes([("widget", f"{base}/{key}_spinner"), ("x", 320), ("y", 1)])}/>'])
+                          f'<child{attributes([("widget", f"{base}/{key}_spinner"), ("x", 200 if wide else 320), ("y", 1)])}/>'])
         extra += _widget(f"{base}/{key}_label",
                          [("type", "text"), ("controller", 1), ("width", 300), ("height", 22),
                           ("string_list", f"{base}/labels"), ("string_index", index), ("font", "ui\\large_ui"),
                           ("color", "#FF2896FF"), ("text_x", 13), ("text_y", 4)], [])
         extra += _widget(f"{base}/{key}_spinner",
-                         [("type", "spinner"), ("left", 3), ("top", 2), ("width", 147), ("height", 20),
+                         [("type", "spinner"), ("left", 3), ("top", 2), ("width", 297 if wide else 147), ("height", 20),
                           ("flags", "pass_unhandled_to_focused_child left_right_tabs_items"),
                           ("strings", "|".join(shown for shown, _ in choices)), ("setting", setting),
                           ("values", "|".join(value for _, value in choices)), ("font", "ui\\large_ui"),
                           ("color", "#FF2896FF"), ("align", "center"), ("text_y", 1),
                           ("header_bitmap", "bitmaps/arrow_sm_left"), ("footer_bitmap", "bitmaps/arrow_sm_right"),
-                          ("header_bounds", "7 -6 19 0"), ("footer_bounds", "7 150 19 156")],
+                          ("header_bounds", "7 -6 19 0"), ("footer_bounds", "7 300 19 306" if wide else "7 150 19 156")],
                          ['<on event="created" run="port setting load"/>'])
     extra += _button(f"{base}/button_defaults", 3, ['<on event="a" run="port settings defaults"/>',
                                                     '<on event="start" run="port settings defaults"/>'])
