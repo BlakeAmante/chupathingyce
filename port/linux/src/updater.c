@@ -13,13 +13,16 @@ asks GitHub for the latest release when it starts, on a thread of its own:
 the game starts meanwhile, and nothing happens if the release is not newer
 or cannot be reached. If it is newer, the game asks whether to update:
 
-- Yes: the release's build for this platform and configuration
-  (chupathingyce-<platform>-<release|debug>.zip) is downloaded next to the executable
-  (into update.partial/), with its signature (<zip>.sig) checked against
-  the release key the game is built with (update_signature.c, update_key.h),
-  and unpacked, its files put in place of the running
-  game's (which become <name>.old, deleted at the next start), and the new
-  game started; this one quits.
+- Yes: the release's list of its update files (updates.json,
+  update_manifest.h) is downloaded, with its signature (updates.json.sig)
+  checked against the release key the game is built with (update_signature.c,
+  update_key.h). The build the list names for this platform and configuration
+  is downloaded next to the executable (into update.partial/), its size and
+  SHA-256 checked against the list's, and unpacked, its files put in place
+  of the running game's (which become <name>.old, deleted at the next start),
+  and the new game started; this one quits. A release from before the list
+  has none: its chupathingyce-<platform>-<release|debug>.zip is downloaded,
+  with that zip's own signature (<zip>.sig) checked, as before.
 - No: nothing, until the next start.
 - Do not ask again: after the player confirms it, update.auto = false is
   written to config.toml.
@@ -31,6 +34,7 @@ update.h's: posix_update.c on Linux, win32_update.c on Windows.
 #include "platform.h"
 #include "port_config.h"
 #include "update.h"
+#include "update_manifest.h"
 #include "update_signature.h"
 
 /* (given for this file by the build: tools/linux_build.py, windows_build.py,
@@ -85,10 +89,12 @@ looks for a new version and offers its download page) */
 #define PATH_SEPARATOR "/"
 #endif
 #define UPDATE_ASSET "chupathingyce-" UPDATE_PLATFORM "-" HALO_BUILD_FLAVOR ".zip"
+/* the release's list of its update files (update_manifest.h) */
+#define UPDATE_MANIFEST "updates.json"
 #define UPDATE_DIRECTORY "update.partial"
 #define MAXIMUM_UPDATE_FILES 32
-/* the most a download may be: GitHub's answer about the latest release, a
-release's zip (about 30 MB), its signature */
+/* the most a download may be: GitHub's answer about the latest release or a
+release's list, a release's zip (about 30 MB), a signature */
 #define MAXIMUM_CHECK_SIZE (1024ULL * 1024)
 #define MAXIMUM_UPDATE_SIZE (256ULL * 1024 * 1024)
 #define MAXIMUM_SIGNATURE_SIZE 4096ULL
@@ -105,6 +111,16 @@ static SDL_AtomicInt updater_state;
 static char updater_latest_version[32];
 static char updater_directory[1024];
 static char updater_executable[1024];
+/* what is downloaded: from the release's list, or the zip's name as before
+(listed: 0, and its own signature is checked) */
+static struct
+{
+	int listed;
+	char tag[160];
+	char name[160];
+	unsigned long long size;
+	char sha256[UPDATE_SHA256_TEXT_SIZE];
+} updater_file;
 
 /* ---------- paths */
 
@@ -500,8 +516,9 @@ static int SDLCALL updater_download_thread(void *context)
 {
 	struct updater_download *download = context;
 	char error[512] = "";
-	int succeeded = update_download(download->url, download->zip_path, MAXIMUM_UPDATE_SIZE, updater_download_progress,
-		download, error, sizeof(error));
+	int succeeded = update_download(download->url, download->zip_path,
+		updater_file.listed ? updater_file.size : MAXIMUM_UPDATE_SIZE, updater_download_progress, download, error,
+		sizeof(error));
 
 	SDL_LockMutex(download->lock);
 	download->succeeded = succeeded;
@@ -523,8 +540,8 @@ static int updater_download_zip(const char *zip_path, char *error, size_t error_
 
 	memset(&download, 0, sizeof(download));
 	download.lock = SDL_CreateMutex();
-	snprintf(download.url, sizeof(download.url),
-		"https://github.com/" UPDATE_REPOSITORY "/releases/download/v%s/" UPDATE_ASSET, updater_latest_version);
+	snprintf(download.url, sizeof(download.url), "https://github.com/" UPDATE_REPOSITORY "/releases/download/%s/%s",
+		updater_file.tag, updater_file.name);
 	snprintf(download.zip_path, sizeof(download.zip_path), "%s", zip_path);
 	thread = SDL_CreateThread(updater_download_thread, "update download", &download);
 	if (!thread)
@@ -584,8 +601,9 @@ static int updater_download_zip(const char *zip_path, char *error, size_t error_
 	return download.succeeded;
 }
 
-/* the downloaded zip, checked against its signature and unpacked from the
-copy that was checked; the zip is deleted either way */
+/* the downloaded zip, checked against the release's list (its size and
+SHA-256) or, from a release without one, its own signature, and unpacked
+from the copy that was checked; the zip is deleted either way */
 static int updater_unpack(const char *zip_path, char names[][256], int *name_count, char *error, size_t error_size)
 {
 	char signature_path[1200];
@@ -601,7 +619,25 @@ static int updater_unpack(const char *zip_path, char names[][256], int *name_cou
 		snprintf(error, error_size, "could not read the download");
 		goto done;
 	}
-	if (update_signature_required())
+	if (updater_file.listed)
+	{
+		char digest[UPDATE_SHA256_TEXT_SIZE];
+
+		if (zip_size != updater_file.size)
+		{
+			snprintf(error, error_size, "the download was not installed: it is %llu bytes, not the list's %llu",
+				(unsigned long long)zip_size, updater_file.size);
+			goto done;
+		}
+		update_sha256(zip, zip_size, digest);
+		if (strcmp(digest, updater_file.sha256))
+		{
+			snprintf(error, error_size, "the download was not installed: its SHA-256 is not the list's");
+			goto done;
+		}
+		platform_log("update: the download's SHA-256 is the release list's");
+	}
+	else if (update_signature_required())
 	{
 		char url[512], reason[256] = "";
 
@@ -639,6 +675,93 @@ static int updater_unpack(const char *zip_path, char names[][256], int *name_cou
 done:
 	SDL_free(signature);
 	SDL_free(zip);
+	return succeeded;
+}
+
+/* which file to download (updater_file): the one the release's list names
+for this platform and configuration, once the list's signature checks; a
+release without a list (or whose list cannot be downloaded), or one whose
+list has no such file, its zip by the name it had before the list. 0, and
+why in error, when the list is there but is not to be trusted */
+static int updater_find_file(char *error, size_t error_size)
+{
+	char manifest_path[1200], signature_path[1200], url[512], reason[256] = "";
+	size_t manifest_size = 0, signature_size = 0;
+	char *manifest = NULL, *signature = NULL;
+	int result, succeeded = 0;
+
+	memset(&updater_file, 0, sizeof(updater_file));
+	snprintf(updater_file.tag, sizeof(updater_file.tag), "v%s", updater_latest_version);
+	snprintf(updater_file.name, sizeof(updater_file.name), "%s", UPDATE_ASSET);
+	updater_partial_path(manifest_path, sizeof(manifest_path), UPDATE_MANIFEST);
+	updater_partial_path(signature_path, sizeof(signature_path), UPDATE_MANIFEST ".sig");
+	snprintf(url, sizeof(url), "https://github.com/" UPDATE_REPOSITORY "/releases/download/v%s/" UPDATE_MANIFEST,
+		updater_latest_version);
+	if (!update_download(url, manifest_path, MAXIMUM_CHECK_SIZE, NULL, NULL, reason, sizeof(reason)))
+	{
+		/* (its zip's own signature is checked instead) */
+		platform_log("update: no list of update files (%s): downloading " UPDATE_ASSET, reason);
+		return 1;
+	}
+	manifest = SDL_LoadFile(manifest_path, &manifest_size);
+	update_delete_file(manifest_path);
+	if (!manifest)
+	{
+		snprintf(error, error_size, "could not read the release's list of update files");
+		goto done;
+	}
+	if (update_signature_required())
+	{
+		snprintf(url, sizeof(url),
+			"https://github.com/" UPDATE_REPOSITORY "/releases/download/v%s/" UPDATE_MANIFEST ".sig",
+			updater_latest_version);
+		if (!update_download(url, signature_path, MAXIMUM_SIGNATURE_SIZE, NULL, NULL, reason, sizeof(reason)))
+		{
+			snprintf(error, error_size, "the release's list of update files has no signature (%s)", reason);
+			goto done;
+		}
+		signature = SDL_LoadFile(signature_path, &signature_size);
+		update_delete_file(signature_path);
+		if (!update_signature_check_document((const unsigned char *)manifest, manifest_size, signature,
+			signature ? signature_size : 0, reason, sizeof(reason)))
+		{
+			snprintf(error, error_size, "the release's list of update files was not used: %s", reason);
+			goto done;
+		}
+	}
+	else
+	{
+		platform_log("update: this build has no release key: the list's signature is not checked");
+	}
+	result = update_manifest_find(manifest, manifest_size, updater_latest_version, UPDATE_PLATFORM, HALO_BUILD_FLAVOR,
+		"zip", updater_file.tag, sizeof(updater_file.tag), updater_file.name, sizeof(updater_file.name),
+		&updater_file.size, updater_file.sha256, sizeof(updater_file.sha256), reason, sizeof(reason));
+	if (result == _update_manifest_found && (!updater_file.size || updater_file.size > MAXIMUM_UPDATE_SIZE))
+	{
+		snprintf(error, error_size, "the release's list gives %s a size this build does not install (%llu bytes)",
+			updater_file.name, updater_file.size);
+	}
+	else if (result == _update_manifest_found)
+	{
+		updater_file.listed = 1;
+		platform_log("update: the release's list names %s (%s, %llu bytes)", updater_file.name, updater_file.tag,
+			updater_file.size);
+		succeeded = 1;
+	}
+	else if (result == _update_manifest_missing)
+	{
+		/* (updater_file as it was: the zip by its old name) */
+		platform_log("update: %s: downloading " UPDATE_ASSET, reason);
+		succeeded = 1;
+	}
+	else
+	{
+		snprintf(error, error_size, "the release's list of update files was not used: %s", reason);
+	}
+
+done:
+	SDL_free(signature);
+	SDL_free(manifest);
 	return succeeded;
 }
 
@@ -711,12 +834,12 @@ static void updater_update(void)
 
 	updater_path(partial, sizeof(partial), UPDATE_DIRECTORY);
 	updater_partial_path(zip_path, sizeof(zip_path), UPDATE_ASSET);
-	platform_log("update: downloading version %s (" UPDATE_ASSET ")", updater_latest_version);
+	platform_log("update: downloading version %s", updater_latest_version);
 	if (!update_make_directory(partial))
 	{
 		snprintf(error, sizeof(error), "could not make %s (is the game's folder read-only?)", partial);
 	}
-	else if (updater_download_zip(zip_path, error, sizeof(error)) &&
+	else if (updater_find_file(error, sizeof(error)) && updater_download_zip(zip_path, error, sizeof(error)) &&
 		updater_unpack(zip_path, names, &name_count, error, sizeof(error)))
 	{
 		if (updater_replace_files(names, name_count, error, sizeof(error)))
@@ -756,6 +879,10 @@ static void updater_clean_up(void)
 	updater_partial_path(path, sizeof(path), UPDATE_ASSET);
 	update_delete_file(path);
 	updater_partial_path(path, sizeof(path), UPDATE_ASSET ".sig");
+	update_delete_file(path);
+	updater_partial_path(path, sizeof(path), UPDATE_MANIFEST);
+	update_delete_file(path);
+	updater_partial_path(path, sizeof(path), UPDATE_MANIFEST ".sig");
 	update_delete_file(path);
 	updater_path(path, sizeof(path), UPDATE_DIRECTORY);
 	update_delete_file(path);
