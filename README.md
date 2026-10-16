@@ -414,7 +414,7 @@ version (`GPL-3.0-or-later`). It comes with no warranty. The full text is in
   implement, under any license, without using this code.
 - **Third-party code, fonts and art** keep their own licenses, which are
   beside them (`port/third_party`, `port/assets/fonts`,
-  `port/linux/ui/fonts`, `port/assets/prompts`), and the release downloads
+  `port/linux/ui/fonts`, `port/assets/prompts`, `port/assets/hud`), and the release downloads
   carry their notices.
 - **Halo itself is not covered.** The license covers the work of
   Chupathingy's authors. It gives no rights in Halo, its maps or anything
@@ -455,6 +455,9 @@ builds are made only with free tools and libraries.
 - Fonts: [Noto Sans](https://fonts.google.com/noto) (SIL OFL) and
   [Kenney's Input Prompts](https://kenney.nl/assets/input-prompts) (CC0).
 - Controller button icons by snapchipper, CC0 (`port/assets/prompts`).
+- High-res HUD art: Aerocatia's and Jessie's redraws from
+  [halopc-restored](https://github.com/Aerocatia/halopc-restored), used with
+  their permission (`port/assets/hud/NOTICE.md`).
 - HaloMD map names: from [MacGamingMods](https://macgamingmods.com)' public
   HaloMD mod list, so the menus can show each map's own name.
 - Missing Custom Edition maps: downloaded from the community map
