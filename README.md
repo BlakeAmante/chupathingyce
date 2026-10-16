@@ -11,6 +11,15 @@
 <a href="https://discord.gg/chupathingy">Discord</a>
 </p>
 
+<p align="center">
+<a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue" alt="License: GPL-3.0-or-later"></a>
+<a href="https://github.com/ChupathingyCE/chupathingyce/releases/latest"><img src="https://img.shields.io/github/v/release/ChupathingyCE/chupathingyce?label=release" alt="Latest release"></a>
+<a href="https://github.com/ChupathingyCE/chupathingyce/releases/tag/nightly"><img src="https://img.shields.io/badge/nightly-daily%20build-orange" alt="Latest nightly"></a>
+<a href="https://github.com/ChupathingyCE/chupathingyce/actions/workflows/build.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/ChupathingyCE/chupathingyce/build.yml?branch=main&label=build" alt="Build status on main"></a>
+<a href="https://discord.gg/chupathingy"><img src="https://img.shields.io/badge/discord-join-5865F2" alt="Discord"></a>
+<img src="https://img.shields.io/badge/platforms-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20Android-lightgrey" alt="Platforms: Windows, macOS, Linux, Android">
+</p>
+
 > **Compatible with OpenCE build-206 (network version 29) for online play.** Players on that build join our games, and ours join games hosted on network versions 11 through 30. Browser builds can't join our games, nor we theirs.
 
 Chupathingy is a free, open-source port of the Halo: Combat Evolved
@@ -24,6 +33,14 @@ them. Website: [chupathingy.org](https://chupathingy.org). Chat and find
 games to join: [discord.gg/chupathingy](https://discord.gg/chupathingy).
 
 <p align="center"><img src="docs/screenshots/lobby.jpg" width="720" alt="A multiplayer lobby"></p>
+
+## Builds
+
+- **Releases** are the stable builds, on the [Releases page](https://github.com/ChupathingyCE/chupathingyce/releases/latest). The game updates itself from them.
+- **Nightly** is the [`nightly` pre-release](https://github.com/ChupathingyCE/chupathingyce/releases/tag/nightly): main, built every day at 04:00 UTC when it has changed. For early birds; it doesn't update itself.
+- **Testing** builds are hand-rolled builds of a branch, published as pre-releases named "(test builds)". The current one is the [Grifball test](https://chupathingy.org/grifball).
+- **Linux AppImage** is on the test builds for now.
+- **What's coming** is the [0.8.0 milestone](https://github.com/ChupathingyCE/chupathingyce/milestone/5) and its unreleased [release notes](docs/release-notes/0.8.0.md).
 
 ## What ChupathingyCE is and isn't
 
@@ -55,7 +72,8 @@ games to join: [discord.gg/chupathingy](https://discord.gg/chupathingy).
 - LAN parties the old way: System Link on your own network and split screen need no internet and no account
 - High-res HUD and text, and widescreen menus
 - Controller prompts for Xbox, PlayStation and Nintendo pads, and the keyboard
-- Updates itself on Windows, Linux and Android: it checks for new releases when it starts, and asks first (on Mac it opens the download)
+- Text chat in games with other Chupathingy players, and a follow camera while you wait to respawn
+- Updates itself on Windows, Linux and Android: it checks for new releases when it starts, asks first, and only trusts the files a signed list of update files names (on Mac it opens the download)
 
 **Platforms**
 
@@ -81,7 +99,7 @@ Get the latest release from the [Releases page](https://github.com/ChupathingyCE
 | Android | `chupathingyce-android-release.zip` | Android 9 or later, 64-bit. See [port/android/README.md](port/android/README.md). |
 | Mac | `chupathingyce-macos-release.zip` | macOS 13 or later, Apple silicon or Intel. |
 
-The game checks for new releases when it starts and asks before updating.
+The game checks for new releases when it starts and asks before updating. On Linux there is also an AppImage, on the test builds for now.
 
 We don't pay for code signing yet, so the first start needs one extra step:
 
@@ -96,15 +114,14 @@ ChupathingyCE doesn't include the game's maps, sounds or art. You need an Xbox
 disc image (`.iso` or `.xiso`) of Halo: Combat Evolved. Any region works.
 
 1. Start ChupathingyCE.
-2. The first time, it asks where to get the maps. Choose **Xbox disc image**
-   and pick your image.
+2. The first time, it asks where to get the maps. The default is **Xbox disc
+   image**: pick your image.
 3. It copies the game's `maps` folder out of the image (about 2 GB), then starts.
 
-The same screen can also add Halo PC's maps from your own copies, as
-optional extras: a Halo PC CD image (`.iso`) fills `maps_pc`, and the Custom
-Edition installer (`halocesetup_en_1.00.exe`) fills `maps_ce`. Or choose
-**Make the folders** to get empty `maps`, `maps_ce`, `maps_pc` and `maps_md`
-folders and copy the files in yourself.
+The same screen accepts your Halo PC retail CD image (`.iso`), which fills
+`maps_pc`, and the Halo Custom Edition installer (`halocesetup_en_1.00.exe`),
+which fills `maps_ce`. Or choose **Make the folders** to get empty `maps`,
+`maps_ce`, `maps_pc` and `maps_md` folders and copy the files in yourself.
 
 On Android, copy the disc image to your phone first; the maps, settings and
 saves go in `/sdcard/Android/data/dev.horrible.chupathingyce/files`. On a
