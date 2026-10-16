@@ -1117,6 +1117,13 @@ BOOL platform_video_initialize(unsigned long width, unsigned long height)
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 0);
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 0);
+#ifndef HALO_ANDROID
+	/* an opaque window: SDL asks for an alpha channel by default, and some
+	compositors (Windows' with some drivers, Wayland's) blend a window's
+	alpha with what is behind it, which showed the desktop through the
+	game */
+	SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 0);
+#endif
 	if (config_boolean("debug.gl_debug"))
 	{
 		int flags = 0;
