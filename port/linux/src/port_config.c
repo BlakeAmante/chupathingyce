@@ -150,6 +150,16 @@ static const struct config_setting config_settings[] =
 		"(Overpass) at the resolution the game draws at, and the menus' titles\n"
 		"from port/assets/titles; false draws the maps' bitmap fonts and titles.\n"
 		"The Server Browser and moderation overlays use the system's fonts." },
+	{ "display.high_res_font", _config_string, "\"\"", "HALO_HIGH_RES_FONT", _environment_value, _platform_all,
+		"Your own font file (.ttf or .otf) for the high-res text and Online\n"
+		"Games, in place of the built-in fonts; a name alone is a file in\n"
+		"data/fonts beside the maps folder. Empty: the built-in fonts. One that\n"
+		"is missing or cannot be read is noted in debug.txt, and the built-in\n"
+		"font drawn." },
+	{ "display.high_res_font_large", _config_string, "\"\"", "HALO_HIGH_RES_FONT_LARGE", _environment_value,
+		_platform_all,
+		"A font file for the large text only (the menus' items, the HUD's\n"
+		"messages), as display.high_res_font; empty: display.high_res_font's." },
 	{ "display.version_watermark", _config_boolean, "false", "HALO_VERSION_WATERMARK", _environment_value,
 		_platform_all,
 		"Show this build's version (as the main menu does) in the bottom right\n"

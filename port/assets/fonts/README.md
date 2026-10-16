@@ -2,7 +2,12 @@
 
 The fonts the game's text is drawn with, at the display's resolution, in
 place of the bitmap fonts of the maps (`port/linux/src/text_hires.c`).
-`fonts.json` says which font draws each of the maps' font tags.
+`fonts.json` says which font draws each of the maps' font tags, its role
+(`large` or `small`: which of the player's fonts stands in for it, and
+which of Online Games' menu faces it is) and how wide it is drawn (`width`,
+1 for the font's own widths). To change a built-in font, change its entry
+there: the builds embed what it names. A player can draw their own font
+instead (`display.high_res_font`, from `data/fonts/` beside the maps).
 
 | File | Draws | From |
 | --- | --- | --- |

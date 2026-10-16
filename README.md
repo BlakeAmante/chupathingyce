@@ -169,7 +169,7 @@ Beside the maps folders, the game keeps folders of its own:
 | Folder | What is in it |
 | --- | --- |
 | `logs` (beside `maps`) | The game's logs: `debug.txt`, crash reports waiting to be sent, and on Windows `halo.log`. Attach these to a bug report. |
-| `data` (beside `maps`) | Things you add that are not maps. |
+| `data` (beside `maps`) | Things you add that are not maps: your own font in `data/fonts` (`display.high_res_font`). |
 | `cache` (in the save folder) | What the game can make again; safe to delete. |
 
 Until 0.8.0, `debug.txt` was beside `maps` (and on Windows `halo.log` beside
@@ -341,6 +341,7 @@ A few people look for most:
 | `display.vsync`, `display.max_fps` | Vertical sync, and a frame rate cap (0 for none). |
 | `display.menus` | `"xbox"` (the default) or `"pc"`, the Halo PC style menus with their Server Browser. |
 | `display.high_res_text` | `true` draws the game's text (menus and HUD) with sharp fonts at your resolution; `false` uses the maps' original bitmap fonts. The Server Browser and the moderation overlays use the system's fonts either way. For a blocky look overall, also set `display.resolution_scaling = "original"`. |
+| `display.high_res_font`, `display.high_res_font_large` | Your own font file for the sharp text and Online Games, in place of the built-in fonts: put it in `data/fonts` beside `maps` and give its name (`high_res_font = "MyFont.ttf"`), or a full path. `_large` sets one for the large text only. Empty uses the built-in fonts; a file that can't be read is noted in `logs/debug.txt` and the built-in font is used. The font is yours: Chupathingy ships none but its own free ones, and never sends yours anywhere. |
 | `display.field_of_view` | How wide the first-person view is, in degrees: 70 (the Xbox's) by default, 50 to 120. |
 | `display.match_timer` | `true` shows a timed multiplayer game's time left at the top of the screen (off by default). |
 | `display.player_names` | Names over players' heads: `"all"`, `"allies"`, `"enemies"` or `"none"`. |
