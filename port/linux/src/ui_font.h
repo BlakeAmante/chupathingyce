@@ -38,6 +38,11 @@ the baseline; posix_ui_font_free frees it; NULL for an empty glyph */
 unsigned char *posix_ui_font_glyph(int font, float pixel_height, unsigned int codepoint, int *width, int *height,
 	int *x_offset, int *y_offset);
 void posix_ui_font_free(unsigned char *bitmap);
+/* a font drawn from a file (a TrueType or OpenType font, whole path) in
+place of its built-in face, or from its built-in face again (NULL or ""):
+1 when the file is drawn; 0 when it cannot be read or is no font (the
+built-in face is drawn) */
+int posix_ui_font_use_file(int font, const char *path);
 
 /* a JPEG picture as RGBA (4 bytes a pixel, rows from the top), NULL if it is
 not one or is larger than POSIX_UI_IMAGE_LARGEST either way; freed with
