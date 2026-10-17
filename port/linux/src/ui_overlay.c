@@ -14,6 +14,7 @@ are the controller's button icons (a texture array, a layer each).
 
 #ifdef HALO_GAME_BROWSER
 
+#include "delta.h"
 #include "platform.h"
 #include "port_config.h"
 #include "text_hires.h"
