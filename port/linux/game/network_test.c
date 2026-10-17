@@ -1018,8 +1018,8 @@ void network_test_update(
 				"ui\\shell\\multiplayer_game\\pause_game\\2p_pause_game" :
 				"ui\\shell\\multiplayer_game\\pause_game\\1p_pause_game", NONE, NULL, 0, NONE, NONE, NONE);
 		}
-		/* debug.network_test_team_change: every so often each machine's
-		player asks to change teams, as the pause menu's CHANGE TEAMS does
+		/* debug.network_test_team_change: every so often a player of each
+		machine asks to change teams, as the pause menu's CHANGE TEAMS does
 		(team_change.c); the joining machine's half an interval later */
 		if (network_test.team_change_interval > 0.0f && game_engine_can_score())
 		{
@@ -1035,8 +1035,10 @@ void network_test_update(
 				asked_period = period;
 				extern boolean team_change_ask(short local_player_index);
 
-				platform_log("network test: player 1 asks to change teams");
-				team_change_ask(0);
+				/* (split screen: each player in turn) */
+				platform_log("network test: player %d asks to change teams",
+					(int)(period % network_test.local_players) + 1);
+				team_change_ask((short)(period % network_test.local_players));
 			}
 		}
 		/* debug.network_test_kill: the host kills the last player every so
