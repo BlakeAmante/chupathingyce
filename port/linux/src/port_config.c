@@ -80,12 +80,35 @@ struct config_setting
 #endif
 
 /* macOS's audio cuts out with SDL's 512-frame buffer when the mixer is late
-(a 10.6 ms budget at 48 kHz); 2048 frames (43 ms) rides that out. Elsewhere
-512 keeps the latency low. */
+(a 10.6 ms budget at 48 kHz); 2048 frames (43 ms) rides that out. Android's
+mixer runs on a phone's cores, often a slower one, so it has 1024 (21 ms).
+Elsewhere 512 keeps the latency low. */
 #ifdef __APPLE__
 #define DEFAULT_AUDIO_BUFFER_FRAMES "2048"
+#elif defined(HALO_ANDROID)
+#define DEFAULT_AUDIO_BUFFER_FRAMES "1024"
 #else
 #define DEFAULT_AUDIO_BUFFER_FRAMES "512"
+#endif
+
+/* The 3D view's anti-aliasing and the objects' shadow maps: the sharpest
+picture the builds' computers draw comfortably, with the look kept
+(multisampling smooths only the edges of what is drawn; a larger shadow map
+only the steps along a shadow's edge, its blur widened to keep it as soft).
+The 64-bit desktop builds take 2 samples a pixel (on an M4 at 1920x1080,
+0.4 ms a frame more; 4 samples cost three times that, which a large display
+multiplies) and 256 (about nothing); the 32-bit builds, for older
+computers, and Android, whose picture is 480 lines, 256 and no
+anti-aliasing. The server draws nothing: the Xbox's. */
+#if defined(HALO_SERVER)
+#define DEFAULT_ANTI_ALIASING "\"off\""
+#define DEFAULT_SHADOW_RESOLUTION "128"
+#elif defined(HALO_64BIT) && !defined(HALO_ANDROID)
+#define DEFAULT_ANTI_ALIASING "\"msaa2x\""
+#define DEFAULT_SHADOW_RESOLUTION "256"
+#else
+#define DEFAULT_ANTI_ALIASING "\"off\""
+#define DEFAULT_SHADOW_RESOLUTION "256"
 #endif
 
 static const struct config_setting config_settings[] =
@@ -127,12 +150,14 @@ static const struct config_setting config_settings[] =
 	{ "display.max_fps", _config_integer, "0", "HALO_MAX_FPS", _environment_value, _platform_desktop,
 		"With vsync off, the most frames a second: 0 for twice the display's\n"
 		"refresh rate, -1 for no limit (which can hang some Intel graphics)." },
-	{ "display.anti_aliasing", _config_string, "\"off\"", "HALO_ANTI_ALIASING", _environment_value, _platform_all,
+	{ "display.anti_aliasing", _config_string, DEFAULT_ANTI_ALIASING, "HALO_ANTI_ALIASING", _environment_value,
+		_platform_all,
 		"Smoothing of jagged edges, which the Xbox did not have: \"off\"; \"fxaa\"\n"
 		"or \"smaa\" smooth the 3D view once it is drawn (the HUD and menus stay\n"
 		"sharp); \"ssaa2x\" draws at twice the resolution each way (four times\n"
 		"the work); \"msaa2x\", \"msaa4x\" or \"msaa8x\" draw with that many samples\n"
-		"a pixel. Android has \"fxaa\" for \"smaa\", and no \"ssaa2x\"." },
+		"a pixel. Android has \"fxaa\" for \"smaa\", and no \"ssaa2x\". The default:\n"
+		"\"msaa2x\" on 64-bit computers, \"off\" on 32-bit ones and Android." },
 	{ "display.interpolation", _config_boolean, "true", "HALO_INTERPOLATION", _environment_value, _platform_all,
 		"Draw a frame for every display refresh, blending between the game's 30\n"
 		"ticks a second; false keeps the original 30 frames a second." },
@@ -174,10 +199,11 @@ static const struct config_setting config_settings[] =
 		_platform_all,
 		"Show this build's version (as the main menu does) in the bottom right\n"
 		"corner while playing too: handy for screenshots and bug reports." },
-	{ "display.shadow_resolution", _config_integer, "128", "HALO_SHADOW_RESOLUTION", _environment_value,
-		_platform_all,
+	{ "display.shadow_resolution", _config_integer, DEFAULT_SHADOW_RESOLUTION, "HALO_SHADOW_RESOLUTION",
+		_environment_value, _platform_all,
 		"The size the objects' shadows are drawn at, in pixels each way: 128 as\n"
-		"on the Xbox, or 256, 512 or 1024 for smoother edges, as soft." },
+		"on the Xbox, or 256 (the default), 512 or 1024 for smoother edges, as\n"
+		"soft." },
 	{ "display.menus", _config_string, "\"chupathingy\"", "HALO_MENUS", _environment_value, _platform_all,
 		"The menus: \"chupathingy\" (the default) for the Xbox's look with Halo\n"
 		"PC's screens added where they help (PROFILES, SETTINGS, QUIT, the\n"
@@ -282,7 +308,7 @@ static const struct config_setting config_settings[] =
 		_platform_all,
 		"The audio device's buffer, in sample frames at 48 kHz (64 to 8192): larger\n"
 		"rides out stalls that cut the sound out, smaller has less delay. 2048\n"
-		"(43 ms) on macOS, 512 (11 ms) elsewhere." },
+		"(43 ms) on macOS, 1024 (21 ms) on Android, 512 (11 ms) elsewhere." },
 
 	{ "audio.reverb", _config_boolean, "true", "HALO_REVERB", _environment_value, _platform_all,
 		"Reverberate the world's sounds as the place the player is in does (the\n"
@@ -1441,6 +1467,13 @@ static const struct
 	/* the Xbox's menus, the default until v0.8.0 (a file that names them
 	keeps them) */
 	{ "display.menus", "\"xbox\"", 0 },
+	/* the Xbox's, until the per-platform defaults of v0.8.0 (a file that
+	names them keeps them) */
+	{ "display.anti_aliasing", "\"off\"", 0 },
+	{ "display.shadow_resolution", "128", 0 },
+#ifdef HALO_ANDROID
+	{ "audio.buffer_frames", "512", 0 },
+#endif
 	/* OpenCE's Discord application, which ChupathingyCE kept until v0.7.5c
 	(Discord showed "OpenCE" as being played) */
 	{ "discord.application_id", "\"1553978809840050229\"", 1 },
@@ -1635,6 +1668,149 @@ static char *config_update_layout(const char *text, toml_datum_t table)
 	}
 	platform_log("settings: config.toml updated (config_version %d): %d lines at this version's default commented "
 		"out, to follow it; every other value is kept", CONFIG_VERSION, defaults);
+	return out.buffer;
+}
+
+/* whether the value is the setting's default, or one an earlier version had */
+static int config_datum_is_a_default(toml_datum_t datum, const struct config_setting *setting)
+{
+	size_t old;
+
+	if (config_datum_is(datum, setting->type, setting->default_value))
+		return 1;
+	for (old = 0; old < NUMBER_OF_CONFIG_OLD_DEFAULTS; old++)
+	{
+		if (!strcmp(config_old_defaults[old].name, setting->name) &&
+			config_datum_is(datum, setting->type, config_old_defaults[old].default_value))
+		{
+			return 1;
+		}
+	}
+	return 0;
+}
+
+/* whether text has the setting commented out at a default in its section,
+"# key = ..." */
+static int config_text_has_commented_key(const char *text, const char *name)
+{
+	const char *dot = strchr(name, '.');
+	char section[64], current[64] = "";
+	const char *line;
+
+	snprintf(section, sizeof(section), "%.*s", (int)(dot - name), name);
+	for (line = text; *line;)
+	{
+		const char *end = line + strcspn(line, "\n");
+
+		if (!config_line_section(line, end, current, sizeof(current)) && !strcmp(current, section) &&
+			config_line_commented_key(line, end, dot + 1))
+		{
+			return 1;
+		}
+		line = *end ? end + 1 : end;
+	}
+	return 0;
+}
+
+/* whether the line (from its '#') is a setting commented out, "# key = ..." */
+static int config_line_is_commented_setting(const char *line)
+{
+	const char *start;
+
+	line++;
+	while (*line == ' ' || *line == '\t')
+		line++;
+	start = line;
+	while ((*line >= 'a' && *line <= 'z') || (*line >= '0' && *line <= '9') || *line == '_')
+		line++;
+	if (line == start)
+		return 0;
+	while (*line == ' ' || *line == '\t')
+		line++;
+	return *line == '=';
+}
+
+/* a version from before config_version, run on a file of this layout, sees
+the settings commented out at their default as missing, and adds each as a
+value at its own default (with its comment, after a blank line) at the end
+of its section: the file then holds the setting twice, "# key = default"
+from this layout and "key = value" from the older version, and the value
+pins the older version's default. Such a value that is a default, this
+version's or an older one, is taken out with its comment, so that the
+setting follows this version's default again; a value that is no default
+stays, being the player's. Returns the new text, or NULL if there was none */
+static char *config_drop_added_defaults(const char *text, toml_datum_t table)
+{
+	toml_datum_t version = toml_seek(table, "config_version");
+	int lines[NUMBER_OF_CONFIG_SETTINGS];
+	struct config_text out = { NULL, 0, 0 };
+	int line_number = 1, dropped = 0, any = 0;
+	const char *line;
+	size_t index;
+
+	if (version.type != TOML_INT64 || version.u.int64 < 2)
+		return NULL;
+	for (index = 0; index < NUMBER_OF_CONFIG_SETTINGS; index++)
+	{
+		const struct config_setting *setting = &config_settings[index];
+		toml_datum_t datum = toml_seek(table, setting->name);
+
+		lines[index] = 0;
+		if (datum.type != TOML_UNKNOWN && config_datum_is_a_default(datum, setting) &&
+			config_text_has_commented_key(text, setting->name))
+		{
+			lines[index] = datum.lineno;
+			any = 1;
+		}
+	}
+	if (!any)
+		return NULL;
+	for (line = text; *line; line_number++)
+	{
+		const char *end = line + strcspn(line, "\n");
+		const char *next = *end ? end + 1 : end;
+		int drop = 0;
+
+		for (index = 0; index < NUMBER_OF_CONFIG_SETTINGS && !drop; index++)
+		{
+			drop = lines[index] == line_number &&
+				config_line_key(line, end, strchr(config_settings[index].name, '.') + 1);
+		}
+		if (drop)
+		{
+			/* (its comment above it, and the blank line before that) */
+			while (out.length)
+			{
+				size_t start = out.length - 1;
+				const char *first;
+
+				while (start > 0 && out.buffer[start - 1] != '\n')
+					start--;
+				for (first = out.buffer + start; *first == ' ' || *first == '\t'; first++)
+				{
+				}
+				/* (not another setting's line, "# key = value") */
+				if (*first != '#' || config_line_is_commented_setting(first))
+					break;
+				out.length = start;
+				out.buffer[start] = 0;
+			}
+			if (out.length >= 2 && out.buffer[out.length - 1] == '\n' && out.buffer[out.length - 2] == '\n')
+				out.buffer[--out.length] = 0;
+			dropped++;
+		}
+		else
+		{
+			char *copy = config_copy(line, (size_t)(next - line));
+
+			if (copy)
+				config_append(&out, copy);
+			free(copy);
+		}
+		line = next;
+	}
+	platform_log("settings: config.toml held %d settings twice, commented out and as a default an older version "
+		"added; those values are taken out, to follow this version's defaults", dropped);
 	return out.buffer;
 }
 
@@ -2092,6 +2268,29 @@ static void config_load(void)
 					{
 						toml_free(followed_result);
 						free(followed);
+					}
+				}
+			}
+			{
+				/* (a default an older version added beside the commented one) */
+				char *dropped = config_drop_added_defaults(text, result.toptab);
+				toml_result_t dropped_result;
+
+				if (dropped)
+				{
+					dropped_result = toml_parse(dropped, (int)strlen(dropped));
+					if (dropped_result.ok)
+					{
+						toml_free(result);
+						free(text);
+						result = dropped_result;
+						text = dropped;
+						updated = text;
+					}
+					else
+					{
+						toml_free(dropped_result);
+						free(dropped);
 					}
 				}
 			}
