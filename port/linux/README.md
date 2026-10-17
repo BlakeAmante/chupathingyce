@@ -451,10 +451,23 @@ line that tells how many lines changed.
 
 A version from before `config_version`, run on a file of this layout, adds
 each commented-out setting again as a value at its own default, so that the
-file holds the setting twice: `# key = default` and `key = value`. At its
-next start, this version takes such a value out (with the comment the older
-version wrote above it) when it is a default, this version's or an earlier
-one's; a value that is no default stays.
+file holds the setting twice: `# key = default` and `key = value`. Such a
+value is taken out (with the comment the older version wrote above it) only
+when the player answers "Use the new settings" to the question below; "Keep
+mine" leaves it, and a value that is no default stays in either case.
+
+When a version changes the default of settings that a `config.toml` has
+untouched (commented out, or not there), the game asks once, before the
+window opens, in a message box on the desktop and on Android: "Use the new
+settings" or "Keep mine" (Return and Escape). It lists the changes in words
+(smoother edges, sharper shadows, the Chupathingy menus, and on Android a
+larger audio buffer). Until it is answered, the settings keep their old
+values and the file is left as it is. "Keep mine" writes the old values into
+`config.toml`; "Use the new settings" lets them follow the new defaults. The
+answer is `game.defaults_answered`; the question does not come again. A new
+`config.toml` has the new defaults and is not asked. A run without anyone to
+answer (a hidden window, a test) logs the question and keeps the old values.
+The dedicated server never asks and keeps its own defaults.
 
 Each setting has an environment variable. The environment variable changes
 the setting for one start of the game. It has priority over the file.

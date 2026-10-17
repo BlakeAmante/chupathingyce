@@ -8,6 +8,9 @@ the C library (the test's SDL3/SDL.h and platform.h declare them).
 
 	port_config_test get <setting>...        prints "<setting>=<value>" each
 	port_config_test write <setting> <value> config_write, then as get
+	port_config_test pending                 prints "pending=<count>" and the
+	                                         changes the player would be asked about
+	port_config_test answer <new|keep>       config_new_defaults_answer
 */
 
 #include "platform.h"
@@ -112,9 +115,24 @@ int main(int argc, char **argv)
 		index = 2;
 		argc = 3;
 	}
+	else if (argc >= 2 && !strcmp(argv[1], "pending"))
+	{
+		char changes[1024];
+		int count = config_new_defaults_pending(changes, sizeof(changes));
+
+		printf("pending=%d\n", count);
+		if (count)
+			printf("changes=%s\n", changes);
+		return 0;
+	}
+	else if (argc >= 3 && !strcmp(argv[1], "answer"))
+	{
+		config_new_defaults_answer(!strcmp(argv[2], "new"));
+		return 0;
+	}
 	else if (argc < 2 || strcmp(argv[1], "get"))
 	{
-		fprintf(stderr, "usage: port_config_test get <setting>... | write <setting> <value>\n");
+		fprintf(stderr, "usage: port_config_test get <setting>... | write <setting> <value> | pending | answer <new|keep>\n");
 		return 2;
 	}
 	for (; index < argc; index++)

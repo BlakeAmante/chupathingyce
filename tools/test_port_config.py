@@ -10,8 +10,13 @@ player's can have:
   values at this version's default are commented out, every other kept
   (an earlier default may be the player's choice);
 - a file of this layout that an older version then ran on, which added each
-  commented-out setting again as a value at its default: those values are
-  taken out, so that a default changed since reaches the player;
+  commented-out setting again as a value at its default: left alone until the
+  player answers the question about the new defaults, then those values are
+  taken out ("use the new settings") or stay ("keep mine");
+- a file of the previous release, with the old defaults commented out: the
+  settings keep their old values and the file stays as it is, the player is
+  asked once, "keep mine" writes the old values and "use the new settings"
+  lets them follow the new defaults; the question never comes again;
 - the per-platform defaults of each build (DEFAULTS below).
 
 Needs only a C compiler. Usage: test_port_config.py [--cc clang]
@@ -50,6 +55,23 @@ DEFAULTS = {
 		"display.shadow_resolution": "128",
 	},
 }
+
+# the settings an existing file would see change, for each kind of build, with
+# the value the previous release had (the dedicated server is not asked: its
+# defaults are its own)
+OLD = {
+	"display.menus": "xbox",
+	"display.anti_aliasing": "off",
+	"display.shadow_resolution": "128",
+	"audio.buffer_frames": "512",
+}
+CHANGED = {
+	"desktop": ["display.menus", "display.anti_aliasing", "display.shadow_resolution"],
+	"desktop32": ["display.menus", "display.shadow_resolution"],
+	"android": ["display.menus", "display.shadow_resolution", "audio.buffer_frames"],
+	"server": [],
+}
+NEW = {"display.menus": "chupathingy"}
 
 # the macros each kind of build is compiled with; the others are not macOS
 # (whose own defaults the native build checks on a Mac)
@@ -129,7 +151,33 @@ def check(condition, message):
 		raise AssertionError(message)
 
 
-def test_new_file(program, directory, defaults):
+def pending(case):
+	"""The count of changes the player would be asked about, and their words."""
+	_, output = case.run("pending")
+	return int(re.search(r"^pending=(\d+)$", output, re.M).group(1)), output
+
+
+def new_value(name, defaults):
+	return NEW.get(name) or defaults[name]
+
+
+def old_value_text(name):
+	return OLD[name] if OLD[name].isdigit() else f'"{OLD[name]}"'
+
+
+def previous_release_file(case, kind):
+	"""A file as the previous release wrote it: every setting commented out,
+	at that release's defaults."""
+	case.get("display.vsync")
+	text = case.text()
+	for name in CHANGED["android" if kind == "server" else kind]:
+		key = name.split(".")[1]
+		text = re.sub(rf"^# {key} = .*$", f"# {key} = {old_value_text(name)}", text, flags=re.M)
+	case.path.write_text(text)
+	return text
+
+
+def test_new_file(program, directory, defaults, kind):
 	case = Case(program, directory / "new")
 	values, _ = case.get(*defaults)
 	for name, expected in defaults.items():
@@ -140,44 +188,137 @@ def test_new_file(program, directory, defaults):
 		key = name.split(".")[1]
 		lines, commented = value_lines(text, key)
 		check(not lines and len(commented) == 1, f"new file: {key} is not commented out once: {lines} {commented}")
-
-
-def test_readded_by_older_version(program, directory, defaults):
-	"""The owner's case: a config_version 2 file that a build from before
-	config_version then ran on, adding every setting again as a value."""
-	case = Case(program, directory / "readded")
-	case.get("display.vsync")
-	text = case.text()
-	# what that older build appends to [display]: its default (the old one
-	# for each setting this version changed) and one the player chose
-	old = {"shadow_resolution": "128", "anti_aliasing": "\"off\"", "interpolation": "true", "vsync": "true",
-		"high_res_hud": "false"}
-	block = "".join(f"\n# An older version's comment for {key}.\n# (for one run: HALO_X=<value>)\n{key} = {value}\n"
-		for key, value in old.items())
-	audio = text.index("\n[audio]")
-	text = text[:audio].rstrip("\n") + "\n" + block + text[audio:]
-	case.path.write_text(text)
-	values, _ = case.get("display.shadow_resolution", "display.anti_aliasing", "display.interpolation",
-		"display.vsync", "display.high_res_hud")
-	check(values["display.shadow_resolution"] == defaults["display.shadow_resolution"],
-		f"readded: shadow_resolution stayed {values['display.shadow_resolution']}")
-	check(values["display.anti_aliasing"] == defaults["display.anti_aliasing"],
-		f"readded: anti_aliasing stayed {values['display.anti_aliasing']}")
-	check(values["display.high_res_hud"] == "false", "readded: the player's high_res_hud = false was lost")
-	text = case.text()
-	for key in ("shadow_resolution", "anti_aliasing", "interpolation", "vsync"):
-		lines, commented = value_lines(text, key)
-		check(not lines and len(commented) == 1, f"readded: {key}: {lines} {commented}")
-		check(f"An older version's comment for {key}." not in text, f"readded: {key}'s added comment stayed")
-	lines, _ = value_lines(text, "high_res_hud")
-	check(lines == ["high_res_hud = false"], f"readded: high_res_hud: {lines}")
-	# (nothing more to do the second time)
+	# (a new file is not asked about anything, then or on the next start)
+	check(pending(case)[0] == 0, "new file: something to ask about")
 	before = case.text()
 	case.get("display.vsync")
-	check(case.text() == before, "readded: the file changed again on the next start")
+	check(case.text() == before and pending(case)[0] == 0, "new file: changed or asked on the next start")
 
 
-def test_before_config_version(program, directory, defaults):
+def test_previous_release_file(program, directory, defaults, kind):
+	"""The question: the previous release's file keeps its old values and
+	stays as it is until the player answers, then once for all."""
+	changed = CHANGED[kind]
+	names = list(changed) or ["display.vsync"]
+	for answer in ("keep", "new"):
+		case = Case(program, directory / f"previous_{answer}")
+		written = previous_release_file(case, kind)
+		values, _ = case.get(*names)
+		for name in changed:
+			check(values[name] == OLD[name], f"previous/{answer}: {name} is {values[name]} before the answer")
+		check(case.text() == written, f"previous/{answer}: the file changed before the answer")
+		count, output = pending(case)
+		check(count == len(changed), f"previous/{answer}: {count} changes, not {len(changed)}: {output}")
+		if "display.anti_aliasing" in changed:
+			check("Smoother edges (2x multisampling)" in output, f"previous/{answer}: no words for anti-aliasing")
+		if "display.shadow_resolution" in changed:
+			check("Sharper shadows (256)" in output, f"previous/{answer}: no words for shadows")
+		if not changed:
+			continue
+		case.run("answer", answer)
+		text = case.text()
+		check(re.search(r"^defaults_answered = 1$", text, re.M), f"previous/{answer}: the answer is not written")
+		# (asked once: a restart finds nothing, and changes nothing)
+		check(pending(case)[0] == 0, f"previous/{answer}: asked again")
+		values, _ = case.get(*names)
+		before = case.text()
+		case.get("display.vsync")
+		check(case.text() == before, f"previous/{answer}: the file changed on the next start")
+		for name in changed:
+			key = name.split(".")[1]
+			lines, commented = value_lines(text, key)
+			if answer == "keep":
+				check(values[name] == OLD[name], f"previous/keep: {name} is {values[name]}, not {OLD[name]}")
+				check(lines == [f"{key} = {old_value_text(name)}"], f"previous/keep: {key} not pinned: {lines}")
+			else:
+				check(values[name] == new_value(name, defaults), f"previous/new: {name} is {values[name]}")
+				check(not lines and commented == [f"# {key} = " + (f'"{values[name]}"' if not values[name].isdigit() else values[name])],
+					f"previous/new: {key}: {lines} {commented}")
+
+
+def test_file_without_the_settings(program, directory, defaults, kind):
+	"""A file from before the settings existed: they were at the old
+	defaults; asked about, and the file is left alone until answered."""
+	changed = CHANGED[kind]
+	if not changed:
+		return
+	case = Case(program, directory / "without")
+	case.path.write_text("config_version = 2\n\n[display]\nfullscreen = false\n")
+	values, _ = case.get(*changed)
+	for name in changed:
+		check(values[name] == OLD[name], f"without: {name} is {values[name]}")
+		lines, commented = value_lines(case.text(), name.split(".")[1])
+		check(not lines and not commented, f"without: {name} was added before the answer: {lines} {commented}")
+	check(pending(case)[0] == len(changed), "without: not asked about every change")
+	case.run("answer", "keep")
+	values, _ = case.get(*changed)
+	check(all(values[name] == OLD[name] for name in changed), f"without: keep: {values}")
+	check(pending(case)[0] == 0, "without: asked again")
+	check("fullscreen = false" in case.text(), "without: the player's fullscreen was lost")
+
+
+def test_readded_by_older_version(program, directory, defaults, kind):
+	"""The owner's case: a config_version 2 file that a build from before
+	config_version then ran on, adding every setting again as a value. It is
+	left alone until the player answers: use the new settings takes the
+	values out, keep mine leaves them."""
+	changed = CHANGED[kind]
+	for answer in ("new", "keep"):
+		case = Case(program, directory / f"readded_{answer}")
+		case.get("display.vsync")
+		text = case.text()
+		# what that older build appends to [display]: its default (the old one
+		# for each setting this version changed) and one the player chose
+		old = {"shadow_resolution": "128", "anti_aliasing": "\"off\"", "interpolation": "true", "vsync": "true",
+			"high_res_hud": "false"}
+		block = "".join(f"\n# An older version's comment for {key}.\n# (for one run: HALO_X=<value>)\n{key} = {value}\n"
+			for key, value in old.items())
+		audio = text.index("\n[audio]")
+		text = text[:audio].rstrip("\n") + "\n" + block + text[audio:]
+		case.path.write_text(text)
+		values, _ = case.get("display.shadow_resolution", "display.anti_aliasing", "display.interpolation",
+			"display.vsync", "display.high_res_hud")
+		check(values["display.shadow_resolution"] == "128", f"readded: shadow_resolution is {values['display.shadow_resolution']}")
+		check(values["display.anti_aliasing"] == "off", f"readded: anti_aliasing is {values['display.anti_aliasing']}")
+		check(values["display.high_res_hud"] == "false", "readded: the player's high_res_hud = false was lost")
+		check(case.text() == text, f"readded/{answer}: the file changed before the answer")
+		count, _ = pending(case)
+		wanted = len([name for name in changed if name in ("display.shadow_resolution", "display.anti_aliasing")])
+		# (the menus and Android's buffer were not added as values here)
+		check(count == wanted, f"readded/{answer}: {count} changes, not {wanted}")
+		if not wanted:
+			continue
+		case.run("answer", answer)
+		values, _ = case.get("display.shadow_resolution", "display.anti_aliasing", "display.high_res_hud")
+		check(values["display.high_res_hud"] == "false", f"readded/{answer}: high_res_hud lost")
+		text = case.text()
+		for key in ("shadow_resolution", "anti_aliasing"):
+			lines, commented = value_lines(text, key)
+			if answer == "new":
+				check(not lines and len(commented) == 1, f"readded/new: {key}: {lines} {commented}")
+				check(f"An older version's comment for {key}." not in text, f"readded/new: {key}'s added comment stayed")
+			else:
+				check(len(lines) == 1, f"readded/keep: {key}: {lines}")
+		if answer == "new":
+			check(values["display.shadow_resolution"] == defaults["display.shadow_resolution"],
+				f"readded/new: shadow_resolution stayed {values['display.shadow_resolution']}")
+			check(values["display.anti_aliasing"] == defaults["display.anti_aliasing"],
+				f"readded/new: anti_aliasing stayed {values['display.anti_aliasing']}")
+			lines, commented = value_lines(text, "interpolation")
+			check(not lines and len(commented) == 1, f"readded/new: interpolation: {lines} {commented}")
+		else:
+			check(values["display.shadow_resolution"] == "128" and values["display.anti_aliasing"] == "off",
+				"readded/keep: the old values were lost")
+		lines, _ = value_lines(text, "high_res_hud")
+		check(lines == ["high_res_hud = false"], f"readded/{answer}: high_res_hud: {lines}")
+		# (nothing more to do the second time)
+		check(pending(case)[0] == 0, f"readded/{answer}: asked again")
+		before = case.text()
+		case.get("display.vsync")
+		check(case.text() == before, f"readded/{answer}: the file changed again on the next start")
+
+
+def test_before_config_version(program, directory, defaults, kind):
 	"""A file from before config_version: every setting a value. Those at
 	this version's default are commented out; an earlier default is kept,
 	being possibly the player's choice (existing players keep their
@@ -203,6 +344,8 @@ def test_before_config_version(program, directory, defaults):
 	check(values["audio.volume"] == "0.5", "version 1: the player's audio.volume was lost")
 	text = case.text()
 	check("config_version = 2" in text, "version 1: no config_version written")
+	# (values the player may have chosen are theirs: nothing to ask about)
+	check(pending(case)[0] == 0, "version 1: asked about values the file holds")
 	lines, commented = value_lines(text, "vsync")
 	check(not lines and len(commented) == 1, f"version 1: vsync, at its default, is not commented out: {lines} {commented}")
 
@@ -216,9 +359,10 @@ def main():
 		directory = Path(directory)
 		for kind in DEFAULTS:
 			program = build(arguments.cc, kind, directory / kind)
-			for test in (test_new_file, test_readded_by_older_version, test_before_config_version):
+			for test in (test_new_file, test_previous_release_file, test_file_without_the_settings,
+				test_readded_by_older_version, test_before_config_version):
 				try:
-					test(program, directory / kind / "cases", DEFAULTS[kind])
+					test(program, directory / kind / "cases", DEFAULTS[kind], kind)
 					print(f"ok   {kind}: {test.__name__}")
 				except AssertionError as error:
 					print(f"FAIL {kind}: {test.__name__}: {error}")
