@@ -443,6 +443,30 @@ real hud_globals_get_scale(
 	return 1.0f;
 }
 
+#ifdef HALO_CUSTOM_EDITION
+/* port: the scale of what the HUD draws from a bitmap group with no
+placement of its own to scale it (the HUD globals' digits, the waypoints'
+arrows): a bitmap group forcing the high resolution scale is drawn at half
+its size, and one with the 0.5 HUD scale at half that (the elements of HUD
+interfaces have it from their placements: ce_hud.c) */
+real hud_bitmap_group_scale(
+	long bitmap_group_index)
+{
+	real scale = 1.0f;
+
+	if (bitmap_group_index != NONE)
+	{
+		struct bitmap_group const *group = bitmap_group_get(bitmap_group_index);
+
+		if (TEST_FLAG(group->flags, _bitmap_group_force_hud_high_resolution_scale_bit))
+			scale *= 0.5f;
+		if (TEST_FLAG(group->flags, _bitmap_group_half_hud_scale_bit))
+			scale *= 0.5f;
+	}
+	return scale;
+}
+#endif
+
 void hud_retrieve_bitmap_and_bounding_rect(
 	long bitmap_group_index,
 	short sequence_index,
@@ -1967,6 +1991,9 @@ void hud_draw_numbers(
 				scale = hud_globals_get_scale(
 					TEST_FLAG(draw_flags, _hud_draw_in_multiplayer_bit));
 			}
+#ifdef HALO_CUSTOM_EDITION
+			scale *= hud_bitmap_group_scale(hud_number->number_bitmap.index);
+#endif
 
 			if (TEST_FLAG(numbers->number_flags, _hud_number_show_trailing_m_bit))
 			{

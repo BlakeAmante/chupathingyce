@@ -14,7 +14,10 @@ know, which are put right when the map's tags load:
     placement's scale is halved and the flag cleared. Two bitmap flags made
     since do the same from the bitmap an element draws: Chimera's "force HUD
     use high resolution scale" draws it as if its placement had the flag,
-    and MCC's "0.5 HUD scale" halves its scale again, after that.
+    and MCC's "0.5 HUD scale" halves its scale again, after that. (What the
+    HUD globals draw with no placement of their own to scale, the digits and
+    the waypoints' arrows, is scaled by those flags as it is drawn:
+    hud_bitmap_group_scale, hud_draw.c.)
   - A HUD meter's bitmap: the meter shader (rasterizer_xbox_dynavobgeom.c)
     compares the texel's color with the meter's value (the order the meter
     fills in) and draws only where there is alpha (its shape). Halo PC keeps
@@ -135,8 +138,8 @@ enum
 	BITMAP_GROUP_FLAGS_OFFSET = 0x06,
 	/* (its flags after the tag set's four: MCC's "0.5 HUD scale" and
 	Chimera's "force HUD use high resolution scale") */
-	BITMAP_GROUP_HALF_HUD_SCALE_FLAG = 1 << 4,
-	BITMAP_GROUP_FORCE_HIGH_RESOLUTION_SCALE_FLAG = 1 << 7,
+	BITMAP_GROUP_HALF_HUD_SCALE_FLAG = FLAG(_bitmap_group_half_hud_scale_bit),
+	BITMAP_GROUP_FORCE_HIGH_RESOLUTION_SCALE_FLAG = FLAG(_bitmap_group_force_hud_high_resolution_scale_bit),
 	BITMAP_GROUP_SEQUENCES_OFFSET = 0x54,
 	BITMAP_GROUP_BITMAPS_OFFSET = 0x60,
 	BITMAP_SEQUENCE_SIZE = 0x40,
