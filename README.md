@@ -511,6 +511,10 @@ builds are made only with free tools and libraries.
 - High-res HUD art: Aerocatia's and Jessie's redraws from
   [halopc-restored](https://github.com/Aerocatia/halopc-restored), used with
   their permission (`port/assets/hud/NOTICE.md`).
+- HD HUDs on Custom Edition maps (MCC's "0.5 HUD scale" and Chimera's
+  "force HUD use high resolution scale" flags): ugoboom, tested with
+  Aerocatia's [halopc-restored](https://github.com/Aerocatia/halopc-restored)
+  resource maps.
 - HaloMD map names: from [MacGamingMods](https://macgamingmods.com)' public
   HaloMD mod list, so the menus can show each map's own name.
 - Missing Custom Edition maps: downloaded from the community map
