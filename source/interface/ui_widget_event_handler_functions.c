@@ -4239,6 +4239,11 @@ static boolean player_profile_initialize_controller_settings(
 		case _button_preset_swap_b_and_right_thumb:
 			option_spinner->parameters.list.selected_index = 4;
 			break;
+		case _button_preset_bumper_jumper:
+			/* (the Xbox's own list has the five layouts of its map: this one is
+			shown in the PC and Chupathingy menus, and here as the default) */
+			option_spinner->parameters.list.selected_index = 5 < option_spinner->parameters.list.number_of_items ? 5 : 0;
+			break;
 		default:
 			option_spinner->parameters.list.selected_index = 0;
 			break;
@@ -4877,6 +4882,7 @@ static boolean player_profile_change_controller_settings(
 		case _button_preset_swap_a_and_left_trigger: profile->controller_settings.button_preset = _button_preset_swap_a_and_left_trigger; return TRUE;
 		case _button_preset_swap_b_and_left_trigger: profile->controller_settings.button_preset = _button_preset_swap_b_and_left_trigger; return TRUE;
 		case _button_preset_swap_b_and_right_thumb: profile->controller_settings.button_preset = _button_preset_swap_b_and_right_thumb; return TRUE;
+		case _button_preset_bumper_jumper: profile->controller_settings.button_preset = _button_preset_bumper_jumper; return TRUE;
 		default: error(2, "unknown button config option selected"); return TRUE;
 		}
 	}
