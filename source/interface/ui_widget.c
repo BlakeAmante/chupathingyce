@@ -1534,6 +1534,7 @@ short local_player_index_for_draw_string_and_hack_in_icons;
 /* port: draw_string_and_hack_in_icons draws a widget's text (the menus'
 keys for the buttons, not the game's: input_abstraction_port_icon_key) */
 static boolean draw_string_icons_for_menus = FALSE;
+short draw_string_and_hack_in_icons_end_x = 0;
 
 /* January defines this and never references it, as we do not */
 real const _one_over_255 = 1.0f / 255.0f;
@@ -4494,6 +4495,7 @@ void draw_string_and_hack_in_icons(
 	}
 	if (current)
 		render_state_text(bounds, &cursor_bounds, current);
+	draw_string_and_hack_in_icons_end_x = cursor_bounds.x0;
 	draw_string_set_indents(0, 0);
 
 	return;
