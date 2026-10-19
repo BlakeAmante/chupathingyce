@@ -173,6 +173,8 @@ boolean device_update(
 /* port: an elevator's riders are carried by the node's movement of the
 tick (device_machines.c; objects.c's object_update samples before the
 machine updates and carries after its node matrices are made) */
+boolean machine_elevator_networked(
+	void);
 boolean machine_elevator_sample(
 	long machine_index,
 	real_point3d *sample);

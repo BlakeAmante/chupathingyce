@@ -298,6 +298,18 @@ boolean machine_update(
 		}
 	}
 
+	/* a local game (the campaign, single player, a film) carries riders as
+	the game always did: by the node's movement since the last tick, from the
+	node matrices as they are before this tick's (network games: objects.c's
+	object_update, machine_elevator_sample) */
+	if (!machine_elevator_networked() && TEST_FLAG(definition->machine.flags, _machine_is_elevator_bit) &&
+		definition->machine.elevator_node_index != NONE)
+	{
+		real_point3d previous = machine->machine.elevator_position;
+
+		machine_elevator_carry_riders(machine_index, &previous);
+	}
+
 	if (TEST_FLAG(machine->device.flags, _device_position_changed_bit))
 	{
 		object_translate(machine_index, &machine->object.position, NULL);
@@ -314,6 +326,16 @@ where that node is now (the world position the last tick's matrices put
 it at). The riders are carried by the node's own movement of the tick
 (machine_elevator_carry_riders): their carry began a tick behind the
 elevator, and went the wrong way on the tick the elevator reversed. */
+/* port: whether this game is a network game, host or client (the tick's own
+carry of riders is the network's; local games keep the game's) */
+boolean machine_elevator_networked(
+	void)
+{
+	short connection = game_connection();
+
+	return connection == _game_connection_network_client || connection == _game_connection_network_server;
+}
+
 boolean machine_elevator_sample(
 	long machine_index,
 	real_point3d *sample)
@@ -321,7 +343,7 @@ boolean machine_elevator_sample(
 	struct machine_datum *machine = machine_get(machine_index);
 	struct machine_definition *definition = machine_definition_get(machine->definition_index);
 
-	if (!TEST_FLAG(definition->machine.flags, _machine_is_elevator_bit) ||
+	if (!machine_elevator_networked() || !TEST_FLAG(definition->machine.flags, _machine_is_elevator_bit) ||
 		definition->machine.elevator_node_index < 0 ||
 		definition->machine.elevator_node_index >= machine->object.node_matrices.size / (short)sizeof(real_matrix4x3))
 	{

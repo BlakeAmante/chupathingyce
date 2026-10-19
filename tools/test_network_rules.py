@@ -123,3 +123,25 @@ def test_the_version_and_the_wire():
     assert '#define DELTA_WIRE "chupa-32a"' in delta
     for number in (30, 31, 32):
         assert re.search(rf'X\({number}, "build-\d+", additive\)', delta)
+
+
+def test_elevator_carry_of_the_tick_is_for_network_games_only():
+    """a local game (campaign, single player, film) carries an elevator's
+    riders as the game always did; the tick's own carry is sampled and applied
+    only in a network game, host or client"""
+    source = (ROOT / "source/devices/device_machines.c").read_text(encoding="utf-8")
+    networked = source[source.index("boolean machine_elevator_networked("):]
+    networked = networked[:networked.index("\n}")]
+    assert "_game_connection_network_client" in networked and "_game_connection_network_server" in networked
+    assert "_game_connection_local" not in networked and "film" not in networked
+    sample = source[source.index("boolean machine_elevator_sample("):]
+    sample = sample[:sample.index("\n}")]
+    assert "!machine_elevator_networked()" in sample.split("return FALSE")[0]
+    update = source[source.index("boolean machine_update("):]
+    update = update[:update.index("\n}")]
+    legacy = update[update.index("if (!machine_elevator_networked()"):]
+    assert "previous = machine->machine.elevator_position" in legacy
+    assert legacy.index("machine_elevator_carry_riders") < legacy.index("_device_position_changed_bit")
+    # objects.c samples through the same gate (the sample is refused locally)
+    assert "machine_elevator_sample(object_index, &elevator_sample)" in \
+        (ROOT / "source/objects/objects.c").read_text(encoding="utf-8")
