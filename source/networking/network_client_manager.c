@@ -819,6 +819,17 @@ static struct
 	byte reserved[0x1A];
 } network_game_client_advertised_versions[MAXIMUM_NETWORK_ADVERTISED_GAMES];
 
+/* the joined game's host's network version, as it advertised it (0xFFFF: not
+known, the host's own game); a client has the host's policies of the versions
+that have them (network_distributed.c's aim assist policy, version 32) */
+static unsigned int network_game_client_joined_version = 0xFFFF;
+
+unsigned int network_game_client_host_network_version(
+	void)
+{
+	return network_game_client_joined_version;
+}
+
 
 #ifdef HALO_GAME_BROWSER
 /* port: the joined game's advertisement's flags (HALO_PORT_ADVERTISED_FLAGS_OFFSET),
@@ -2088,6 +2099,12 @@ boolean network_game_client_initiate_join_game(
 	client->join_in_progress = TRUE;
 	client->connect_process = 0;
 	client->connection_attempt_time = system_milliseconds();
+	{
+		long advertised_index = game - client->available_games;
+
+		network_game_client_joined_version = advertised_index >= 0 && advertised_index < MAXIMUM_NETWORK_ADVERTISED_GAMES ?
+			network_game_client_advertised_versions[advertised_index].version : 0xFFFF;
+	}
 #ifdef HALO_GAME_BROWSER
 	/* (an advertised game's flags; the host's own game, joined through
 	127.0.0.1, is no advertised one) */
