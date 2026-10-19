@@ -3119,7 +3119,8 @@ static void browser_games_read(void)
 			struct advertised_game *game = &games[index];
 
 			if (network_game_client_advertised_game_is_valid(game) && !advertised_in_progress(game) == (pass == 0) &&
-				game_from_peer(game) == (multiplayer.mode == _multiplayer_mode_direct_link))
+				game_from_peer(game) == (multiplayer.mode == _multiplayer_mode_direct_link) &&
+				(game_from_peer(game) || !browser_map_is_campaign(game->map_name)))
 			{
 				multiplayer.games[multiplayer.game_count++] = game;
 			}
@@ -3550,6 +3551,9 @@ static short lobby_browser_valid_games(struct p2p_listing *games, short count)
 		wchar_t name[P2P_LISTING_NAME_SIZE + 1];
 		short index;
 
+		/* (no co-op games in a server browser) */
+		if (browser_map_is_campaign(games[read].map))
+			continue;
 		text_to_wide(games[read].name, name, NUMBEROF(name));
 		if (!player_name_clean(name, NUMBEROF(name)))
 			continue;
@@ -3701,12 +3705,19 @@ static void lobby_browser_add_listed(void)
 {
 	/* (its gametypes as a listing names them) */
 	static char const *const gametypes[] = { "Game", "CTF", "Slayer", "Oddball", "King", "Race" };
-	short index;
+	short index, kept;
 
 	lobby_browser_listed.count = 0;
 	if (!config_boolean("network.online") || !config_boolean("network.public_lobby"))
 		return;
 	lobby_browser_listed.count = (short)browser_get_games(lobby_browser_listed.games, BROWSER_MAXIMUM_GAMES);
+	/* (no co-op games in a server browser) */
+	for (index = kept = 0; index < lobby_browser_listed.count; index++)
+	{
+		if (!browser_map_is_campaign(lobby_browser_listed.games[index].map))
+			lobby_browser_listed.games[kept++] = lobby_browser_listed.games[index];
+	}
+	lobby_browser_listed.count = kept;
 	for (index = 0; index < lobby_browser_listed.count; index++)
 	{
 		struct browser_game const *listed = &lobby_browser_listed.games[index];
