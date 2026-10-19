@@ -583,6 +583,14 @@ static const struct config_setting config_settings[] =
 		"\"on\", \"shields_only\" or \"explosives_only\" (Server Setup's FRIENDLY\n"
 		"FIRE in co-op, which writes its choice here). Their AI allies they\n"
 		"always can, as in the campaign." },
+	{ "network.block_mouse_aim_assist", _config_boolean, "false", "HALO_NET_BLOCK_MOUSE_AIM_ASSIST", _environment_value,
+		_platform_all,
+		"The host's policy on aiming assist for the mouse and keyboard in a\n"
+		"game it hosts: false, each player's own setting\n"
+		"(input.mouse_aim_assist) decides; true, the view's magnetism is off\n"
+		"for a player aiming with the mouse in the game, whatever their\n"
+		"setting. The players' own settings are never changed. The host's\n"
+		"clients are told when they join and when this changes." },
 	{ "network.coop_player_collisions", _config_boolean, "true", "HALO_NET_COOP_PLAYER_COLLISIONS", _environment_value,
 		_platform_all,
 		"Whether the players of an online co-op game bump into each other;\n"
