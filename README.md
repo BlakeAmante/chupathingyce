@@ -2,7 +2,7 @@
 
 <h1 align="center">Chupathingy</h1>
 
-<p align="center"><b>A native port of the Halo: Combat Evolved decompilation for Windows, Mac, Linux and Android, built for stability and community play.</b></p>
+<p align="center"><b>A native port of the Halo: Combat Evolved decompilation for Windows, Mac, Linux (including Steam Deck) and Android, built for stability and community play.</b></p>
 
 <p align="center">
 <a href="https://chupathingy.org">chupathingy.org</a> ·
@@ -24,7 +24,7 @@
 
 Chupathingy is a free, open-source port of the Halo: Combat Evolved
 decompilation. It runs natively on Windows, Mac (Apple silicon and Intel),
-Linux and Android, with no emulator, and it is built for stability and
+Linux (including Steam Deck) and Android, with no emulator, and it is built for stability and
 community play: the original Xbox campaign and multiplayer maps, Halo PC and
 Custom Edition maps, online games with the community's servers, and releases
 you can count on. Xbox and Xbox 360 versions are built separately, by
