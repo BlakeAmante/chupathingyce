@@ -1484,9 +1484,8 @@ there is no room */
 unsigned long ce_resources_allocate(
 	unsigned long size)
 {
-	extern unsigned int platform_ce_conversion_room;
 	unsigned long room_base = CE_IMAGE_TAG_CACHE_BASE + CE_IMAGE_TAG_CACHE_SIZE;
-	unsigned long room_end = room_base + platform_ce_conversion_room;
+	unsigned long room_end = room_base + CE_CONVERSION_ROOM;
 	unsigned long address = ce_free_next;
 
 	if (!address)

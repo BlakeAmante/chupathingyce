@@ -535,11 +535,10 @@ static boolean ce_map_check_tags(
 	there may leave unused below the BSP, at most a strip of the most
 	triangles) */
 	{
-		extern unsigned int platform_ce_conversion_room;
 		unsigned long room = end_free - next_free;
 
-		if (platform_ce_conversion_room > CE_LARGEST_CONVERSION_ALLOCATION)
-			room += platform_ce_conversion_room - CE_LARGEST_CONVERSION_ALLOCATION;
+		if (CE_CONVERSION_ROOM > CE_LARGEST_CONVERSION_ALLOCATION)
+			room += CE_CONVERSION_ROOM - CE_LARGEST_CONVERSION_ALLOCATION;
 		if (model_bytes > room || bsp_bytes > room - model_bytes)
 		{
 			unsigned long needed = model_bytes + bsp_bytes;

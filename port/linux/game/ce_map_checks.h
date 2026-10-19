@@ -28,6 +28,17 @@ enum
 	CE_LARGEST_CONVERSION_ALLOCATION = 0x20000,
 };
 
+/* the room above the tag cache for the port's converted models and level
+(port/linux/src/platform.h): its size, 0 if it is not mapped, and always 0
+on a console or with the console's limits */
+#include "halo_port_limits.h"
+#if defined(HALO_PORT_CONSOLE_LIMITS) || defined(HALO_CONSOLE_LIMITS)
+#define CE_CONVERSION_ROOM 0UL
+#else
+extern unsigned int platform_ce_conversion_room;
+#define CE_CONVERSION_ROOM ((unsigned long)platform_ce_conversion_room)
+#endif
+
 /* ---------- structures */
 
 /* (cache_files.c's) */
