@@ -1333,6 +1333,8 @@ static boolean player_profile_save_changes(
 	boolean *widget_deleted);
 /* the layout spinner's index that stands for a kept Bumper Jumper, or NONE */
 static long g_button_preset_kept_index = NONE;
+extern struct widget_instance *g_list_widget_watched;
+extern boolean g_list_widget_watched_stepped;
 
 static boolean player_profile_initialize_controller_settings(
 	struct widget_instance *widget,
@@ -4251,6 +4253,8 @@ static boolean player_profile_initialize_controller_settings(
 			/* (shown as the first layout; the stored choice is kept until the
 			player picks another one here) */
 			g_button_preset_kept_index = 5 < option_spinner->parameters.list.number_of_items ? NONE : 0;
+			g_list_widget_watched = option_spinner;
+			g_list_widget_watched_stepped = FALSE;
 			break;
 		default:
 			option_spinner->parameters.list.selected_index = 0;
@@ -4884,10 +4888,11 @@ static boolean player_profile_change_controller_settings(
 			option_spinner = option_spinner->next;
 		match_vassert("c:\\halo\\SOURCE\\interface\\ui_widget_event_handler_functions.c", 3956, option_spinner, "expected 'button config' option spinner list");
 		/* (Bumper Jumper shown as the first layout on a list without it: left
-		as it is unless the player changed the layout) */
+		as it is unless the player stepped the spinner, Default included) */
 		if (g_button_preset_kept_index != NONE &&
 			profile->controller_settings.button_preset == _button_preset_bumper_jumper &&
-			option_spinner->parameters.list.selected_index == g_button_preset_kept_index)
+			g_list_widget_watched == option_spinner &&
+			!g_list_widget_watched_stepped)
 			return TRUE;
 		switch (option_spinner->parameters.list.selected_index)
 		{
