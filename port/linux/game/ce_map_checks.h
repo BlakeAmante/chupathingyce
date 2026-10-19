@@ -22,6 +22,10 @@ enum
 	CE_IMAGE_TAG_CACHE_BASE = 0x40440000,
 	CE_IMAGE_TAG_CACHE_SIZE = 0x01700000,
 	CE_TAG_INSTANCE_SIZE = 0x20,
+	/* the most one allocation of the port's converted models and level takes
+	(ce_resources_allocate): a strip of a part's most triangles (ce_models.c),
+	aligned */
+	CE_LARGEST_CONVERSION_ALLOCATION = 0x20000,
 };
 
 /* ---------- structures */

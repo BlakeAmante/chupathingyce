@@ -489,7 +489,10 @@ log.
 
 The Halo PC maps contain pointers to their own tag cache, at `0x40440000`
 to `0x41b40000`. The host also reserves this range at the start, in the
-same way, but the game can start without it. ART's main space starts at
+same way, but the game can start without it. It also reserves the 4.75 MB
+above it, to `0x42000000`, if that is free, for the converted models and
+level of the largest maps (`port/linux/src/platform.h`); without it, those
+maps are refused. ART's main space starts at
 `0x12c00000` and is as large as the Java heap of the device
 (`dalvik.vm.heapsize`). If that heap is larger than about 700 MB, the main
 space covers the range, and the host does not take it. Then the game does
