@@ -2173,6 +2173,28 @@ static void add_known(struct browser_game *games, int count)
 	}
 }
 
+int browser_map_is_campaign(const char *map)
+{
+	static const char *const levels[] = { "a10", "a30", "a50", "b30", "b40", "c10", "c20", "c40", "d20", "d40" };
+	const char *name = map ? map : "";
+	size_t index;
+
+	/* (the path's last part; a Halo PC or HaloMD map, <file>@ce or @md, is not a level) */
+	for (index = 0; name[index]; index++)
+	{
+		if (name[index] == '@')
+			return 0;
+	}
+	while (strpbrk(name, "\\/"))
+		name = strpbrk(name, "\\/") + 1;
+	for (index = 0; index < sizeof(levels) / sizeof(levels[0]); index++)
+	{
+		if (!SDL_strcasecmp(name, levels[index]))
+			return 1;
+	}
+	return 0;
+}
+
 int browser_get_games(struct browser_game *games, int maximum_count)
 {
 	int count;
