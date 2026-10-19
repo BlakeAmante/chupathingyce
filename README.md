@@ -526,9 +526,10 @@ builds are made only with free tools and libraries.
   domain), plus our own Xbox 360 ring and Wii U GamePad; the names and logos
   are their owners' trademarks, used only to identify platforms.
 - Controller button icons by snapchipper, CC0 (`port/assets/prompts`).
-- High-res HUD art: Aerocatia's and Jessie's redraws from
-  [halopc-restored](https://github.com/Aerocatia/halopc-restored), used with
-  their permission (`port/assets/hud/NOTICE.md`).
+- High-res HUD art on the Xbox maps: Aerocatia's and Jessie's HUD art from
+  [Halo PC Restored](https://github.com/Aerocatia/halopc-restored) (release
+  r220), used with Aerocatia's permission on the condition that both are
+  credited; `port/assets/hud/NOTICE.md` lists which files are theirs.
 - HD HUDs on Custom Edition maps (MCC's "0.5 HUD scale" and Chimera's
   "force HUD use high resolution scale" flags): ugoboom, tested with
   Aerocatia's [halopc-restored](https://github.com/Aerocatia/halopc-restored)
