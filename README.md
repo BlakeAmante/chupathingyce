@@ -220,6 +220,13 @@ badged, and it can be joined only by players who have that map: the game
 says which file is missing and where it goes. The Xbox maps from your disc
 image are still needed. Chupathingy doesn't come with any of these files.
 
+**HD HUDs on Custom Edition maps.** Custom Edition maps can draw their HUD in
+high resolution. For the HD HUD on every map that uses Custom Edition's shared
+HUD, use the `bitmaps.map`, `sounds.map` and `loc.map` from Aerocatia's
+[halopc-restored](https://github.com/Aerocatia/halopc-restored/releases/tag/r220)
+release r220 (the "custom edition full shared" package) in `maps_ce` instead of
+the stock ones; keep a copy of yours. Maps with their own HUD use theirs.
+
 **Playing with OpenCE players.** OpenCE plays Custom Edition maps from
 a `custom_maps` folder. A game on a Custom Edition map is named the same way
 for both, so their players with the map join our games and we join theirs.
