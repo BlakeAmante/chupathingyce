@@ -6222,20 +6222,31 @@ static short ui_mouse_key_button(
 		{ "start_butn", _gamepad_binary_button_start },
 		{ "back_butn", _gamepad_binary_button_back },
 	};
-	char const *name = tag_get_name(widget->definition_tag_index);
-	char const *leaf = name ? strrchr(name, '\\') : NULL;
-	long key_index;
+	long tag_indices[2];
+	long tag;
 
-	leaf = leaf ? leaf + 1 : name;
-	for (key_index = 0; leaf && key_index < NUMBEROF(keys); key_index++)
+	/* the widget's name (ui.map's prompts, "a_butn"), or its picture's (the
+	Chupathingy menus' prompts are "chupathingy\\prompts\\a", drawn from
+	"chupathingy\\prompts\\a_butn": chupathingy/prompts.xml) */
+	tag_indices[0] = widget->definition_tag_index;
+	tag_indices[1] = ui_widget_definition_get(widget->definition_tag_index)->background_bitmap.index;
+	for (tag = 0; tag < NUMBEROF(tag_indices); tag++)
 	{
-		long length = (long)strlen(keys[key_index].name);
+		char const *name = tag_indices[tag] != NONE ? tag_get_name(tag_indices[tag]) : NULL;
+		char const *leaf = name ? strrchr(name, '\\') : NULL;
+		long key_index;
 
-		/* and the smaller icons of the dialogs, "a_butn_sm" */
-		if (!strncmp(leaf, keys[key_index].name, length) &&
-			(leaf[length] == '\0' || leaf[length] == '_'))
+		leaf = leaf ? leaf + 1 : name;
+		for (key_index = 0; leaf && key_index < NUMBEROF(keys); key_index++)
 		{
-			return keys[key_index].button_index;
+			long length = (long)strlen(keys[key_index].name);
+
+			/* and the smaller icons of the dialogs, "a_butn_sm" */
+			if (!strncmp(leaf, keys[key_index].name, length) &&
+				(leaf[length] == '\0' || leaf[length] == '_'))
+			{
+				return keys[key_index].button_index;
+			}
 		}
 	}
 
