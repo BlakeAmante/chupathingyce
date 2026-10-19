@@ -1,5 +1,7 @@
 # Delta: ChupathingyCE's network family
 
+See also [Delta: compatibility](delta-compatibility.md), the design for how builds play together.
+
 Status (October 13, 2026, for 0.7.4e): in progress. Delta List, Stats, Link
 and Control run under the names in the table below; the legacy number's
 table and its signed loader are built, and the cross-play gate that

@@ -396,7 +396,8 @@ to install, and no port forwarding. See [server/README.md](server/README.md).
 - **Delta** is Chupathingy's network family ([docs/delta.md](docs/delta.md)):
   the game list, stats, profile links and dedicated server admin tools on
   [halo.milenko.org](https://halo.milenko.org), and a channel between
-  Chupathingy machines for features of our own. Games with OpenCE players
+  Chupathingy machines for features of our own (how builds play together:
+  [docs/delta-compatibility.md](docs/delta-compatibility.md)). Games with OpenCE players
   use the shared game protocol, so everyone plays together.
 
 ## Building it yourself
