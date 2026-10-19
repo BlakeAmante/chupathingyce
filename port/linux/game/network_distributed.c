@@ -74,6 +74,7 @@ machine (their datum identifiers need not be).
 #include "units/bipeds.h"
 #include "network_coop.h"
 #include "network_distributed.h"
+#include "network_rules.h"
 
 #include <limits.h>
 #include <stdio.h>
@@ -545,6 +546,8 @@ static struct distributed_own_position
 	long time;
 	long unit_index;
 	real_point3d position;
+	/* the elevator the unit was in floor contact with (NONE: none) */
+	long elevator_index;
 } distributed_own_positions[MAXIMUM_LOCAL_PLAYERS][OWN_POSITION_TICKS];
 static real distributed_own_round_trip;
 /* the host: the players each machine had when it last told the host that it
@@ -1620,6 +1623,25 @@ static boolean distributed_apply_state(
 	return TRUE;
 }
 
+/* the elevator (a machine of an elevator's definition) a biped is in floor
+contact with, NONE for none: one it remembers after a jump or a step off
+is not (bipeds.c keeps it a moment) */
+static long distributed_floor_elevator(
+	long unit_index)
+{
+	struct biped_datum *biped = (struct biped_datum *)object_try_and_get_and_verify_type(unit_index,
+		_object_mask_biped);
+
+	if (!biped || biped->biped.elevator_object_index == NONE ||
+		!object_try_and_get_and_verify_type(biped->biped.elevator_object_index, _object_mask_machine))
+	{
+		return NONE;
+	}
+	return network_rules_floor_contact(TEST_FLAG(biped->biped.flags, _biped_airborne_bit),
+		biped->biped.support_surface_index != NONE, biped->biped.elevator_ticks) ?
+		biped->biped.elevator_object_index : NONE;
+}
+
 /* (a client) where its own players' units are this tick, noted */
 static void distributed_note_own_positions(
 	void)
@@ -1639,8 +1661,12 @@ static void distributed_note_own_positions(
 			unit_index = NONE;
 		own->time = game_time_get();
 		own->unit_index = unit_index;
+		own->elevator_index = NONE;
 		if (unit_index != NONE)
+		{
 			own->position = object_get(unit_index)->object.position;
+			own->elevator_index = distributed_floor_elevator(unit_index);
+		}
 	}
 }
 
@@ -1688,8 +1714,11 @@ static void distributed_correct_own_unit(
 			error.i = state->position.x - own->position.x;
 			error.j = state->position.y - own->position.y;
 			error.k = state->position.z - own->position.z;
-			if (!(error.i * error.i + error.j * error.j + error.k * error.k >
-				LOCAL_CORRECTION_TOLERANCE * LOCAL_CORRECTION_TOLERANCE))
+			/* (on the elevator it was recorded on, how high the host has it
+			is the elevator's phase, which each machine's own copy carries
+			up and down: not corrected, the height left out) */
+			if (!network_rules_elevator_correction(own->elevator_index, distributed_floor_elevator(unit_index),
+				&error.i))
 			{
 				return;
 			}
