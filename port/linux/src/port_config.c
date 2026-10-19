@@ -17,6 +17,8 @@ edits and comments stay.
 #include "platform.h"
 #include "port_config.h"
 #include "posix.h"
+
+#include <time.h>
 #include "tomlc17.h"
 
 #include <SDL3/SDL.h>
@@ -2874,8 +2876,9 @@ static const char *const config_live_settings[] =
 
 enum
 {
-	/* config.toml's time looked at no more often than this */
-	CONFIG_FOLLOW_INTERVAL_MS = 1000
+	/* config.toml's time looked at no more often than this (seconds; the
+	C library's clock, which the dedicated server, without SDL, has too) */
+	CONFIG_FOLLOW_INTERVAL_SECONDS = 1
 };
 
 /* config.toml changed on disk since it was last looked at: its live
@@ -2883,11 +2886,11 @@ settings read again from it (one given by the environment kept), and
 config_changes moved if any is different */
 static void config_follow_file(void)
 {
-	static Uint64 looked_at;
+	static time_t looked_at;
 	static posix_ulong modified, modified_nanoseconds, modified_size;
 	static int looked;
 	static char path[1024];
-	Uint64 now = SDL_GetTicks();
+	time_t now = time(NULL);
 	struct posix_file_information info;
 	size_t size = 0;
 	char *text;
@@ -2895,7 +2898,7 @@ static void config_follow_file(void)
 	size_t live;
 	int changed = 0;
 
-	if (!config_loaded || (looked && now - looked_at < CONFIG_FOLLOW_INTERVAL_MS))
+	if (!config_loaded || (looked && now - looked_at < CONFIG_FOLLOW_INTERVAL_SECONDS))
 		return;
 	looked_at = now;
 	if (!path[0])
