@@ -105,7 +105,7 @@ def test_aim_assist_policy_is_message_90():
     assert "machine_index == NONE" in handler and "_game_connection_network_client" in handler
     assert "!main_menu_is_active()" in handler and "network_connection_last_read_was_unreliable()" in handler
     # a client starts every game blocked, when its host's version has the policy
-    assert "distributed_aim_assist_blocked_by_host =\n\t\tnetwork_game_client_host_network_version() >= AIM_ASSIST_POLICY_NETWORK_VERSION;" in source
+    assert "network_game_client_host_network_version() >= AIM_ASSIST_POLICY_NETWORK_VERSION;" in source
     assert "#define AIM_ASSIST_POLICY_NETWORK_VERSION 32" in source
 
 

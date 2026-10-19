@@ -3487,8 +3487,11 @@ void network_distributed_new_game(
 	distributed_machines.in_tick = FALSE;
 	distributed_machines.valid = FALSE;
 	distributed_host_time = NONE;
-	/* (a client: blocked until the host speaks, if the host's version has the policy) */
+	/* (a client: blocked until the host speaks, if the host is known to have
+	a version with the policy; a host not known, such as one joined by an
+	invitation, is heard when it speaks) */
 	distributed_aim_assist_blocked_by_host =
+		network_game_client_host_network_version() != 0xFFFF &&
 		network_game_client_host_network_version() >= AIM_ASSIST_POLICY_NETWORK_VERSION;
 	distributed_aim_assist_sent = NONE;
 	distributed_statistics_due = FALSE;
