@@ -485,7 +485,11 @@ Thus:
 
 If the addresses are not available, the game shows a message, and writes
 the mappings below 4 GB to `memory_map.txt` in the data folder and to the
-log.
+log. At the next start, while that file is there, the app offers the native
+64-bit build of the same version (refer to "The native 64-bit build"), which
+needs no fixed address: a release build downloads it from the release and
+installs it over this one, and other builds open the release page. "Try
+again" starts the game as usual. A start that works removes the file.
 
 The Halo PC maps contain pointers to their own tag cache, at `0x40440000`
 to `0x41b40000`. The host also reserves this range at the start, in the
