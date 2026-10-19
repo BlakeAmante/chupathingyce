@@ -3837,6 +3837,8 @@ static boolean object_update(
 	struct object_definition *object_definition = object_definition_get(object->definition_index);
 
 	boolean result = TRUE;
+	boolean elevator_sampled = FALSE;
+	real_point3d elevator_sample;
 	if (!TEST_FLAG(header->flags, _object_header_do_not_update_bit))
 	{
 		if (TEST_FLAG(object->object.flags, _object_garbage_bit))
@@ -3854,6 +3856,10 @@ static boolean object_update(
 			}
 		}
 
+		/* port: an elevator's node, before the machine moves it (machine_elevator_carry_riders) */
+		elevator_sampled = object->object.type == _object_type_machine &&
+			machine_elevator_sample(object_index, &elevator_sample);
+
 		object_type_update(object_index);
 		if (object_definition->object.collision_model.index!=NONE)
 		{
@@ -3865,6 +3871,11 @@ static boolean object_update(
 		if (!TEST_FLAG(object->object.flags, _object_do_not_recompute_node_matrices_bit))
 		{
 			object_compute_node_matrices(object_index);
+		}
+
+		if (elevator_sampled)
+		{
+			machine_elevator_carry_riders(object_index, &elevator_sample);
 		}
 
 		object_compute_function_values(object_index);

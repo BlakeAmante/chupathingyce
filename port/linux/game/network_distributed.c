@@ -2047,9 +2047,11 @@ static boolean distributed_on_foot_move_valid(
 	return dx * dx + dy * dy + rise * rise <= reach * reach && -dz <= fall_reach;
 }
 
-/* (the host) whether a unit rides an elevator that is moving (bipeds.c's
-elevator, kept a moment after the unit leaves its floor, as in a jump) */
-static boolean distributed_riding_moving_elevator(
+/* (the host) whether a unit rides an elevator (bipeds.c's elevator, which it
+keeps a moment after the unit leaves its floor, as in a jump): one that is
+moving, or that the unit stands on at rest. A stopped elevator remembered
+alone, after a jump, is not riding it. */
+static boolean distributed_riding_elevator(
 	long unit_index)
 {
 	struct biped_datum *biped = (struct biped_datum *)object_try_and_get_and_verify_type(unit_index,
@@ -2059,13 +2061,14 @@ static boolean distributed_riding_moving_elevator(
 	if (!biped || biped->biped.elevator_object_index == NONE)
 		return FALSE;
 	elevator = (struct device_datum *)object_try_and_get_and_verify_type(biped->biped.elevator_object_index,
-		_object_mask_device);
-	return elevator && elevator->device.position_velocity != 0.0f;
+		_object_mask_machine);
+	return network_rules_riding_elevator(elevator != NULL, elevator && elevator->device.position_velocity != 0.0f,
+		distributed_floor_elevator(unit_index) != NONE);
 }
 
 /* (the host) a client's player's prediction of its unit on foot, taken
 where it says within a tolerance (distributed_apply_predictions). Riding a
-moving elevator, only across: a client's elevator follows the host's
+an elevator (moving, or stood on), only across: a client's elevator follows the host's
 (network_coop.c), behind it by the time the host's word takes to come, and
 the client's prediction a round trip behind the host's elevator when it
 comes. Taken up and down too, it would put the host's unit under its own
@@ -2083,7 +2086,7 @@ static void distributed_take_prediction(
 	real_point3d position = state->position;
 	real dx, dy, dz;
 
-	if (distributed_riding_moving_elevator(unit_index))
+	if (distributed_riding_elevator(unit_index))
 		position.z = object->object.position.z;
 	dx = position.x - object->object.position.x;
 	dy = position.y - object->object.position.y;

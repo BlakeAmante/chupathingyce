@@ -22,7 +22,7 @@ from where the client had it before the client moves it there */
 /* how much of the height of that error a client discards while its player
 stands on the same elevator as when it was recorded: the platform's travel
 over a round trip */
-#define NETWORK_RULES_ELEVATOR_PHASE_TOLERANCE 3.0e38f
+#define NETWORK_RULES_ELEVATOR_PHASE_TOLERANCE 4.0f
 /* the ticks a biped's elevator counter is set to on each tick that finds it
 on an elevator (bipeds.c) */
 #define NETWORK_RULES_ELEVATOR_CONTACT_TICKS 60
@@ -33,6 +33,13 @@ on an elevator (bipeds.c) */
 with a support surface, and its elevator counter just set (an elevator it
 remembers after a jump or a step off is not contact) */
 int network_rules_floor_contact(int airborne, int has_support_surface, int elevator_ticks);
+
+/* (the host) whether a unit rides an elevator, for taking a client's word on
+where it is: its biped has an elevator that is a machine, and either that is
+moving (its device's position velocity is not 0) or the unit is in floor
+contact with it. An elevator remembered alone (after a jump or a step off a
+stopped one) is not riding. */
+int network_rules_riding_elevator(int elevator_is_machine, int elevator_moving, int floor_contact);
 
 /* the host's word on a client's own player against the client's record of
 the same tick: error is the host's position less the record's (x, y, z).
