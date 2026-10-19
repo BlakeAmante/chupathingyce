@@ -12,6 +12,11 @@ as they are, unchanged. The HUD textures in this folder that
 listed below) are their art, cut and placed to fit the Xbox maps' HUD
 sheets.
 
+One of them is edited: `art/hud__bitmaps__sniper__hud_reticles_scope__10x.png`
+is their sniper zoom labels' "x" beside a "10" set in Tahoma Bold, made by
+`tools/hud_assets.py` (ten_times_label) because the Xbox's label says 10x
+where theirs says 8x.
+
 They are not covered by Chupathingy's license. They are used with
 Aerocatia's permission, given on October 14, 2026 ("it was released to be
 used"), on the condition that Aerocatia and Jessie are credited. Anyone

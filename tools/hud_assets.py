@@ -19,6 +19,13 @@ some elsewhere, so each Xbox sprite (or bitmap) is copied from the restored
 sprite whose shape matches it best, aligned by its content. A texture is
 made at the restored art's own scale (4x, mostly).
 
+The restored sheets with English text (the message icons, the reticle's
+warnings, the vehicles' seat plates, the sniper's captions) are used as
+the others are: a map in another language has other pixels there, which the
+game's checksum tells apart, so it keeps its own. Where the restored art
+says something else than the Xbox's, it is edited to say what the Xbox's
+does (the sniper's 10x: ten_times_label).
+
 Where the restored art is no larger than the Xbox bitmap (the radar's blips
 and sweeper, the health meter's base), an older SVG redraw of the PC sheet
 is drawn instead, at 8x (--svg: the ones still used are kept in
@@ -80,28 +87,12 @@ METERS = {
     HUD + "combined\\hud_ammo_meters": ("hud_xbox_order/bitmaps/combined/hud_ammo_meters",
                                        "extra/xbox_order_hud_meters/tags/ui/hud/bitmaps/combined/hud_ammo_meters.bitmap"),
 }
-# restored sheets (and redraws) not used, by name: those with English text
-# (other languages' maps have their own; the Xbox message icons all have
-# some, and the vehicles' seat plates are their names), the sniper's zoom
-# labels (2x and 8x, where the Xbox's are 2x and 10x), a reticle the Xbox
-# has none of, and the meters in the PC channel order
+# restored sheets (and redraws) not used, by name: a reticle the Xbox has
+# none of, and the meters in the PC channel order. (Those with English text
+# are used: a map in another language has other pixels there, which the
+# game's checksum tells apart, and keeps its own.)
 UNUSED = {
-    "hud/bitmaps/combined/hud_reticle_warnings",
-    "hud/bitmaps/combined/hud_msg_icons__0",
-    "hud/bitmaps/combined/hud_msg_icons__1",
-    "hud/bitmaps/combined/hud_msg_icons__2",
-    "hud/bitmaps/combined/hud_msg_icons__3",
-    "hud/bitmaps/combined/hud_msg_icons__4",
-    "hud/bitmaps/hud_msg_icons_sm__0",
-    "hud/bitmaps/hud_msg_icons_sm__1",
     "hud/bitmaps/combined/hud_reticles__13",
-    "hud/bitmaps/combined/hud_unit_backgrounds__8",
-    "hud/bitmaps/combined/hud_unit_backgrounds__9",
-    "hud/bitmaps/combined/hud_unit_backgrounds__10",
-    "hud/bitmaps/combined/hud_unit_backgrounds__11",
-    "hud/bitmaps/combined/hud_unit_backgrounds__12",
-    "hud/bitmaps/sniper/caption",
-    "hud/bitmaps/sniper/hud_reticles_scope",
     "hud/bitmaps/combined/hud_unit_meters",
     "hud/bitmaps/combined/hud_ammo_meters",
 }
@@ -309,6 +300,39 @@ def hek_bitmap_texels(bitmap: dict) -> np.ndarray:
     return decode_bitmap(dict(bitmap, flags=BITMAP_LINEAR_FLAG))
 
 
+# ---------- edits: where the restored art says something else than the Xbox's
+
+
+# the sniper's zoom labels: the restored sheet's are 2x and 8x (Halo PC's),
+# the Xbox's 2x and 10x; a 10x is made of "10" in the Xbox's font (Tahoma
+# Bold) beside the restored "x", sized and placed as the Xbox's is
+ZOOM_LABELS = HUD + "sniper\\hud_reticles_scope"
+TAHOMA_BOLD = "/System/Library/Fonts/Supplemental/Tahoma Bold.ttf"
+
+
+def ten_times_label(sheet: np.ndarray, font: str) -> np.ndarray:
+    """A sheet the size of the restored zoom labels' with a 10x in its top
+    left 172 by 96 texels (the Xbox's cell, at 4x): the "10" at the size and
+    place that match the Xbox's best (Tahoma Bold, 73 px, at 17, 1), the
+    "x" the restored 8x's, cut where it meets the 8 (where the fewest of the
+    sheet's columns are covered), at 108, 12."""
+    from PIL import ImageDraw, ImageFont
+
+    result = np.zeros_like(sheet)
+    text = Image.new("L", (172, 96))
+    ImageDraw.Draw(text).text((17, 1), "10", font=ImageFont.truetype(font, 73), fill=255)
+    result[:96, :172, :3] = 255
+    result[:96, :172, 3] = np.asarray(text)
+    # (the 8x sprite is 100 to 204 across and 72 down; its x from the gap)
+    covered = (sheet[:72, 100:204, 3] > 128).sum(axis=0)
+    cut = 100 + 30 + int(np.argmin(covered[30:80]))
+    x = sheet[:72, cut:204]
+    width = min(x.shape[1], 172 - 108)
+    region = result[12:12 + 72, 108:108 + width]
+    region[...] = np.where(x[:, :width, 3:4] > region[..., 3:4], x[:, :width], region)
+    return result
+
+
 # ---------- rendering and matching
 
 
@@ -379,7 +403,7 @@ def match(alpha: np.ndarray, render: np.ndarray, clip: list, scale: int) -> tupl
     return best
 
 
-def sources(svg_root, hek_root: Path, tag: str) -> tuple:
+def sources(svg_root, hek_root: Path, tag: str, font: str) -> tuple:
     """The restored art for a tag's bitmaps, and the SVG redraws of them:
     each a list of (name, PC bitmap index, PC bitmap group), the restored
     art's named as the redraws are (their path under ui, or the tags, with
@@ -399,6 +423,13 @@ def sources(svg_root, hek_root: Path, tag: str) -> tuple:
         name = relative + (f"__{index}" if len(group["bitmaps"]) > 1 else "")
         if tag in METERS or name not in UNUSED:
             art.append((name, index, group))
+    if tag == ZOOM_LABELS:
+        sheet = hek_bitmap_texels(group["bitmaps"][0])
+        height, width = sheet.shape[:2]
+        edited = {"bitmaps": [{"width": width, "height": height, "format": group["bitmaps"][0]["format"],
+                               "texels": ten_times_label(sheet, font)}],
+                  "sequences": [[(0, 0.0, 0.0, 172 / width, 96 / height)]]}
+        art.append((relative + "__10x", 0, edited))
     svgs = []
     if svg_root is not None:
         flat = relative.replace("/", "__").replace(" ", "_")
@@ -422,7 +453,8 @@ def score_cell(alpha: np.ndarray, cell: list, numbers: set, xbox_width: int, can
         pc_bitmap = pc_group["bitmaps"][pc_index]
         key = (kind, name)
         if key not in renders:
-            renders[key] = hek_bitmap_texels(pc_bitmap) if kind == "art" else render_svg(svg_root / name)
+            renders[key] = (pc_bitmap["texels"] if "texels" in pc_bitmap else hek_bitmap_texels(pc_bitmap)) \
+                if kind == "art" else render_svg(svg_root / name)
         render = renders[key]
         if render.shape[1] % xbox_width:
             continue
@@ -459,7 +491,7 @@ def layout(arguments) -> None:
     for group_tag, tag in sorted(xbox_map.tags):
         if group_tag != "bitm" or not tag.startswith(FOLDERS):
             continue
-        art, svgs = sources(svg_root, hek_root, tag)
+        art, svgs = sources(svg_root, hek_root, tag, arguments.font)
         if not art and not svgs:
             continue
         group = xbox_map.bitmap_group(tag)
@@ -487,9 +519,17 @@ def layout(arguments) -> None:
                 # flat: the Xbox's DXT1 blip is opaque, and its "Km" glyph
                 # has only grey)
                 alpha = xbox[top:bottom, left:right, 3]
-                if alpha.min() == alpha.max():
-                    alpha = xbox[top:bottom, left:right, 0]
-                if not alpha.any():
+                grey = xbox[top:bottom, left:right, 0]
+                # (or its grey where that is the shape drawn: the warning
+                # sheet's pips are dots in the grey over triangles in the
+                # alpha, where the restored ones are dots in both)
+                if alpha.min() == alpha.max() or (
+                        "reticle_warnings" in tag and overlap(alpha.astype(float), grey.astype(float)) < 0.5):
+                    alpha = grey
+                # (blank, or a few stray texels: the edges of a neighbour's
+                # shape, which the Xbox's sheets have in some cells; left
+                # blank)
+                if np.count_nonzero(alpha) <= 4:
                     continue
                 # (the restored art where it is larger than the Xbox's; else
                 # an SVG redraw)
@@ -498,6 +538,18 @@ def layout(arguments) -> None:
                 if best is None or best[0] < MATCH or best[5] is None:
                     kind = "svg"
                     best = score_cell(alpha, cell, numbers, width, svgs, renders, kind, svg_root, 1)
+                # (a faint cell that matches nothing: matched by its shape,
+                # and drawn as faint; or, matching nothing still, left blank,
+                # as a faint frame on the Xbox's message icons, all but
+                # invisible, is)
+                faint = (best is None or best[0] < MATCH) and alpha.max() < 64
+                if faint:
+                    kind = "art"
+                    best = score_cell((alpha.astype(float) * 255 / alpha.max()).astype(np.uint8), cell, numbers,
+                                      width, art, renders, kind, svg_root, 2)
+                    if best is None or best[0] < MATCH:
+                        print(f"{name}: cell {cell}, faint, matches nothing: left blank")
+                        continue
                 if best is None or best[0] < MATCH or best[5] is None:
                     matched = None
                     print(f"{name}: left out, cell {cell} " +
@@ -521,6 +573,8 @@ def layout(arguments) -> None:
                     health = set(range(30, 241, 30))
                     if health <= values <= health | {0}:
                         found["thresholds"] = sorted(health)
+                if faint:
+                    found["intensity"] = round(float(xbox[top:bottom, left:right, 3].max()) / 255, 3)
                 matched.append(found)
             if not matched:
                 if matched is not None:
@@ -706,7 +760,10 @@ def build_asset(entry: dict, renders: dict) -> np.ndarray:
         width, height = (right - left) * scale, (bottom - top) * scale
         texels = window(clipped(renders[key], [round(value * zoom) for value in cell["clip"]]),
                         round(cell["source"][0] * zoom), round(cell["source"][1] * zoom), width, height)
-        image[top * scale:top * scale + height, left * scale:left * scale + width] = recipe(texels, cell["kind"])
+        texels = recipe(texels, cell["kind"])
+        if "intensity" in cell:
+            texels = np.round(texels * cell["intensity"]).astype(np.uint8)
+        image[top * scale:top * scale + height, left * scale:left * scale + width] = texels
     if any(cell["kind"] in ("meter", "dxt") for cell in entry["cells"]):
         image = bleed(image)
     if any(cell["kind"] == "meter" for cell in entry["cells"]):
@@ -773,6 +830,7 @@ def main() -> None:
     command.add_argument("--map", required=True)
     command.add_argument("--hek", required=True)
     command.add_argument("--svg")
+    command.add_argument("--font", default=TAHOMA_BOLD)
     commands.add_parser("build")
     commands.add_parser("thresholds")
     command = commands.add_parser("check")

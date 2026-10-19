@@ -1187,6 +1187,990 @@
    ]
   },
   {
+   "name": "hud_msg_icons__0",
+   "tag": "ui\\hud\\bitmaps\\combined\\hud_msg_icons",
+   "bitmap": 0,
+   "width": 128,
+   "height": 128,
+   "format": "a8y8",
+   "scale": 4,
+   "crc": 1457896459,
+   "cells": [
+    {
+     "xbox": [
+      0,
+      0,
+      36,
+      40
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__1.png",
+     "source_scale": 4,
+     "source": [
+      139,
+      170
+     ],
+     "clip": [
+      140,
+      168,
+      280,
+      328
+     ],
+     "kind": "grey",
+     "score": 0.695
+    },
+    {
+     "xbox": [
+      0,
+      40,
+      100,
+      72
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__3.png",
+     "source_scale": 4,
+     "source": [
+      0,
+      131
+     ],
+     "clip": [
+      0,
+      132,
+      400,
+      260
+     ],
+     "kind": "grey",
+     "score": 0.628
+    },
+    {
+     "xbox": [
+      0,
+      72,
+      24,
+      102
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__2.png",
+     "source_scale": 4,
+     "source": [
+      380,
+      288
+     ],
+     "clip": [
+      380,
+      288,
+      476,
+      404
+     ],
+     "kind": "grey",
+     "score": 0.812
+    },
+    {
+     "xbox": [
+      0,
+      102,
+      122,
+      128
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__3.png",
+     "source_scale": 4,
+     "source": [
+      0,
+      372
+     ],
+     "clip": [
+      0,
+      372,
+      488,
+      476
+     ],
+     "kind": "grey",
+     "score": 0.621
+    },
+    {
+     "xbox": [
+      24,
+      72,
+      48,
+      101
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__2.png",
+     "source_scale": 4,
+     "source": [
+      284,
+      287
+     ],
+     "clip": [
+      284,
+      288,
+      380,
+      404
+     ],
+     "kind": "grey",
+     "score": 0.88
+    },
+    {
+     "xbox": [
+      36,
+      0,
+      74,
+      40
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__0.png",
+     "source_scale": 4,
+     "source": [
+      324,
+      223
+     ],
+     "clip": [
+      324,
+      224,
+      476,
+      384
+     ],
+     "kind": "grey",
+     "score": 0.676
+    },
+    {
+     "xbox": [
+      48,
+      72,
+      72,
+      101
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__1.png",
+     "source_scale": 4,
+     "source": [
+      380,
+      0
+     ],
+     "clip": [
+      380,
+      0,
+      476,
+      116
+     ],
+     "kind": "grey",
+     "score": 0.857
+    },
+    {
+     "xbox": [
+      74,
+      0,
+      122,
+      39
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__1.png",
+     "source_scale": 4,
+     "source": [
+      280,
+      168
+     ],
+     "clip": [
+      280,
+      168,
+      472,
+      324
+     ],
+     "kind": "grey",
+     "score": 0.689
+    },
+    {
+     "xbox": [
+      91,
+      72,
+      110,
+      94
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__0.png",
+     "source_scale": 4,
+     "source": [
+      77,
+      415
+     ],
+     "clip": [
+      76,
+      416,
+      152,
+      504
+     ],
+     "kind": "grey",
+     "score": 0.908
+    },
+    {
+     "xbox": [
+      100,
+      40,
+      124,
+      70
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__2.png",
+     "source_scale": 4,
+     "source": [
+      188,
+      287
+     ],
+     "clip": [
+      188,
+      288,
+      284,
+      404
+     ],
+     "kind": "grey",
+     "score": 0.855
+    }
+   ]
+  },
+  {
+   "name": "hud_msg_icons__1",
+   "tag": "ui\\hud\\bitmaps\\combined\\hud_msg_icons",
+   "bitmap": 1,
+   "width": 128,
+   "height": 128,
+   "format": "a8y8",
+   "scale": 4,
+   "crc": 1851454571,
+   "cells": [
+    {
+     "xbox": [
+      0,
+      0,
+      95,
+      42
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__1.png",
+     "source_scale": 4,
+     "source": [
+      -2,
+      -3
+     ],
+     "clip": [
+      0,
+      0,
+      380,
+      168
+     ],
+     "kind": "grey",
+     "score": 0.563
+    },
+    {
+     "xbox": [
+      0,
+      42,
+      36,
+      82
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__1.png",
+     "source_scale": 4,
+     "source": [
+      1,
+      170
+     ],
+     "clip": [
+      0,
+      168,
+      140,
+      328
+     ],
+     "kind": "grey",
+     "score": 0.685
+    },
+    {
+     "xbox": [
+      0,
+      82,
+      82,
+      115
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__3.png",
+     "source_scale": 4,
+     "source": [
+      0,
+      0
+     ],
+     "clip": [
+      0,
+      0,
+      328,
+      132
+     ],
+     "kind": "grey",
+     "score": 0.705
+    },
+    {
+     "xbox": [
+      36,
+      42,
+      102,
+      81
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__1.png",
+     "source_scale": 4,
+     "source": [
+      0,
+      328
+     ],
+     "clip": [
+      0,
+      328,
+      264,
+      484
+     ],
+     "kind": "grey",
+     "score": 0.717
+    },
+    {
+     "xbox": [
+      82,
+      82,
+      116,
+      110
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__3.png",
+     "source_scale": 4,
+     "source": [
+      329,
+      1
+     ],
+     "clip": [
+      328,
+      0,
+      464,
+      112
+     ],
+     "kind": "grey",
+     "score": 0.791
+    },
+    {
+     "xbox": [
+      95,
+      0,
+      126,
+      28
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__3.png",
+     "source_scale": 4,
+     "source": [
+      -1,
+      261
+     ],
+     "clip": [
+      0,
+      260,
+      124,
+      372
+     ],
+     "kind": "grey",
+     "score": 0.806
+    }
+   ]
+  },
+  {
+   "name": "hud_msg_icons__2",
+   "tag": "ui\\hud\\bitmaps\\combined\\hud_msg_icons",
+   "bitmap": 2,
+   "width": 128,
+   "height": 128,
+   "format": "a8y8",
+   "scale": 4,
+   "crc": 734518216,
+   "cells": [
+    {
+     "xbox": [
+      0,
+      0,
+      62,
+      56
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__0.png",
+     "source_scale": 4,
+     "source": [
+      -1,
+      0
+     ],
+     "clip": [
+      0,
+      0,
+      248,
+      224
+     ],
+     "kind": "grey",
+     "score": 0.697
+    },
+    {
+     "xbox": [
+      0,
+      56,
+      35,
+      92
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__2.png",
+     "source_scale": 4,
+     "source": [
+      139,
+      2
+     ],
+     "clip": [
+      140,
+      0,
+      280,
+      144
+     ],
+     "kind": "grey",
+     "score": 0.689
+    },
+    {
+     "xbox": [
+      0,
+      92,
+      122,
+      118
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__4.png",
+     "source_scale": 4,
+     "source": [
+      -5,
+      -5
+     ],
+     "clip": [
+      0,
+      0,
+      480,
+      96
+     ],
+     "kind": "grey",
+     "score": 0.659
+    },
+    {
+     "xbox": [
+      35,
+      56,
+      70,
+      92
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__2.png",
+     "source_scale": 4,
+     "source": [
+      279,
+      145
+     ],
+     "clip": [
+      280,
+      144,
+      420,
+      288
+     ],
+     "kind": "grey",
+     "score": 0.681
+    },
+    {
+     "xbox": [
+      62,
+      0,
+      97,
+      36
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__2.png",
+     "source_scale": 4,
+     "source": [
+      -1,
+      2
+     ],
+     "clip": [
+      0,
+      0,
+      140,
+      144
+     ],
+     "kind": "grey",
+     "score": 0.695
+    },
+    {
+     "xbox": [
+      70,
+      56,
+      120,
+      91
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__1.png",
+     "source_scale": 4,
+     "source": [
+      265,
+      328
+     ],
+     "clip": [
+      264,
+      328,
+      452,
+      468
+     ],
+     "kind": "grey",
+     "score": 0.849
+    }
+   ]
+  },
+  {
+   "name": "hud_msg_icons__3",
+   "tag": "ui\\hud\\bitmaps\\combined\\hud_msg_icons",
+   "bitmap": 3,
+   "width": 128,
+   "height": 128,
+   "format": "a8y8",
+   "scale": 4,
+   "crc": 2758814568,
+   "cells": [
+    {
+     "xbox": [
+      0,
+      0,
+      53,
+      53
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__0.png",
+     "source_scale": 4,
+     "source": [
+      248,
+      -1
+     ],
+     "clip": [
+      248,
+      0,
+      460,
+      212
+     ],
+     "kind": "grey",
+     "score": 0.761
+    },
+    {
+     "xbox": [
+      0,
+      53,
+      36,
+      89
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__2.png",
+     "source_scale": 4,
+     "source": [
+      281,
+      2
+     ],
+     "clip": [
+      280,
+      0,
+      420,
+      144
+     ],
+     "kind": "grey",
+     "score": 0.685
+    },
+    {
+     "xbox": [
+      36,
+      53,
+      87,
+      88
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__2.png",
+     "source_scale": 4,
+     "source": [
+      -1,
+      288
+     ],
+     "clip": [
+      0,
+      288,
+      188,
+      428
+     ],
+     "kind": "grey",
+     "score": 0.831
+    },
+    {
+     "xbox": [
+      53,
+      0,
+      89,
+      36
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__2.png",
+     "source_scale": 4,
+     "source": [
+      141,
+      146
+     ],
+     "clip": [
+      140,
+      144,
+      280,
+      288
+     ],
+     "kind": "grey",
+     "score": 0.658
+    },
+    {
+     "xbox": [
+      89,
+      0,
+      125,
+      36
+     ],
+     "art": "hud__bitmaps__combined__hud_msg_icons__2.png",
+     "source_scale": 4,
+     "source": [
+      1,
+      146
+     ],
+     "clip": [
+      0,
+      144,
+      140,
+      288
+     ],
+     "kind": "grey",
+     "score": 0.677
+    }
+   ]
+  },
+  {
+   "name": "hud_reticle_warnings__0",
+   "tag": "ui\\hud\\bitmaps\\combined\\hud_reticle_warnings",
+   "bitmap": 0,
+   "width": 128,
+   "height": 128,
+   "format": "a8y8",
+   "scale": 4,
+   "crc": 1728930376,
+   "cells": [
+    {
+     "xbox": [
+      0,
+      0,
+      56,
+      27
+     ],
+     "art": "hud__bitmaps__combined__hud_reticle_warnings.png",
+     "source_scale": 4,
+     "source": [
+      200,
+      2
+     ],
+     "clip": [
+      200,
+      0,
+      424,
+      108
+     ],
+     "kind": "grey",
+     "score": 0.612
+    },
+    {
+     "xbox": [
+      0,
+      27,
+      49,
+      54
+     ],
+     "art": "hud__bitmaps__combined__hud_reticle_warnings.png",
+     "source_scale": 4,
+     "source": [
+      1,
+      109
+     ],
+     "clip": [
+      0,
+      108,
+      196,
+      216
+     ],
+     "kind": "grey",
+     "score": 0.607
+    },
+    {
+     "xbox": [
+      0,
+      54,
+      42,
+      79
+     ],
+     "art": "hud__bitmaps__combined__hud_reticle_warnings.png",
+     "source_scale": 4,
+     "source": [
+      0,
+      217
+     ],
+     "clip": [
+      0,
+      216,
+      168,
+      316
+     ],
+     "kind": "grey",
+     "score": 0.625
+    },
+    {
+     "xbox": [
+      0,
+      79,
+      42,
+      103
+     ],
+     "art": "hud__bitmaps__combined__hud_reticle_warnings.png",
+     "source_scale": 4,
+     "source": [
+      168,
+      216
+     ],
+     "clip": [
+      168,
+      216,
+      336,
+      312
+     ],
+     "kind": "grey",
+     "score": 0.613
+    },
+    {
+     "xbox": [
+      0,
+      103,
+      30,
+      109
+     ],
+     "art": "hud__bitmaps__combined__hud_reticle_warnings.png",
+     "source_scale": 4,
+     "source": [
+      0,
+      412
+     ],
+     "clip": [
+      0,
+      412,
+      120,
+      436
+     ],
+     "kind": "grey",
+     "score": 0.714
+    },
+    {
+     "xbox": [
+      30,
+      103,
+      60,
+      109
+     ],
+     "art": "hud__bitmaps__combined__hud_reticle_warnings.png",
+     "source_scale": 4,
+     "source": [
+      120,
+      412
+     ],
+     "clip": [
+      120,
+      412,
+      240,
+      436
+     ],
+     "kind": "grey",
+     "score": 0.714
+    },
+    {
+     "xbox": [
+      42,
+      54,
+      102,
+      78
+     ],
+     "art": "hud__bitmaps__combined__hud_reticle_warnings.png",
+     "source_scale": 4,
+     "source": [
+      0,
+      316
+     ],
+     "clip": [
+      0,
+      316,
+      240,
+      412
+     ],
+     "kind": "grey",
+     "score": 0.616
+    },
+    {
+     "xbox": [
+      42,
+      79,
+      86,
+      94
+     ],
+     "art": "hud__bitmaps__combined__hud_reticle_warnings.png",
+     "source_scale": 4,
+     "source": [
+      335,
+      216
+     ],
+     "clip": [
+      336,
+      216,
+      512,
+      276
+     ],
+     "kind": "grey",
+     "score": 0.625
+    },
+    {
+     "xbox": [
+      49,
+      27,
+      77,
+      52
+     ],
+     "art": "hud__bitmaps__combined__hud_reticle_warnings.png",
+     "source_scale": 4,
+     "source": [
+      308,
+      109
+     ],
+     "clip": [
+      308,
+      108,
+      420,
+      208
+     ],
+     "kind": "grey",
+     "score": 0.62
+    },
+    {
+     "xbox": [
+      56,
+      0,
+      106,
+      27
+     ],
+     "art": "hud__bitmaps__combined__hud_reticle_warnings.png",
+     "source_scale": 4,
+     "source": [
+      1,
+      1
+     ],
+     "clip": [
+      0,
+      0,
+      200,
+      108
+     ],
+     "kind": "grey",
+     "score": 0.628
+    },
+    {
+     "xbox": [
+      60,
+      103,
+      90,
+      109
+     ],
+     "art": "hud__bitmaps__combined__hud_reticle_warnings.png",
+     "source_scale": 4,
+     "source": [
+      240,
+      316
+     ],
+     "clip": [
+      240,
+      316,
+      360,
+      340
+     ],
+     "kind": "grey",
+     "score": 0.714
+    },
+    {
+     "xbox": [
+      77,
+      27,
+      105,
+      52
+     ],
+     "art": "hud__bitmaps__combined__hud_reticle_warnings.png",
+     "source_scale": 4,
+     "source": [
+      196,
+      109
+     ],
+     "clip": [
+      196,
+      108,
+      308,
+      208
+     ],
+     "kind": "grey",
+     "score": 0.605
+    },
+    {
+     "xbox": [
+      86,
+      79,
+      116,
+      85
+     ],
+     "art": "hud__bitmaps__combined__hud_reticle_warnings.png",
+     "source_scale": 4,
+     "source": [
+      360,
+      316
+     ],
+     "clip": [
+      360,
+      316,
+      480,
+      340
+     ],
+     "kind": "grey",
+     "score": 0.714
+    },
+    {
+     "xbox": [
+      90,
+      103,
+      120,
+      109
+     ],
+     "art": "hud__bitmaps__combined__hud_reticle_warnings.png",
+     "source_scale": 4,
+     "source": [
+      240,
+      412
+     ],
+     "clip": [
+      240,
+      412,
+      360,
+      436
+     ],
+     "kind": "grey",
+     "score": 0.714
+    },
+    {
+     "xbox": [
+      106,
+      0,
+      117,
+      7
+     ],
+     "art": "hud__bitmaps__combined__hud_reticle_warnings.png",
+     "source_scale": 4,
+     "source": [
+      424,
+      0
+     ],
+     "clip": [
+      424,
+      0,
+      468,
+      28
+     ],
+     "kind": "grey",
+     "score": 0.785
+    }
+   ]
+  },
+  {
    "name": "hud_reticles__0",
    "tag": "ui\\hud\\bitmaps\\combined\\hud_reticles",
    "bitmap": 0,
@@ -1933,6 +2917,176 @@
    ]
   },
   {
+   "name": "hud_unit_backgrounds__8",
+   "tag": "ui\\hud\\bitmaps\\combined\\hud_unit_backgrounds",
+   "bitmap": 8,
+   "width": 128,
+   "height": 32,
+   "format": "ay8",
+   "scale": 4,
+   "crc": 3988051168,
+   "cells": [
+    {
+     "xbox": [
+      0,
+      0,
+      128,
+      32
+     ],
+     "art": "hud__bitmaps__combined__hud_unit_backgrounds__8.png",
+     "source_scale": 4,
+     "source": [
+      2,
+      0
+     ],
+     "clip": [
+      0,
+      0,
+      512,
+      128
+     ],
+     "kind": "grey",
+     "score": 0.476
+    }
+   ]
+  },
+  {
+   "name": "hud_unit_backgrounds__9",
+   "tag": "ui\\hud\\bitmaps\\combined\\hud_unit_backgrounds",
+   "bitmap": 9,
+   "width": 128,
+   "height": 32,
+   "format": "ay8",
+   "scale": 4,
+   "crc": 661112012,
+   "cells": [
+    {
+     "xbox": [
+      0,
+      0,
+      128,
+      32
+     ],
+     "art": "hud__bitmaps__combined__hud_unit_backgrounds__9.png",
+     "source_scale": 4,
+     "source": [
+      2,
+      0
+     ],
+     "clip": [
+      0,
+      0,
+      512,
+      128
+     ],
+     "kind": "grey",
+     "score": 0.46
+    }
+   ]
+  },
+  {
+   "name": "hud_unit_backgrounds__10",
+   "tag": "ui\\hud\\bitmaps\\combined\\hud_unit_backgrounds",
+   "bitmap": 10,
+   "width": 128,
+   "height": 32,
+   "format": "ay8",
+   "scale": 4,
+   "crc": 3401836366,
+   "cells": [
+    {
+     "xbox": [
+      0,
+      0,
+      128,
+      32
+     ],
+     "art": "hud__bitmaps__combined__hud_unit_backgrounds__10.png",
+     "source_scale": 4,
+     "source": [
+      0,
+      0
+     ],
+     "clip": [
+      0,
+      0,
+      512,
+      128
+     ],
+     "kind": "grey",
+     "score": 0.468
+    }
+   ]
+  },
+  {
+   "name": "hud_unit_backgrounds__11",
+   "tag": "ui\\hud\\bitmaps\\combined\\hud_unit_backgrounds",
+   "bitmap": 11,
+   "width": 128,
+   "height": 32,
+   "format": "ay8",
+   "scale": 4,
+   "crc": 1510305698,
+   "cells": [
+    {
+     "xbox": [
+      0,
+      0,
+      128,
+      32
+     ],
+     "art": "hud__bitmaps__combined__hud_unit_backgrounds__11.png",
+     "source_scale": 4,
+     "source": [
+      1,
+      0
+     ],
+     "clip": [
+      0,
+      0,
+      512,
+      128
+     ],
+     "kind": "grey",
+     "score": 0.469
+    }
+   ]
+  },
+  {
+   "name": "hud_unit_backgrounds__12",
+   "tag": "ui\\hud\\bitmaps\\combined\\hud_unit_backgrounds",
+   "bitmap": 12,
+   "width": 128,
+   "height": 32,
+   "format": "ay8",
+   "scale": 4,
+   "crc": 3188769653,
+   "cells": [
+    {
+     "xbox": [
+      0,
+      0,
+      128,
+      32
+     ],
+     "art": "hud__bitmaps__combined__hud_unit_backgrounds__12.png",
+     "source_scale": 4,
+     "source": [
+      2,
+      0
+     ],
+     "clip": [
+      0,
+      0,
+      512,
+      128
+     ],
+     "kind": "grey",
+     "score": 0.471
+    }
+   ]
+  },
+  {
    "name": "hud_unit_meters__0",
    "tag": "ui\\hud\\bitmaps\\combined\\hud_unit_meters",
    "bitmap": 0,
@@ -2531,6 +3685,382 @@
    ]
   },
   {
+   "name": "hud_msg_icons_sm__0",
+   "tag": "ui\\hud\\bitmaps\\hud_msg_icons_sm",
+   "bitmap": 0,
+   "width": 128,
+   "height": 128,
+   "format": "a8y8",
+   "scale": 4,
+   "crc": 2908635490,
+   "cells": [
+    {
+     "xbox": [
+      0,
+      0,
+      71,
+      21
+     ],
+     "art": "hud__bitmaps__hud_msg_icons_sm__0.png",
+     "source_scale": 4,
+     "source": [
+      -3,
+      79
+     ],
+     "clip": [
+      0,
+      80,
+      284,
+      160
+     ],
+     "kind": "grey",
+     "score": 0.666
+    },
+    {
+     "xbox": [
+      0,
+      21,
+      68,
+      41
+     ],
+     "art": "hud__bitmaps__hud_msg_icons_sm__0.png",
+     "source_scale": 4,
+     "source": [
+      -1,
+      402
+     ],
+     "clip": [
+      0,
+      400,
+      272,
+      480
+     ],
+     "kind": "grey",
+     "score": 0.745
+    },
+    {
+     "xbox": [
+      0,
+      41,
+      65,
+      61
+     ],
+     "art": "hud__bitmaps__hud_msg_icons_sm__0.png",
+     "source_scale": 4,
+     "source": [
+      -1,
+      242
+     ],
+     "clip": [
+      0,
+      240,
+      260,
+      320
+     ],
+     "kind": "grey",
+     "score": 0.636
+    },
+    {
+     "xbox": [
+      0,
+      61,
+      65,
+      81
+     ],
+     "art": "hud__bitmaps__hud_msg_icons_sm__0.png",
+     "source_scale": 4,
+     "source": [
+      -1,
+      162
+     ],
+     "clip": [
+      0,
+      160,
+      260,
+      240
+     ],
+     "kind": "grey",
+     "score": 0.647
+    },
+    {
+     "xbox": [
+      0,
+      81,
+      65,
+      101
+     ],
+     "art": "hud__bitmaps__hud_msg_icons_sm__0.png",
+     "source_scale": 4,
+     "source": [
+      191,
+      2
+     ],
+     "clip": [
+      192,
+      0,
+      452,
+      80
+     ],
+     "kind": "grey",
+     "score": 0.647
+    },
+    {
+     "xbox": [
+      0,
+      101,
+      65,
+      121
+     ],
+     "art": "hud__bitmaps__hud_msg_icons_sm__0.png",
+     "source_scale": 4,
+     "source": [
+      -1,
+      322
+     ],
+     "clip": [
+      0,
+      320,
+      260,
+      400
+     ],
+     "kind": "grey",
+     "score": 0.614
+    },
+    {
+     "xbox": [
+      68,
+      21,
+      84,
+      41
+     ],
+     "art": "hud__bitmaps__hud_msg_icons_sm__0.png",
+     "source_scale": 4,
+     "source": [
+      284,
+      80
+     ],
+     "clip": [
+      284,
+      80,
+      348,
+      160
+     ],
+     "kind": "grey",
+     "score": 0.791
+    },
+    {
+     "xbox": [
+      71,
+      0,
+      87,
+      20
+     ],
+     "art": "hud__bitmaps__hud_msg_icons_sm__0.png",
+     "source_scale": 4,
+     "source": [
+      64,
+      -1
+     ],
+     "clip": [
+      64,
+      0,
+      128,
+      80
+     ],
+     "kind": "grey",
+     "score": 0.803
+    },
+    {
+     "xbox": [
+      84,
+      21,
+      97,
+      36
+     ],
+     "art": "hud__bitmaps__hud_msg_icons_sm__0.png",
+     "source_scale": 4,
+     "source": [
+      348,
+      81
+     ],
+     "clip": [
+      348,
+      80,
+      400,
+      140
+     ],
+     "kind": "grey",
+     "score": 0.861
+    },
+    {
+     "xbox": [
+      87,
+      0,
+      103,
+      20
+     ],
+     "art": "hud__bitmaps__hud_msg_icons_sm__0.png",
+     "source_scale": 4,
+     "source": [
+      128,
+      -1
+     ],
+     "clip": [
+      128,
+      0,
+      192,
+      80
+     ],
+     "kind": "grey",
+     "score": 0.846
+    },
+    {
+     "xbox": [
+      97,
+      21,
+      110,
+      36
+     ],
+     "art": "hud__bitmaps__hud_msg_icons_sm__0.png",
+     "source_scale": 4,
+     "source": [
+      453,
+      0
+     ],
+     "clip": [
+      452,
+      0,
+      504,
+      60
+     ],
+     "kind": "grey",
+     "score": 0.405
+    },
+    {
+     "xbox": [
+      103,
+      0,
+      119,
+      20
+     ],
+     "art": "hud__bitmaps__hud_msg_icons_sm__0.png",
+     "source_scale": 4,
+     "source": [
+      0,
+      0
+     ],
+     "clip": [
+      0,
+      0,
+      64,
+      80
+     ],
+     "kind": "grey",
+     "score": 0.75
+    }
+   ]
+  },
+  {
+   "name": "hud_msg_icons_sm__1",
+   "tag": "ui\\hud\\bitmaps\\hud_msg_icons_sm",
+   "bitmap": 1,
+   "width": 128,
+   "height": 128,
+   "format": "a8y8",
+   "scale": 4,
+   "crc": 3534989248,
+   "cells": [
+    {
+     "xbox": [
+      0,
+      0,
+      71,
+      20
+     ],
+     "art": "hud__bitmaps__hud_msg_icons_sm__1.png",
+     "source_scale": 4,
+     "source": [
+      -2,
+      79
+     ],
+     "clip": [
+      0,
+      80,
+      284,
+      160
+     ],
+     "kind": "grey",
+     "score": 0.666
+    },
+    {
+     "xbox": [
+      0,
+      20,
+      71,
+      40
+     ],
+     "art": "hud__bitmaps__hud_msg_icons_sm__1.png",
+     "source_scale": 4,
+     "source": [
+      -2,
+      239
+     ],
+     "clip": [
+      0,
+      240,
+      284,
+      320
+     ],
+     "kind": "grey",
+     "score": 0.663
+    },
+    {
+     "xbox": [
+      0,
+      40,
+      75,
+      60
+     ],
+     "art": "hud__bitmaps__hud_msg_icons_sm__1.png",
+     "source_scale": 4,
+     "source": [
+      -3,
+      162
+     ],
+     "clip": [
+      0,
+      160,
+      300,
+      240
+     ],
+     "kind": "grey",
+     "score": 0.73
+    },
+    {
+     "xbox": [
+      0,
+      60,
+      71,
+      80
+     ],
+     "art": "hud__bitmaps__hud_msg_icons_sm__1.png",
+     "source_scale": 4,
+     "source": [
+      -2,
+      -1
+     ],
+     "clip": [
+      0,
+      0,
+      284,
+      80
+     ],
+     "kind": "grey",
+     "score": 0.664
+    }
+   ]
+  },
+  {
    "name": "hud_multiplayer__0",
    "tag": "ui\\hud\\bitmaps\\hud_multiplayer",
    "bitmap": 0,
@@ -2765,6 +4295,118 @@
      ],
      "kind": "grey",
      "score": 0.99
+    }
+   ]
+  },
+  {
+   "name": "sniper__caption__0",
+   "tag": "ui\\hud\\bitmaps\\sniper\\caption",
+   "bitmap": 0,
+   "width": 128,
+   "height": 128,
+   "format": "a8y8",
+   "scale": 4,
+   "crc": 800277554,
+   "cells": [
+    {
+     "xbox": [
+      0,
+      0,
+      128,
+      32
+     ],
+     "art": "hud__bitmaps__sniper__caption.png",
+     "source_scale": 4,
+     "source": [
+      0,
+      0
+     ],
+     "clip": [
+      0,
+      0,
+      512,
+      128
+     ],
+     "kind": "grey",
+     "score": 0.512
+    }
+   ]
+  },
+  {
+   "name": "sniper__hud_reticles_scope__0",
+   "tag": "ui\\hud\\bitmaps\\sniper\\hud_reticles_scope",
+   "bitmap": 0,
+   "width": 64,
+   "height": 64,
+   "format": "a8y8",
+   "scale": 4,
+   "crc": 2373183232,
+   "cells": [
+    {
+     "xbox": [
+      0,
+      0,
+      31,
+      24
+     ],
+     "art": "hud__bitmaps__sniper__hud_reticles_scope.png",
+     "source_scale": 4,
+     "source": [
+      -12,
+      -12
+     ],
+     "clip": [
+      0,
+      0,
+      100,
+      72
+     ],
+     "kind": "grey",
+     "score": 0.74
+    },
+    {
+     "xbox": [
+      0,
+      24,
+      43,
+      48
+     ],
+     "art": "hud__bitmaps__sniper__hud_reticles_scope__10x.png",
+     "source_scale": 4,
+     "source": [
+      -1,
+      0
+     ],
+     "clip": [
+      0,
+      0,
+      172,
+      96
+     ],
+     "kind": "grey",
+     "score": 0.76
+    },
+    {
+     "xbox": [
+      32,
+      0,
+      50,
+      18
+     ],
+     "art": "hud__bitmaps__sniper__hud_reticles_scope.png",
+     "source_scale": 4,
+     "source": [
+      192,
+      -12
+     ],
+     "clip": [
+      204,
+      0,
+      252,
+      48
+     ],
+     "kind": "grey",
+     "score": 0.556
     }
    ]
   },
