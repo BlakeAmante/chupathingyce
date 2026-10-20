@@ -828,9 +828,9 @@ jobs:
         shell: pwsh
         run: python configure.py
 
-      - name: Compile dedicated server
+      - name: List available build targets
         shell: pwsh
-        run: ninja server-windows64
+        run: ninja -t targets all
 
       - name: Verify executable
         shell: pwsh
