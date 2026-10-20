@@ -806,3 +806,46 @@ jobs:
         with:
           path: .ccache
           key: ccache-macos-${{ github.sha }}
+      
+  server-windows64:
+    name: Windows x64 Dedicated Server
+    runs-on: windows-2025
+    timeout-minutes: 40
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install Ninja
+        shell: pwsh
+        run: |
+          choco install ninja -y --no-progress
+          ninja --version
+
+      - name: Configure dedicated server
+        shell: pwsh
+        run: python configure.py
+
+      - name: Compile dedicated server
+        shell: pwsh
+        run: ninja server-windows64
+
+      - name: Verify executable
+        shell: pwsh
+        run: |
+          $exe = "build/server-windows64/chupathingyce-server.exe"
+          if (!(Test-Path $exe)) {
+            throw "Dedicated server executable was not produced"
+          }
+          Get-Item $exe | Select-Object Name,Length
+
+      - name: Upload dedicated server
+        uses: actions/upload-artifact@v4
+        with:
+          name: chupathingyce-server-windows-x64
+          path: build/server-windows64/chupathingyce-server.exe
+          if-no-files-found: error
+          retention-days: 7
+
